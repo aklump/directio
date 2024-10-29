@@ -1,0 +1,6 @@
+vendor/
+composer.lock
+.idea/
+feature--*
+feature_*/
+demo/

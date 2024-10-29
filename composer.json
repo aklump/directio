@@ -1,0 +1,31 @@
+{
+  "name": "aklump/directio",
+  "type": "library",
+  "version": "0.0.0",
+  "autoload": {
+    "psr-4": {
+      "AKlump\\Directio\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=7.4",
+    "symfony/console": "^5.4",
+    "symfony/yaml": "^5.4",
+    "symfony/serializer": "^5.4",
+    "symfony/property-access": "^5.4",
+    "aklump/local-timezone": "^0.0.1",
+    "doctrine/lexer": "^2.1"
+  },
+  "license": "GPL-2.0-or-later",
+  "bin": [
+    "./bin/directio"
+  ],
+  "autoload-dev": {
+    "psr-4": {
+      "AKlump\\Directio\\Tests\\Unit\\": "./tests_unit"
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.6"
+  }
+}
