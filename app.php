@@ -39,5 +39,6 @@ $START_DIR = getcwd() . '/';
 
 $application = new \Symfony\Component\Console\Application();
 $application->add(new \AKlump\Directio\Command\InitializeCommand());
-$application->add(new \AKlump\Directio\Command\UseCommand());
+$application->add(new \AKlump\Directio\Command\UpdateCommand());
+$application->add(new \AKlump\Directio\Command\NewCommand());
 $application->run();

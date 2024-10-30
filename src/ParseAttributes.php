@@ -24,6 +24,7 @@ class ParseAttributes {
       $lexer->moveNext();
       if ($lexer->token->isA(AttributesLexer::T_ATTRIBUTE_NAME)) {
         $name = $lexer->token->value;
+        $attributes[$name] = TRUE;
       }
       elseif (!empty($name)
         && $lexer->token->isA(AttributesLexer::T_ATTRIBUTE_VALUE)) {

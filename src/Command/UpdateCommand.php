@@ -11,15 +11,14 @@ use AKlump\Directio\WriteDocument;
 use AKlump\LocalTimezone\LocalTimezone;
 use Exception;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class UseCommand extends Command {
+class UpdateCommand extends Command {
 
-  protected static $defaultName = 'use';
+  protected static $defaultName = 'update';
 
-  protected static $defaultDescription = 'Create a new document based on the current state';
+  protected static $defaultDescription = 'Remove completed tasks and update state';
 
   /**
    * @var \Symfony\Component\Console\Output\OutputInterface
@@ -29,7 +28,6 @@ class UseCommand extends Command {
   private string $directioDirectory;
 
   protected function configure() {
-    $this->addArgument('document', InputArgument::REQUIRED, 'The source document to be filtered.');
   }
 
   protected function execute(InputInterface $input, OutputInterface $output) {
@@ -37,12 +35,34 @@ class UseCommand extends Command {
     $this->directioDirectory = getcwd() . '/' . Names::FILENAME_INIT;
     if (!file_exists($this->directioDirectory)) {
       $output->writeln('<error>Current directory is not initialized.</error>');
-      $output->writeln('<info>Try the init command first.</info>');
+      $output->writeln(sprintf('<info>Try the "%s" command first.</info>', InitializeCommand::getDefaultName()));
 
       return Command::FAILURE;
     }
 
+    $files_to_update = glob($this->directioDirectory . '/*.md');
+    if (empty($files_to_update)) {
+      $output->writeln(sprintf('<error>No documents in "%s"</error>', $this->directioDirectory));
+      $output->writeln(sprintf('<info>Try the "%s" command first.</info>', NewCommand::getDefaultName()));
+
+      return Command::FAILURE;
+    }
+
+    foreach ($files_to_update as $path) {
+      $output->writeln($path);
+      $document = (new ReadDocument())($path);
+      $completed_ids = (new \AKlump\Directio\FindCompletedTasks())($document->getContent());
+    }
+
+    print '<pre>';
+    print __FILE__ . '/' . __FUNCTION__ . '():' . __LINE__ . "\n";
+    print_r($completed_ids);
+    print '</pre>';
+    die;
+
     try {
+
+
       $document_path = $input->getArgument('document');
       $document = (new ReadDocument())($document_path);
       $state = (new ReadState())($this->directioDirectory . '/' . Names::FILENAME_STATE . '.yml');

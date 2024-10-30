@@ -4,3 +4,4 @@ composer.lock
 feature--*
 feature_*/
 demo/
+.directio/

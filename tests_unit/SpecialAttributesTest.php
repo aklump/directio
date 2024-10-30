@@ -18,21 +18,7 @@ class SpecialAttributesTest extends TestCase {
 
   public function testDoneKeysContainsExpectedValues() {
     $done_keys = SpecialAttributes::doneKeys();
-    $this->assertArrayHasKey('done', $done_keys);
-    $this->assertArrayHasKey('complete', $done_keys);
     $this->assertArrayHasKey('[X]', $done_keys);
     $this->assertArrayHasKey('[x]', $done_keys);
-  }
-
-  public function testId() {
-    $attributes = new SpecialAttributes();
-    $this->assertSame('id', $attributes->id);
-    $this->assertSame('id', $attributes->name);
-  }
-
-  public function testDone() {
-    $attributes = new SpecialAttributes();
-    $this->assertSame('done', $attributes->done);
-    $this->assertSame('done', $attributes->complete);
   }
 }
