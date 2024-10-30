@@ -23,7 +23,7 @@ class ReadDocumentTest extends TestCase {
 
   public function testNoFileThrows() {
     $this->expectException(RuntimeException::class);
-    $path = $this->getTestFileFilepath('/foo/document.md');
+    $path = $this->getTestFileFilepath('.cache/document.md');
     (new ReadDocument())($path);
   }
 }

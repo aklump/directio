@@ -3,6 +3,7 @@
 namespace AKlump\Directio\TextProcessor;
 
 use AKlump\Directio\Lexer\TaskLexer;
+use AKlump\Directio\Config\SpecialAttributes;
 
 class ScanForCompletedTaskIds {
 
@@ -24,13 +25,13 @@ class ScanForCompletedTaskIds {
       if (NULL === $lexer->lookahead) {
         break;
       }
+      $lexer->moveNext();
       if ($lexer->token->isA(TaskLexer::T_ATTRIBUTES)) {
         $attributes = (new ParseAttributes())($lexer->token->value);
         if (array_intersect_key($attributes, SpecialAttributes::doneKeys())) {
           $completed_task_ids[] = $attributes['id'];
         }
       }
-      $lexer->moveNext();
     }
 
     return $completed_task_ids;

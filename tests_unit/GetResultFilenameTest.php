@@ -31,10 +31,16 @@ class GetResultFilenameTest extends TestCase {
   /**
    * @dataProvider dataFortestInvokeProvider
    */
-  public function testInvoke(string $document_path, string $expected_filename) {
+  public function testInvokeWithDate(string $document_path, string $expected_filename) {
     $date = date_create('2020-01-01');
     $getter = new GetResultFilename($date);
     $result = $getter($document_path);
     $this->assertSame($expected_filename, $result);
+  }
+
+  public function testInvokeWithoutDate() {
+    $getter = new GetResultFilename();
+    $result = $getter('.cache/bar/document.md');
+    $this->assertSame('document.md', $result);
   }
 }

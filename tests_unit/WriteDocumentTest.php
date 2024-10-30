@@ -18,7 +18,7 @@ class WriteDocumentTest extends TestCase {
 
   public function testCantWriteThrows() {
     $document = new Document();
-    $file = $this->getTestFileFilepath('foo/lorem.md');
+    $file = $this->getTestFileFilepath('.cache/lorem.md');
     $this->expectException(RuntimeException::class);
     (new WriteDocument())($file, $document);
   }
@@ -38,7 +38,7 @@ class WriteDocumentTest extends TestCase {
   }
 
   protected function tearDown(): void {
-    $this->deleteTestFile('foo/lorem.md');
+    $this->deleteTestFile('.cache/lorem.md');
   }
 
 

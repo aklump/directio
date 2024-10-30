@@ -9,11 +9,18 @@ use RuntimeException;
 
 /**
  * @covers \AKlump\Directio\IO\ReadState
- * @uses \AKlump\Directio\Model\Task
+ * @uses   \AKlump\Directio\Model\Task
  */
 class ReadStateTest extends TestCase {
 
   use TestWithFilesTrait;
+
+  public function testCanReadEmptyFile() {
+    $path = $this->getTestFileFilepath('.cache/state.yml', true);
+    $state = (new ReadState())($path);
+    $this->assertEmpty($state);
+    $this->deleteTestFile('.cache/state.yml');
+  }
 
   public function testCanReadYaml() {
     $path = $this->getTestFileFilepath('/state.yml');
@@ -23,7 +30,7 @@ class ReadStateTest extends TestCase {
 
   public function testNoFileThrows() {
     $this->expectException(RuntimeException::class);
-    $path = $this->getTestFileFilepath('/foo/state.md');
+    $path = $this->getTestFileFilepath('.cache/state.md');
     (new ReadState())($path);
   }
 }
