@@ -2,11 +2,11 @@
 
 namespace AKlump\Directio\Tests\Unit;
 
-use AKlump\Directio\ParseAttributes;
+use AKlump\Directio\TextProcessor\ParseAttributes;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \AKlump\Directio\ParseAttributes
+ * @covers \AKlump\Directio\TextProcessor\ParseAttributes
  * @uses   \AKlump\Directio\Lexer\AttributesLexer
  */
 class ParseAttributesTest extends TestCase {
@@ -20,10 +20,6 @@ class ParseAttributesTest extends TestCase {
     $tests[] = [
       '<!-- directio [] -->',
       ['[]' => TRUE],
-    ];
-    $tests[] = [
-      '<!-- directio [X] -->',
-      ['[X]' => TRUE],
     ];
     $tests[] = [
       '<!-- directio [x] -->',

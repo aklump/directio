@@ -1,8 +1,8 @@
 <?php
 
-namespace AKlump\Directio;
+namespace AKlump\Directio\Model;
 
-class Task implements TaskInterface {
+class Task implements \AKlump\Directio\Model\TaskInterface {
 
   protected string $id;
 

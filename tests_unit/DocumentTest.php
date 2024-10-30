@@ -2,11 +2,11 @@
 
 namespace AKlump\Directio\Tests\Unit;
 
-use AKlump\Directio\Document;
+use AKlump\Directio\Model\Document;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \AKlump\Directio\Document
+ * @covers \AKlump\Directio\Model\Document
  */
 class DocumentTest extends TestCase {
 

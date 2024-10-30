@@ -1,6 +1,6 @@
 <?php
 
-namespace AKlump\Directio;
+namespace AKlump\Directio\IO;
 
 use RuntimeException;
 use Symfony\Component\Serializer\Encoder\YamlEncoder;
@@ -13,7 +13,7 @@ class ReadState {
   /**
    * @param string $path
    *
-   * @return \AKlump\Directio\TaskInterface[]
+   * @return \AKlump\Directio\Model\TaskInterface[]
    *
    * @throws \RuntimeException If the state cannot be read.
    */
@@ -33,7 +33,7 @@ class ReadState {
     $serializer = new Serializer($normalizers, $encoders);
     $format = pathinfo($path, PATHINFO_EXTENSION);
 
-    return $serializer->deserialize($data, Task::class . '[]', $format);
+    return $serializer->deserialize($data, \AKlump\Directio\Model\Task::class . '[]', $format);
   }
 
 }

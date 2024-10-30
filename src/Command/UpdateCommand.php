@@ -2,12 +2,12 @@
 
 namespace AKlump\Directio\Command;
 
-use AKlump\Directio\DocumentInterface;
-use AKlump\Directio\GetResultFilename;
-use AKlump\Directio\Names;
-use AKlump\Directio\ReadDocument;
-use AKlump\Directio\ReadState;
-use AKlump\Directio\WriteDocument;
+use AKlump\Directio\Config\Names;
+use AKlump\Directio\IO\GetResultFilename;
+use AKlump\Directio\IO\ReadDocument;
+use AKlump\Directio\IO\ReadState;
+use AKlump\Directio\IO\WriteDocument;
+use AKlump\Directio\Model\DocumentInterface;
 use AKlump\LocalTimezone\LocalTimezone;
 use Exception;
 use Symfony\Component\Console\Command\Command;
@@ -51,7 +51,7 @@ class UpdateCommand extends Command {
     foreach ($files_to_update as $path) {
       $output->writeln($path);
       $document = (new ReadDocument())($path);
-      $completed_ids = (new \AKlump\Directio\FindCompletedTasks())($document->getContent());
+      $completed_ids = (new \AKlump\Directio\TextProcessor\ScanForCompletedTaskIds())($document->getContent());
     }
 
     print '<pre>';

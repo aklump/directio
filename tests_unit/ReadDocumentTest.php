@@ -2,14 +2,14 @@
 
 namespace AKlump\Directio\Tests\Unit;
 
-use AKlump\Directio\ReadDocument;
+use AKlump\Directio\IO\ReadDocument;
 use AKlump\Directio\Tests\Unit\TestingTraits\TestWithFilesTrait;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
- * @covers \AKlump\Directio\ReadDocument
- * @uses   \AKlump\Directio\Document
+ * @covers \AKlump\Directio\IO\ReadDocument
+ * @uses   \AKlump\Directio\Model\Document
  */
 class ReadDocumentTest extends TestCase {
 

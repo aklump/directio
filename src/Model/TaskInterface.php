@@ -1,6 +1,6 @@
 <?php
 
-namespace AKlump\Directio;
+namespace AKlump\Directio\Model;
 
 interface TaskInterface {
 

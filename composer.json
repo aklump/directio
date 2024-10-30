@@ -16,7 +16,7 @@
     "aklump/local-timezone": "^0.0.1",
     "doctrine/lexer": "^2.1"
   },
-  "license": "GPL-2.0-or-later",
+  "license": "BSD-3-Clause",
   "bin": [
     "./bin/directio"
   ],

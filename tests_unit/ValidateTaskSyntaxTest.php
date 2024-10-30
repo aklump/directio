@@ -5,14 +5,14 @@ namespace AKlump\Directio\Tests\Unit;
 use AKlump\Directio\Exception\NoClosingException;
 use AKlump\Directio\Exception\NoIDException;
 use AKlump\Directio\Exception\NoOpeningException;
-use AKlump\Directio\ValidateTaskSyntax;
+use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \AKlump\Directio\ValidateTaskSyntax
+ * @covers \AKlump\Directio\TextProcessor\ValidateTaskSyntax
  * @uses   \AKlump\Directio\Lexer\AttributesLexer
  * @uses   \AKlump\Directio\Lexer\TaskLexer
- * @uses   \AKlump\Directio\ParseAttributes
+ * @uses   \AKlump\Directio\TextProcessor\ParseAttributes
  */
 class ValidateTaskSyntaxTest extends TestCase {
 

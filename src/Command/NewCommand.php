@@ -2,12 +2,12 @@
 
 namespace AKlump\Directio\Command;
 
-use AKlump\Directio\DocumentInterface;
-use AKlump\Directio\GetResultFilename;
-use AKlump\Directio\Names;
-use AKlump\Directio\ReadDocument;
-use AKlump\Directio\ReadState;
-use AKlump\Directio\WriteDocument;
+use AKlump\Directio\Config\Names;
+use AKlump\Directio\IO\GetResultFilename;
+use AKlump\Directio\IO\ReadDocument;
+use AKlump\Directio\IO\ReadState;
+use AKlump\Directio\IO\WriteDocument;
+use AKlump\Directio\Model\DocumentInterface;
 use Exception;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;

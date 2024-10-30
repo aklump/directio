@@ -2,11 +2,11 @@
 
 namespace AKlump\Directio\Tests\Unit;
 
-use AKlump\Directio\GetResultFilename;
+use AKlump\Directio\IO\GetResultFilename;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \AKlump\Directio\GetResultFilename
+ * @covers \AKlump\Directio\IO\GetResultFilename
  */
 class GetResultFilenameTest extends TestCase {
 

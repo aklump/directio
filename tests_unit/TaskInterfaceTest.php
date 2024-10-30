@@ -2,11 +2,11 @@
 
 namespace AKlump\Directio\Tests\Unit;
 
-use AKlump\Directio\Task;
+use AKlump\Directio\Model\Task;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \AKlump\Directio\Task
+ * @covers \AKlump\Directio\Model\Task
  */
 class TaskInterfaceTest extends TestCase {
 

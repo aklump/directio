@@ -1,8 +1,8 @@
 <?php
 
-namespace AKlump\Directio\Helper;
+namespace AKlump\Directio\IO;
 
-use AKlump\Directio\Names;
+use AKlump\Directio\Config\Names;
 use RuntimeException;
 
 class InitializeDirectory {

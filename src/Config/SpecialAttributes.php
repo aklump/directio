@@ -1,6 +1,6 @@
 <?php
 
-namespace AKlump\Directio;
+namespace AKlump\Directio\Config;
 
 /**
  * @code
@@ -13,7 +13,7 @@ class SpecialAttributes {
 
   private static array $id = ['id', 'name'];
 
-  private static array $done = ['[x]', '[X]'];
+  private static array $done = ['[x]', 'done', 'complete'];
 
   public static function idKeys(): array {
     return array_fill_keys(self::$id, TRUE);

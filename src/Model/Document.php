@@ -1,10 +1,10 @@
 <?php
 
-namespace AKlump\Directio;
+namespace AKlump\Directio\Model;
 
 use AKlump\Directio\Lexer\TaskLexer;
 
-class Document implements DocumentInterface {
+class Document implements \AKlump\Directio\Model\DocumentInterface {
 
   protected string $content = '';
 
@@ -21,10 +21,10 @@ class Document implements DocumentInterface {
   /**
    * @param string $id The task attribute ID to remove.
    *
-   * @return \AKlump\Directio\DocumentInterface A new document without the
+   * @return \AKlump\Directio\Model\DocumentInterface A new document without the
    * task(s) indicated by matching the id attribute with $id.
    */
-  public function withoutTask(string $id): DocumentInterface {
+  public function withoutTask(string $id): \AKlump\Directio\Model\DocumentInterface {
     $content = $this->getContent();
     $cuts = [];
 

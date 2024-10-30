@@ -2,14 +2,14 @@
 
 namespace AKlump\Directio\Tests\Unit;
 
-use AKlump\Directio\ReadState;
+use AKlump\Directio\IO\ReadState;
 use AKlump\Directio\Tests\Unit\TestingTraits\TestWithFilesTrait;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
- * @covers \AKlump\Directio\ReadState
- * @uses \AKlump\Directio\Task
+ * @covers \AKlump\Directio\IO\ReadState
+ * @uses \AKlump\Directio\Model\Task
  */
 class ReadStateTest extends TestCase {
 

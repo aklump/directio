@@ -25,5 +25,4 @@ Any of the following can be used to indicate completion of a task.
 <!-- directio id=foo complete -->
 <!-- directio id=foo done -->
 <!-- directio [x] id=foo -->
-<!-- directio [X] id=foo -->
 ```

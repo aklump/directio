@@ -2,11 +2,11 @@
 
 namespace AKlump\Directio\Tests\Unit;
 
-use AKlump\Directio\NormalizeSyntax;
+use AKlump\Directio\TextProcessor\NormalizeSyntax;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \AKlump\Directio\NormalizeSyntax
+ * @covers \AKlump\Directio\TextProcessor\NormalizeSyntax
  */
 class NormalizeSyntaxTest extends TestCase {
 

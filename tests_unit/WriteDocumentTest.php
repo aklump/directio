@@ -2,15 +2,15 @@
 
 namespace AKlump\Directio\Tests\Unit;
 
-use AKlump\Directio\Document;
+use AKlump\Directio\IO\WriteDocument;
+use AKlump\Directio\Model\Document;
 use AKlump\Directio\Tests\Unit\TestingTraits\TestWithFilesTrait;
-use AKlump\Directio\WriteDocument;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
- * @covers \AKlump\Directio\WriteDocument
- * @uses   \AKlump\Directio\Document
+ * @covers \AKlump\Directio\IO\WriteDocument
+ * @uses   \AKlump\Directio\Model\Document
  */
 class WriteDocumentTest extends TestCase {
 

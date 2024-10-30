@@ -1,10 +1,10 @@
 <?php
 
-namespace AKlump\Directio;
+namespace AKlump\Directio\TextProcessor;
 
 use AKlump\Directio\Lexer\TaskLexer;
 
-class FindCompletedTasks {
+class ScanForCompletedTaskIds {
 
   /**
    * @param string $content

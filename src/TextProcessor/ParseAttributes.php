@@ -1,6 +1,6 @@
 <?php
 
-namespace AKlump\Directio;
+namespace AKlump\Directio\TextProcessor;
 
 use AKlump\Directio\Lexer\AttributesLexer;
 
