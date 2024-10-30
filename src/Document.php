@@ -39,6 +39,7 @@ class Document implements DocumentInterface {
       if (NULL === $lexer->lookahead) {
         break;
       }
+      $lexer->moveNext();
 
       if ($lexer->token->isA(TaskLexer::T_OPEN_TAG)) {
         $start_position = $lexer->token->position;
@@ -57,7 +58,6 @@ class Document implements DocumentInterface {
           $lexer->token->position + strlen($lexer->token->value),
         ];
       }
-      $lexer->moveNext();
     }
     $content = $this->applyCuts($cuts, $content);
 

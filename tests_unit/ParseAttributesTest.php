@@ -14,9 +14,38 @@ class ParseAttributesTest extends TestCase {
   public static function dataFortestInvokeProvider(): array {
     $tests = [];
     $tests[] = [
-      'id=lorem ipsum dolar',
+      '<!-- directio [ ] -->',
+      ['[ ]' => TRUE],
+    ];
+    $tests[] = [
+      '<!-- directio [] -->',
+      ['[]' => TRUE],
+    ];
+    $tests[] = [
+      '<!-- directio [X] -->',
+      ['[X]' => TRUE],
+    ];
+    $tests[] = [
+      '<!-- directio [x] -->',
+      ['[x]' => TRUE],
+    ];
+    $tests[] = [
+      'id="lorem ipsum dolar"',
       [
         'id' => 'lorem ipsum dolar',
+      ],
+    ];
+    $tests[] = [
+      '<!-- directio id=install_runs_update -->',
+      [
+        'id' => 'install_runs_update',
+      ],
+    ];
+    $tests[] = [
+      '<!-- directio id=install_runs_update complete -->',
+      [
+        'id' => 'install_runs_update',
+        'complete' => TRUE,
       ],
     ];
     $tests[] = [
