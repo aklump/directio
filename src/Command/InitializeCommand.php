@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: BSD-3-Clause
 
 namespace AKlump\Directio\Command;
 
@@ -15,9 +16,8 @@ class InitializeCommand extends Command {
   protected static $defaultDescription = 'Initialize the current directory';
 
   protected function execute(InputInterface $input, OutputInterface $output) {
-    $START_DIR = getcwd() . '/';
     try {
-      (new InitializeDirectory())($START_DIR);
+      (new InitializeDirectory())(getcwd());
       $output->writeln('<info>Directory is initialized.</info>');
 
       return Command::SUCCESS;

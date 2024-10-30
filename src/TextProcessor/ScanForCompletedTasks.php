@@ -1,16 +1,17 @@
 <?php
+// SPDX-License-Identifier: BSD-3-Clause
 
 namespace AKlump\Directio\TextProcessor;
 
 use AKlump\Directio\Lexer\TaskLexer;
 use AKlump\Directio\Config\SpecialAttributes;
 
-class ScanForCompletedTaskIds {
+class ScanForCompletedTasks {
 
   /**
    * @param string $content
    *
-   * @return string[] An array of task IDs that have been marked as complete.
+   * @return array[] An array of completed task attributes.
    */
   public function __invoke(string $content): array {
     $lexer = new TaskLexer();
@@ -20,7 +21,7 @@ class ScanForCompletedTaskIds {
     // Save some time by moving to the first task.
     $lexer->skipUntil(TaskLexer::T_ATTRIBUTES);
 
-    $completed_task_ids = [];
+    $completed_tasks = [];
     while (TRUE) {
       if (NULL === $lexer->lookahead) {
         break;
@@ -29,12 +30,12 @@ class ScanForCompletedTaskIds {
       if ($lexer->token->isA(TaskLexer::T_ATTRIBUTES)) {
         $attributes = (new ParseAttributes())($lexer->token->value);
         if (array_intersect_key($attributes, SpecialAttributes::doneKeys())) {
-          $completed_task_ids[] = $attributes['id'];
+          $completed_tasks[] = $attributes;
         }
       }
     }
 
-    return $completed_task_ids;
+    return $completed_tasks;
   }
 
 }

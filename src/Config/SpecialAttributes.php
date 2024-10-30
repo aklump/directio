@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: BSD-3-Clause
 
 namespace AKlump\Directio\Config;
 
@@ -15,11 +16,17 @@ class SpecialAttributes {
 
   private static array $done = ['[x]', 'done', 'complete'];
 
+  private static array $expires = ['redo'];
+
   public static function idKeys(): array {
     return array_fill_keys(self::$id, TRUE);
   }
 
   public static function doneKeys(): array {
     return array_fill_keys(self::$done, TRUE);
+  }
+
+  public static function expiresKeys(): array {
+    return array_fill_keys(self::$expires, TRUE);
   }
 }

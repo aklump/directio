@@ -1,15 +1,19 @@
 <?php
+// SPDX-License-Identifier: BSD-3-Clause
 
 namespace AKlump\Directio\Command;
 
 use AKlump\Directio\Config\Names;
-use AKlump\Directio\IO\GetResultFilename;
+use AKlump\Directio\Config\SpecialAttributes;
 use AKlump\Directio\IO\ReadDocument;
 use AKlump\Directio\IO\ReadState;
 use AKlump\Directio\IO\WriteDocument;
-use AKlump\Directio\Model\DocumentInterface;
+use AKlump\Directio\IO\WriteState;
+use AKlump\Directio\Model\TaskState;
+use AKlump\Directio\TextProcessor\ScanForCompletedTasks;
 use AKlump\LocalTimezone\LocalTimezone;
-use Exception;
+use DateInterval;
+use DateTimeInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,8 +35,11 @@ class UpdateCommand extends Command {
   }
 
   protected function execute(InputInterface $input, OutputInterface $output) {
+    $this->directioDirectory = getcwd() . DIRECTORY_SEPARATOR . Names::FILENAME_INIT;
+    $now = date_create('now', LocalTimezone::get());
+
     $this->output = $output;
-    $this->directioDirectory = getcwd() . '/' . Names::FILENAME_INIT;
+    $this->directioDirectory = getcwd() . DIRECTORY_SEPARATOR . Names::FILENAME_INIT;
     if (!file_exists($this->directioDirectory)) {
       $output->writeln('<error>Current directory is not initialized.</error>');
       $output->writeln(sprintf('<info>Try the "%s" command first.</info>', InitializeCommand::getDefaultName()));
@@ -48,50 +55,54 @@ class UpdateCommand extends Command {
       return Command::FAILURE;
     }
 
-    foreach ($files_to_update as $path) {
-      $output->writeln($path);
-      $document = (new ReadDocument())($path);
-      $completed_ids = (new \AKlump\Directio\TextProcessor\ScanForCompletedTaskIds())($document->getContent());
+    $state = [];
+    $state_path = $this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
+    if (file_exists($state_path)) {
+      $state = (new ReadState())($state_path);
     }
 
-    print '<pre>';
-    print __FILE__ . '/' . __FUNCTION__ . '():' . __LINE__ . "\n";
-    print_r($completed_ids);
-    print '</pre>';
-    die;
-
-    try {
-
-
-      $document_path = $input->getArgument('document');
+    foreach ($files_to_update as $document_path) {
+      $output->writeln($document_path);
       $document = (new ReadDocument())($document_path);
-      $state = (new ReadState())($this->directioDirectory . '/' . Names::FILENAME_STATE . '.yml');
-      $document = $this->applyStateToDocument($state, $document);
-      $this->createNewDocument($document_path, $document);
-    }
-    catch (Exception $exception) {
-      $output->writeln(sprintf("<error>%s</error>", $exception->getMessage()));
+      $completed_tasks = (new ScanForCompletedTasks())($document->getContent());
+      if (empty($completed_tasks)) {
+        continue;
+      }
 
-      return Command::FAILURE;
+      foreach ($completed_tasks as $task_data) {
+        $document = $document->withoutTask($task_data['id']);
+
+        $task = (new TaskState())
+          ->setId($task_data['id'])
+          ->setEnv(exec('echo "$(hostname)"'))
+          ->setCompleted($now->format(DateTimeInterface::ATOM))
+          ->setUser(exec('whoami'));
+
+        $expires = array_intersect_key($task_data, SpecialAttributes::expiresKeys());
+        if ($expires) {
+          $duration = new DateInterval($task_data[key($expires)]);
+          if ($duration) {
+            $expiry = (clone $now)->add($duration);
+          }
+          $task->setRedo($expiry->format(DateTimeInterface::ATOM));
+        }
+        $state[] = $task;
+      }
+      (new WriteDocument())($document_path, $document);
     }
+
+    $state = $this->dedupeState($state);
+    (new WriteState())($state_path, $state);
 
     return Command::SUCCESS;
   }
 
-  private function applyStateToDocument(array $state, DocumentInterface $document): DocumentInterface {
+  private function dedupeState(array $state): array {
+    $deduped_state = [];
     foreach ($state as $task) {
-      if ($task->isComplete()) {
-        $document = $document->withoutTask($task->getId());
-      }
+      $deduped_state[$task->getId()] = $task;
     }
 
-    return $document;
-  }
-
-  private function createNewDocument($document_path, DocumentInterface $document): void {
-    $now = date_create('now', LocalTimezone::get());
-    $filtered_doc_path = $this->directioDirectory . '/' . (new GetResultFilename($now))($document_path);
-    (new WriteDocument())($filtered_doc_path, $document);
-    $this->output->writeln(sprintf('<info>File created %s</info>', $filtered_doc_path));
+    return array_values($deduped_state);
   }
 }

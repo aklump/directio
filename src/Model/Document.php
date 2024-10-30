@@ -1,10 +1,12 @@
 <?php
+// SPDX-License-Identifier: BSD-3-Clause
 
 namespace AKlump\Directio\Model;
 
 use AKlump\Directio\Lexer\TaskLexer;
+use AKlump\Directio\TextProcessor\ParseAttributes;
 
-class Document implements \AKlump\Directio\Model\DocumentInterface {
+class Document implements DocumentInterface {
 
   protected string $content = '';
 
@@ -24,7 +26,7 @@ class Document implements \AKlump\Directio\Model\DocumentInterface {
    * @return \AKlump\Directio\Model\DocumentInterface A new document without the
    * task(s) indicated by matching the id attribute with $id.
    */
-  public function withoutTask(string $id): \AKlump\Directio\Model\DocumentInterface {
+  public function withoutTask(string $id): DocumentInterface {
     $content = $this->getContent();
     $cuts = [];
 

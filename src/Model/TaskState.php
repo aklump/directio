@@ -1,23 +1,19 @@
 <?php
+// SPDX-License-Identifier: BSD-3-Clause
 
 namespace AKlump\Directio\Model;
 
-class Task implements \AKlump\Directio\Model\TaskInterface {
+class TaskState implements TaskStateInterface {
 
   protected string $id;
 
   protected string $completed;
 
-  protected string $expires;
+  protected string $redo;
 
   protected string $env;
 
   protected string $user;
-
-  public function isComplete(): bool {
-    // TODO Add logic here.
-    return TRUE;
-  }
 
   public function setId(string $id): self {
     $this->id = $id;
@@ -31,8 +27,8 @@ class Task implements \AKlump\Directio\Model\TaskInterface {
     return $this;
   }
 
-  public function setExpires(string $expires): self {
-    $this->expires = $expires;
+  public function setRedo(string $redo): self {
+    $this->redo = $redo;
 
     return $this;
   }
@@ -57,8 +53,8 @@ class Task implements \AKlump\Directio\Model\TaskInterface {
     return $this->completed;
   }
 
-  public function getExpires(): string {
-    return $this->expires;
+  public function getRedo(): string {
+    return $this->redo;
   }
 
   public function getEnv(): string {

@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: BSD-3-Clause
 
 namespace AKlump\Directio\Tests\Unit;
 
@@ -9,7 +10,7 @@ use RuntimeException;
 
 /**
  * @covers \AKlump\Directio\IO\ReadState
- * @uses   \AKlump\Directio\Model\Task
+ * @uses   \AKlump\Directio\Model\TaskState
  */
 class ReadStateTest extends TestCase {
 

@@ -1,4 +1,5 @@
 <?php
+// SPDX-License-Identifier: BSD-3-Clause
 
 namespace AKlump\Directio\Tests\Unit\IO;
 
@@ -19,8 +20,8 @@ class InitializeDirectoryTest extends TestCase {
 
   public function testThrowsWhenCantCreateStateFile() {
     $directory = $this->getTestFileFilepath('.cache/project/', TRUE);
-    mkdir($directory . '/' . Names::FILENAME_INIT);
-    chmod($directory . '/' . Names::FILENAME_INIT, 0444);
+    mkdir($directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT);
+    chmod($directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT, 0444);
     $this->expectException(RuntimeException::class);
     $this->expectExceptionMessage(Names::FILENAME_STATE);
     try {
@@ -54,7 +55,7 @@ class InitializeDirectoryTest extends TestCase {
     mkdir($directio_dir . '/bravo/');
     mkdir($directio_dir . '/charlie/');
     file_put_contents($directio_dir . '/info.txt', 'info');
-    $state_path = $directio_dir . '/' . Names::FILENAME_STATE . '.yml';
+    $state_path = $directio_dir . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
     file_put_contents($state_path, '');
 
     $get_hash = function () use ($directio_dir) {
@@ -71,7 +72,7 @@ class InitializeDirectoryTest extends TestCase {
   public function testInitializeOnExistingDoesNotOverwriteStateFile() {
     $directio_dir = $this->getTestFileFilepath('.cache/project/' . Names::FILENAME_INIT . '/', TRUE);
     $this->assertDirectoryExists($directio_dir);
-    $state_path = $directio_dir . '/' . Names::FILENAME_STATE . '.yml';
+    $state_path = $directio_dir . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
     $state_data = [];
     $state_data[] = ['id' => 'lorem'];
     file_put_contents($state_path, Yaml::dump($state_data));
@@ -86,9 +87,9 @@ class InitializeDirectoryTest extends TestCase {
   public function testInvoke() {
     $directory = $this->getTestFileFilepath('.cache/project/');
     (new InitializeDirectory())($directory);
-    $directio_dir = $directory . '/' . Names::FILENAME_INIT;
+    $directio_dir = $directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT;
     $this->assertDirectoryExists($directio_dir);
-    $this->assertFileExists($directio_dir . '/' . Names::FILENAME_STATE . '.yml');
+    $this->assertFileExists($directio_dir . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE);
     $this->deleteTestFile('.cache/project/');
 
   }
