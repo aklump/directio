@@ -19,7 +19,7 @@ class ScanForCompletedTasks {
     $lexer->moveNext();
 
     // Save some time by moving to the first task.
-    $lexer->skipUntil(TaskLexer::T_ATTRIBUTES);
+    $lexer->skipUntil(TaskLexer::T_OPEN_TAG);
 
     $completed_tasks = [];
     while (TRUE) {
@@ -27,7 +27,7 @@ class ScanForCompletedTasks {
         break;
       }
       $lexer->moveNext();
-      if ($lexer->token->isA(TaskLexer::T_ATTRIBUTES)) {
+      if ($lexer->token->isA(TaskLexer::T_OPEN_TAG)) {
         $attributes = (new ParseAttributes())($lexer->token->value);
         if (array_intersect_key($attributes, SpecialAttributes::doneKeys())) {
           $completed_tasks[] = $attributes;

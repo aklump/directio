@@ -1,1 +1,21 @@
-app.php
+#!/usr/bin/env php
+<?php
+// SPDX-License-Identifier: BSD-3-Clause
+
+foreach ([
+           __DIR__ . '/../../autoload.php',
+           __DIR__ . '/../vendor/autoload.php',
+           __DIR__ . '/vendor/autoload.php',
+         ] as $file) {
+  if (file_exists($file)) {
+    $class_loader = require_once $file;
+    break;
+  }
+}
+
+$application = new \Symfony\Component\Console\Application();
+$application->setName('Directio: Persistent Task Manager');
+$application->add(new \AKlump\Directio\Command\InitializeCommand());
+$application->add(new \AKlump\Directio\Command\UpdateCommand());
+$application->add(new \AKlump\Directio\Command\ImportCommand());
+$application->run();

@@ -18,7 +18,7 @@
   },
   "license": "BSD-3-Clause",
   "bin": [
-    "./bin/directio"
+    "./directio"
   ],
   "autoload-dev": {
     "psr-4": {

@@ -1,7 +1,7 @@
 <?php
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace AKlump\Directio\Tests\Unit;
+namespace AKlump\Directio\Tests\Unit\IO;
 
 use AKlump\Directio\IO\ReadDocument;
 use AKlump\Directio\Tests\Unit\TestingTraits\TestWithFilesTrait;

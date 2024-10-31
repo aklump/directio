@@ -1,7 +1,7 @@
 <?php
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace AKlump\Directio\Tests\Unit;
+namespace AKlump\Directio\Tests\Unit\Config;
 
 use AKlump\Directio\Config\SpecialAttributes;
 use PHPUnit\Framework\TestCase;

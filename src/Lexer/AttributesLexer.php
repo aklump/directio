@@ -17,7 +17,6 @@ use Doctrine\Common\Lexer\AbstractLexer;
  * - id=foo done
  *
  * @see \AKlump\Directio\Lexer\TaskLexer::T_OPEN_TAG
- * @see \AKlump\Directio\Lexer\TaskLexer::T_ATTRIBUTES
  */
 class AttributesLexer extends AbstractLexer {
 

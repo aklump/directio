@@ -1,7 +1,7 @@
 <?php
 // SPDX-License-Identifier: BSD-3-Clause
 
-namespace AKlump\Directio\Tests\Unit;
+namespace AKlump\Directio\Tests\Unit\IO;
 
 use AKlump\Directio\IO\GetResultFilename;
 use PHPUnit\Framework\TestCase;
@@ -15,15 +15,15 @@ class GetResultFilenameTest extends TestCase {
     $tests = [];
     $tests[] = [
       '/path/to/source.md',
-      'source_2020-01-01_000000.md',
+      '2020-01-01_source.md',
     ];
     $tests[] = [
       '/path/to/source.txt',
-      'source_2020-01-01_000000.txt',
+      '2020-01-01_source.txt',
     ];
     $tests[] = [
       'source.md',
-      'source_2020-01-01_000000.md',
+      '2020-01-01_source.md',
     ];
 
     return $tests;

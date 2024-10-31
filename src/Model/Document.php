@@ -45,8 +45,6 @@ class Document implements DocumentInterface {
 
       if ($lexer->token->isA(TaskLexer::T_OPEN_TAG)) {
         $start_position = $lexer->token->position;
-      }
-      elseif ($lexer->token->isA(TaskLexer::T_ATTRIBUTES)) {
         $attributes = (new ParseAttributes())($lexer->token->value);
         // Check the id of this task against the method argument, and discard
         // the start position (preventing the cut) if the id doesn't match.

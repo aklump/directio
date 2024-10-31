@@ -20,9 +20,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class UpdateCommand extends Command {
 
+  use InitializedDirCommandTrait;
+
   protected static $defaultName = 'update';
 
-  protected static $defaultDescription = 'Remove completed tasks and update state';
+  protected static $defaultDescription = 'Remove completed tasks from all project documents';
 
   /**
    * @var \Symfony\Component\Console\Output\OutputInterface
@@ -35,11 +37,14 @@ class UpdateCommand extends Command {
   }
 
   protected function execute(InputInterface $input, OutputInterface $output) {
-    $this->directioDirectory = getcwd() . DIRECTORY_SEPARATOR . Names::FILENAME_INIT;
+    $base_dir = $this->getBaseDirOrInitializeCurrent($input, $output);
+    if (!$base_dir) {
+      return Command::FAILURE;
+    }
+    $this->directioDirectory = $base_dir . DIRECTORY_SEPARATOR . Names::FILENAME_INIT;
     $now = date_create('now', LocalTimezone::get());
 
     $this->output = $output;
-    $this->directioDirectory = getcwd() . DIRECTORY_SEPARATOR . Names::FILENAME_INIT;
     if (!file_exists($this->directioDirectory)) {
       $output->writeln('<error>Current directory is not initialized.</error>');
       $output->writeln(sprintf('<info>Try the "%s" command first.</info>', InitializeCommand::getDefaultName()));
@@ -50,7 +55,7 @@ class UpdateCommand extends Command {
     $files_to_update = glob($this->directioDirectory . '/*.md');
     if (empty($files_to_update)) {
       $output->writeln(sprintf('<error>No documents in "%s"</error>', $this->directioDirectory));
-      $output->writeln(sprintf('<info>Try the "%s" command first.</info>', NewCommand::getDefaultName()));
+      $output->writeln(sprintf('<info>Try the "%s" command first.</info>', ImportCommand::getDefaultName()));
 
       return Command::FAILURE;
     }

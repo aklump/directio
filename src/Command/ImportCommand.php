@@ -4,7 +4,6 @@
 namespace AKlump\Directio\Command;
 
 use AKlump\Directio\Config\Names;
-use AKlump\Directio\IO\GetDirectioRoot;
 use AKlump\Directio\IO\GetResultFilename;
 use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\ReadDocument;
@@ -12,18 +11,19 @@ use AKlump\Directio\IO\ReadState;
 use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\Model\DocumentInterface;
 use Exception;
-use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
+use AKlump\LocalTimezone\LocalTimezone;
 
-class NewCommand extends Command {
+class ImportCommand extends Command {
 
-  protected static $defaultName = 'new';
+  use InitializedDirCommandTrait;
 
-  protected static $defaultDescription = 'Create a new document based on the current state';
+  protected static $defaultName = 'import';
+
+  protected static $defaultDescription = 'Import document, applying project task state';
 
   /**
    * @var \Symfony\Component\Console\Output\OutputInterface
@@ -36,27 +36,14 @@ class NewCommand extends Command {
     $this->addArgument('source document', InputArgument::REQUIRED, 'The source document to be filtered.');
   }
 
-  protected function getBaseDirOrInitializeCurrent(): string {
-    $base_dir = (new GetDirectioRoot())();
-    if ($base_dir) {
-      return $base_dir;
-    }
-    $this->output->writeln('<error>Directio has not been initialized.</error>');
-    $helper = $this->getHelper('question');
-    $question = new ConfirmationQuestion(sprintf('Would you like to initialize %s?', getcwd()), FALSE);
-    if (!$helper->ask($this->input, $this->output, $question)) {
-      return Command::FAILURE;
-    }
-    (new InitializeCommand())->execute($this->input, $this->output);
-
-    return (new GetDirectioRoot())();
-  }
 
   protected function execute(InputInterface $input, OutputInterface $output) {
-    $this->input = $input;
     $this->output = $output;
 
-    $base_dir = $this->getBaseDirOrInitializeCurrent();
+    $base_dir = $this->getBaseDirOrInitializeCurrent($input, $output);
+    if (!$base_dir) {
+      return Command::FAILURE;
+    }
     $this->directioDirectory = $base_dir . DIRECTORY_SEPARATOR . Names::FILENAME_INIT;
 
     try {
@@ -88,7 +75,8 @@ class NewCommand extends Command {
   }
 
   private function createNewDocument($document_path, DocumentInterface $document): bool {
-    $filtered_doc_path = $this->directioDirectory . DIRECTORY_SEPARATOR . (new GetResultFilename())($document_path);
+    $now = date_create('now', LocalTimezone::get());
+    $filtered_doc_path = $this->directioDirectory . DIRECTORY_SEPARATOR . (new GetResultFilename($now))($document_path);
     $shortpath = (new GetShortPath(getcwd()))($filtered_doc_path);
     if (file_exists($filtered_doc_path)) {
       $this->output->writeln(sprintf('<error>Cannot create a new document as "%s".</error>', basename($filtered_doc_path)));
@@ -97,7 +85,7 @@ class NewCommand extends Command {
       return FALSE;
     }
     (new WriteDocument())($filtered_doc_path, $document);
-    $this->output->writeln(sprintf('<info>File created %s</info>', $shortpath));
+    $this->output->writeln(sprintf('<info>File imported to %s</info>', $shortpath));
 
     return TRUE;
   }

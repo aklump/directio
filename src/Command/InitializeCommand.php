@@ -13,7 +13,7 @@ class InitializeCommand extends Command {
 
   protected static $defaultName = 'init';
 
-  protected static $defaultDescription = 'Initialize the current directory';
+  protected static $defaultDescription = 'Initialize PWD as task tracking root';
 
   protected function execute(InputInterface $input, OutputInterface $output) {
     try {

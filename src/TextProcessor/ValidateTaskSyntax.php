@@ -41,11 +41,12 @@ class ValidateTaskSyntax {
   }
 
   private function validateID() {
-    $this->lexer->skipUntil(TaskLexer::T_ATTRIBUTES);
-    if (NULL === $this->lexer->lookahead) {
+    $this->lexer->skipUntil(TaskLexer::T_OPEN_TAG);
+    $this->lexer->moveNext();
+    if (NULL === $this->lexer->token) {
       throw new NoIDException();
     }
-    $attributes = (new ParseAttributes())($this->lexer->lookahead->value);
+    $attributes = (new ParseAttributes())($this->lexer->token->value);
     if (empty($attributes['id'])) {
       throw new NoIDException();
     }

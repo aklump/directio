@@ -3,6 +3,7 @@
 
 namespace AKlump\Directio\IO;
 
+use AKlump\Directio\Model\DocumentInterface;
 use RuntimeException;
 
 class WriteDocument {
@@ -14,7 +15,7 @@ class WriteDocument {
    * @return void
    *
    */
-  public function __invoke(string $path, \AKlump\Directio\Model\DocumentInterface $document): void {
+  public function __invoke(string $path, DocumentInterface $document): void {
     if (!file_put_contents($path, $document->getContent())) {
       throw new RuntimeException(sprintf('Failed to write: %s', $path));
     }
