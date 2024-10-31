@@ -13,7 +13,7 @@ class GetResultFilename {
   private DateTimeInterface $date;
 
   /**
-   * @param \DateTimeInterface $date (Optional) The date document was filtered.
+   * @param \DateTimeInterface|null $date (Optional) The date document was filtered.
    * This will be stamped into the name if provided.
    */
   public function __construct(DateTimeInterface $date = NULL) {
@@ -31,8 +31,8 @@ class GetResultFilename {
   public function __invoke(string $source_path): string {
     if (isset($this->date)) {
       return sprintf("%s_%s.%s",
+        $this->date->format('Y-m-d'),
         pathinfo($source_path, PATHINFO_FILENAME),
-        $this->date->format('Y-m-d_His'),
         pathinfo($source_path, PATHINFO_EXTENSION)
       );
     }
