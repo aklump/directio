@@ -36,6 +36,11 @@ class ValidateTaskSyntaxTest extends TestCase {
       '<!-- directio lorem=ipsum -->foobar<!-- /directio -->',
       NoIDException::class,
     ];
+    $tests[] = [
+      '<!-- directio id=ipsum -->foobar<!-- /directio --><!-- directio lorem=ipsum -->',
+      NoIDException::class,
+    ];
+    $tests[] = ['# Lorem Ipsum<!-- /directio -->', NoOpeningException::class];
     $tests[] = ['', NoOpeningException::class];
 
     return $tests;

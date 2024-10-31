@@ -17,14 +17,14 @@ class ReadStateTest extends TestCase {
   use TestWithFilesTrait;
 
   public function testCanReadEmptyFile() {
-    $path = $this->getTestFileFilepath('.cache/state.yml', true);
+    $path = $this->getTestFileFilepath('.cache/state.json', true);
     $state = (new ReadState())($path);
     $this->assertEmpty($state);
-    $this->deleteTestFile('.cache/state.yml');
+    $this->deleteTestFile('.cache/state.json');
   }
 
-  public function testCanReadYaml() {
-    $path = $this->getTestFileFilepath('/state.yml');
+  public function testCanReadJson() {
+    $path = $this->getTestFileFilepath('/state.json');
     $state = (new ReadState())($path);
     $this->assertSame('install_runs_update', $state[0]->getId());
   }

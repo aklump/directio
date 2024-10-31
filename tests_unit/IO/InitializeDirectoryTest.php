@@ -75,11 +75,11 @@ class InitializeDirectoryTest extends TestCase {
     $state_path = $directio_dir . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
     $state_data = [];
     $state_data[] = ['id' => 'lorem'];
-    file_put_contents($state_path, Yaml::dump($state_data));
-    $this->assertSame("-\n    id: lorem\n", file_get_contents($state_path), 'Assert state file contents are correct.');
+    file_put_contents($state_path, json_encode($state_data));
+    $this->assertSame('[{"id":"lorem"}]', file_get_contents($state_path), 'Assert state file contents are correct.');
 
     (new InitializeDirectory())(dirname($directio_dir));
-    $this->assertSame("-\n    id: lorem\n", file_get_contents($state_path), 'Assert state file has not been changed.');
+    $this->assertSame('[{"id":"lorem"}]', file_get_contents($state_path), 'Assert state file has not been changed.');
 
     $this->deleteTestFile('.cache/project/');
   }

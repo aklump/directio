@@ -11,6 +11,10 @@ use PHPUnit\Framework\TestCase;
  */
 class SpecialAttributesTest extends TestCase {
 
+  public function testExpiresKeysContainsExpectedValues() {
+    $id_keys = SpecialAttributes::expiresKeys();
+    $this->assertArrayHasKey('redo', $id_keys);
+  }
   public function testIdKeysContainsExpectedValues() {
     $id_keys = SpecialAttributes::idKeys();
     $this->assertArrayHasKey('id', $id_keys);

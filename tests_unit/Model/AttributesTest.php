@@ -19,6 +19,7 @@ class AttributesTest extends TestCase {
       'id' => 'foo',
       'title' => 'Lorem Ipsum',
       'done' => TRUE,
+      'deprecated' => false,
       'foo' => 'some "thing"',
       'bar' => '"thing"',
     ]);

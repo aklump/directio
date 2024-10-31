@@ -3,9 +3,9 @@
 
 namespace AKlump\Directio\IO;
 
+use AKlump\Directio\Model\TaskState;
 use RuntimeException;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\YamlEncoder;
 use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -31,11 +31,11 @@ class ReadState {
       new ArrayDenormalizer(),
       new ObjectNormalizer(),
     ];
-    $encoders = [new YamlEncoder(), new JsonEncoder()];
+    $encoders = [new JsonEncoder()];
     $serializer = new Serializer($normalizers, $encoders);
     $format = pathinfo($path, PATHINFO_EXTENSION);
 
-    return $serializer->deserialize($data, \AKlump\Directio\Model\TaskState::class . '[]', $format);
+    return $serializer->deserialize($data, TaskState::class . '[]', $format);
   }
 
 }

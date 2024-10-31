@@ -11,6 +11,7 @@ use AKlump\Directio\IO\ReadState;
 use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\Model\DocumentInterface;
 use Exception;
+use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -50,6 +51,8 @@ class ImportCommand extends Command {
       $document_path = $input->getArgument('source document');
       $document = (new ReadDocument())($document_path);
       $state = (new ReadState())($this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE);
+
+      $this->tryValidateIncomingIdsDoNotAlreadyExists($document);
       $document = $this->applyStateToDocument($state, $document);
     }
     catch (Exception $exception) {
@@ -89,4 +92,35 @@ class ImportCommand extends Command {
 
     return TRUE;
   }
+
+  private function tryValidateIncomingIdsDoNotAlreadyExists(DocumentInterface $importing_document): void {
+    $new_ids = $importing_document->getIds();
+    $read_document = new ReadDocument();
+    $imported_files = glob($this->directioDirectory . '/*');
+    $invalid = FALSE;
+    foreach ($imported_files as $imported_path) {
+      $existing_document = $read_document($imported_path);
+      $existing_ids = $existing_document->getIds();
+      $duplicated_ids = array_intersect($new_ids, $existing_ids);
+      if ($duplicated_ids) {
+        if (!$invalid) {
+          $this->output->writeln('<comment>The following tasks have already been imported:</comment>');
+        }
+        $invalid = TRUE;
+        $this->output->writeln(sprintf('<info>├── %s</info>', basename($imported_path)));
+        $this->output->write(array_map(function ($line) {
+          return "<comment>│   ├── $line</comment>";
+        }, $duplicated_ids), TRUE);
+        $this->output->writeln('');
+      }
+    }
+
+    if ($invalid) {
+      $message = "Import failed due to ID collision";
+      $this->output->writeln(sprintf('<info>Try deleting or moving the imported files if they are no longer relevant.</info>', $message));
+      $this->output->writeln('');
+      throw new RuntimeException($message);
+    }
+  }
+
 }
