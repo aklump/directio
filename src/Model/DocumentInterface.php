@@ -12,6 +12,11 @@ interface DocumentInterface {
    */
   public function withoutTask(string $id): DocumentInterface;
 
+  /**
+   * @return string[] An array of all directio ids in the document.
+   */
+  public function getIds(): array;
+
   public function setContent($content): self;
 
   public function getContent(): string;

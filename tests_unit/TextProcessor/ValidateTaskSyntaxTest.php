@@ -3,6 +3,7 @@
 
 namespace AKlump\Directio\Tests\Unit\TextProcessor;
 
+use AKlump\Directio\Exception\NestedTagsException;
 use AKlump\Directio\Exception\NoClosingException;
 use AKlump\Directio\Exception\NoIDException;
 use AKlump\Directio\Exception\NoOpeningException;
@@ -19,6 +20,10 @@ class ValidateTaskSyntaxTest extends TestCase {
 
   public static function dataFortestInvokeThrowsProvider(): array {
     $tests = [];
+    $tests[] = [
+      '<!-- directio [] id=foo --><!-- directio [] id=bar --><!-- /directio --><!-- /directio -->',
+      NestedTagsException::class,
+    ];
     $tests[] = [
       '<!-- directio -->foobar<!-- /directio -->',
       NoIDException::class,

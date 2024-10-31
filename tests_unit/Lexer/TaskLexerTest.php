@@ -5,7 +5,7 @@ namespace AKlump\Directio\Tests\Unit\Lexer;
 
 use AKlump\Directio\Lexer\TaskLexer;
 use AKlump\Directio\Model\Attributes;
-use DomainException;
+use AKlump\Directio\TextProcessor\ParseAttributes;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -16,13 +16,30 @@ use PHPUnit\Framework\TestCase;
  */
 class TaskLexerTest extends TestCase {
 
-  public function testNestedTagThrows() {
-    $this->expectException(DomainException::class);
-    $this->expectExceptionMessage('foo>bar');
+  public function testNestedTagParsesOkay() {
     $lexer = new TaskLexer();
     $lexer->setInput('<!-- directio [] id=foo --><!-- directio [] id=bar --><!-- /directio --><!-- /directio -->');
     $lexer->moveNext();
-    $lexer->skipUntil(TaskLexer::T_CLOSE_TAG);
+
+    $parse_attributes = new ParseAttributes();
+
+    $lexer->moveNext();
+    $value = $lexer->token->value;
+    $this->assertSame('foo', $parse_attributes($value)['id']);
+    $this->assertTrue($lexer->isA($value, TaskLexer::T_OPEN_TAG));
+
+    $lexer->moveNext();
+    $value = $lexer->token->value;
+    $this->assertSame('bar', $parse_attributes($value)['id']);
+    $this->assertTrue($lexer->isA($value, TaskLexer::T_OPEN_TAG));
+
+    $lexer->moveNext();
+    $this->assertTrue($lexer->isA($lexer->token->value, TaskLexer::T_CLOSE_TAG));
+    $this->assertNotNull($lexer->token);
+
+    $lexer->moveNext();
+    $this->assertTrue($lexer->isA($lexer->token->value, TaskLexer::T_CLOSE_TAG));
+    $this->assertNotNull($lexer->token);
   }
 
   public function testOnlyBooleanAttributes() {

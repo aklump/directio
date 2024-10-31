@@ -4,6 +4,7 @@
 namespace AKlump\Directio\Tests\Unit\Model;
 
 use AKlump\Directio\Model\Document;
+use AKlump\Directio\Tests\Unit\TestingTraits\TestWithFilesTrait;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -14,46 +15,47 @@ use PHPUnit\Framework\TestCase;
  */
 class DocumentTest extends TestCase {
 
+  use TestWithFilesTrait;
+
+  public function testGetIdsDoesNotMakeUnique() {
+    $document = new Document();
+    $document->setContent('<!-- directio [] id=foo --><!-- /directio --><!-- directio [] id=foo --><!-- /directio -->');
+    $ids = $document->getIds();
+    $this->assertCount(2, $ids);
+    $this->assertCount(1, array_unique($ids));
+  }
+
+  public function testGetIds() {
+    $document = new Document();
+    $content = file_get_contents($this->getTestFileFilepath('document.md'));
+    $document->setContent($content);
+    $ids = $document->getIds();
+    $this->assertContains('install_runs_update', $ids);
+    $this->assertContains('drush_control', $ids);
+  }
+
   public static function dataFortestWithoutTaskProvider(): array {
     $tests = [];
+
+    // Duplicate ids are both removed.
+    $tests[] = [
+      '<!-- directio [] id=foo --><!-- /directio --><!-- directio [] id=foo --><!-- /directio -->',
+      'foo',
+      '',
+    ];
+    // Duplicate ids are both removed.
+    $tests[] = [
+      "lorem\n\n<!-- directio [] id=foo -->\n\nipsum<!-- /directio -->\n\n",
+      'foo',
+      "lorem\n",
+    ];
 
     $tests[] = ['', 'foo', ''];
 
     $tests[] = [
       "foo\n<!-- directio [] id=bar -->\nbar\n<!-- /directio -->\nbaz",
       'bar',
-      "foo\n\nbaz",
-    ];
-
-    $_tests[] = [
-      "# Some Thing
-
-Excepteur sint occaecat cupidatat non proident laborum.
-<!-- directio [] id=parent -->
-
-* Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-
-<!-- directio [] id=child -->
-
-* Ullamco laboris nisi ut aliquip ex ea commodo consequat<!-- /directio -->
-* Ut enim ad minim veniam, quis nostrud exercitation.
-
-<!-- /directio -->
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-",
-      'child',
-      "# Some Thing
-
-Excepteur sint occaecat cupidatat non proident laborum.
-<!-- directio [] id=parent -->
-
-* Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-
-* Ut enim ad minim veniam, quis nostrud exercitation.
-
-<!-- /directio -->
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-",
+      "foo\n\nbaz\n",
     ];
 
     return $tests;
@@ -65,11 +67,10 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
   public function testWithoutTask(string $content, string $id, string $expected) {
     $document = new Document();
     $result = $document->setContent($content)->withoutTask($id);
-    $foo = $result->getContent();
     $this->assertSame($expected, $result->getContent());
   }
 
-  public function testContent() {
+  public function testSetGetContent() {
     $document = new Document();
     $content = $document->setContent('foo bar')->getContent();
     $this->assertSame('foo bar', $content);

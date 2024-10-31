@@ -3,9 +3,7 @@
 
 namespace AKlump\Directio\Lexer;
 
-use AKlump\Directio\TextProcessor\ParseAttributes;
 use Doctrine\Common\Lexer\AbstractLexer;
-use DomainException;
 
 /**
  * TaskLexer is responsible for tokenizing task-related markup.
@@ -31,7 +29,8 @@ class TaskLexer extends AbstractLexer {
    */
   protected function getCatchablePatterns() {
     return [
-      '<!-- directio (.*?) ?-->',
+      '<!-- directio -->',
+      '<!-- directio .+? -->',
       '<!-- \/directio -->',
     ];
   }
@@ -54,7 +53,6 @@ class TaskLexer extends AbstractLexer {
       return self::T_OPEN_TAG;
     }
     elseif ('<!-- /directio -->' === $value) {
-      $this->tryValidateNoNestedTags();
       array_pop($this->nested);
       $this->tagIsOpen = FALSE;
 
@@ -62,17 +60,6 @@ class TaskLexer extends AbstractLexer {
     }
 
     return $this->tagIsOpen ? self::T_CONTENT : self::T_NONE;
-  }
-
-  private function tryValidateNoNestedTags(): void {
-    if (count($this->nested) <= 1) {
-      return;
-    }
-    $ids = array_map(function ($attributes) {
-      return (new ParseAttributes())($attributes)['id'] ?? 'NULL';
-    }, $this->nested);
-    $ids = implode('>', $ids);
-    throw new DomainException(sprintf('Nesting directio tags (%s) is not supported.', $ids));
   }
 
 }

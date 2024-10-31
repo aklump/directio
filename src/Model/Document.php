@@ -70,10 +70,34 @@ class Document implements DocumentInterface {
     foreach ($cuts as $cut) {
       $pre = substr($content, 0, $cut[0]);
       $post = substr($content, $cut[1]);
-      $content = rtrim($pre, PHP_EOL) . PHP_EOL . PHP_EOL . ltrim($post, PHP_EOL);
+      $content = rtrim($pre, PHP_EOL) . rtrim(PHP_EOL . PHP_EOL . ltrim($post, PHP_EOL));
+      if (mb_strlen($content) > 0) {
+        $content .= PHP_EOL;
+      }
     }
 
     return $content;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getIds(): array {
+    $lexer = new TaskLexer();
+    $lexer->setInput($this->getContent());
+    $lexer->moveNext();
+    $parse_attributes = new ParseAttributes();
+    $ids = [];
+    while (TRUE) {
+      $lexer->skipUntil(TaskLexer::T_OPEN_TAG);
+      if (NULL === $lexer->lookahead) {
+        break;
+      }
+      $lexer->moveNext();
+      $ids[] = $parse_attributes($lexer->token->value)['id'] ?? NULL;
+    }
+
+    return $ids;
   }
 
 }
