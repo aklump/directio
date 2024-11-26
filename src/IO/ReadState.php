@@ -21,7 +21,7 @@ class ReadState {
    */
   public function __invoke(string $path): array {
     if (!file_exists($path)) {
-      throw new RuntimeException(sprintf('Missing file: %s', $path));
+      throw new RuntimeException(sprintf('Missing file: %s; try directio init.', $path));
     }
     $data = file_get_contents($path);
     if (empty($data)) {

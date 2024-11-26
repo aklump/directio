@@ -79,15 +79,20 @@ class ImportCommand extends Command {
 
   private function createNewDocument($document_path, DocumentInterface $document): bool {
     $now = date_create('now', LocalTimezone::get());
-    $filtered_doc_path = $this->directioDirectory . DIRECTORY_SEPARATOR . (new GetResultFilename($now))($document_path);
-    $shortpath = (new GetShortPath(getcwd()))($filtered_doc_path);
-    if (file_exists($filtered_doc_path)) {
-      $this->output->writeln(sprintf('<error>Cannot create a new document as "%s".</error>', basename($filtered_doc_path)));
+    $imported_doc_path = $this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_IMPORTED . DIRECTORY_SEPARATOR . (new GetResultFilename($now))($document_path);
+    $parent = dirname($imported_doc_path);
+    if (!file_exists($parent)) {
+      mkdir($parent, 0755, TRUE);
+    }
+
+    $shortpath = (new GetShortPath(getcwd()))($imported_doc_path);
+    if (file_exists($imported_doc_path)) {
+      $this->output->writeln(sprintf('<error>Cannot create a new document as "%s".</error>', basename($imported_doc_path)));
       $this->output->writeln(sprintf('<info>Move %s and try again.</info>', $shortpath));
 
       return FALSE;
     }
-    (new WriteDocument())($filtered_doc_path, $document);
+    (new WriteDocument())($imported_doc_path, $document);
     $this->output->writeln(sprintf('<info>File imported to %s</info>', $shortpath));
 
     return TRUE;
@@ -96,7 +101,7 @@ class ImportCommand extends Command {
   private function tryValidateIncomingIdsDoNotAlreadyExists(DocumentInterface $importing_document): void {
     $new_ids = $importing_document->getIds();
     $read_document = new ReadDocument();
-    $imported_files = glob($this->directioDirectory . '/*');
+    $imported_files = glob($this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_IMPORTED . DIRECTORY_SEPARATOR . '*');
     $invalid = FALSE;
     foreach ($imported_files as $imported_path) {
       $existing_document = $read_document($imported_path);

@@ -10,4 +10,6 @@ class Names {
   const EXTENSION_STATE = 'json';
 
   const FILENAME_INIT = '.directio';
+
+  const FILENAME_IMPORTED = 'imported';
 }
