@@ -52,7 +52,7 @@ class UpdateCommand extends Command {
       return Command::FAILURE;
     }
 
-    $files_to_update = glob($this->directioDirectory . '/*.md');
+    $files_to_update = glob($this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_IMPORTED . DIRECTORY_SEPARATOR . '*');
     if (empty($files_to_update)) {
       $output->writeln(sprintf('<error>No documents in "%s"</error>', $this->directioDirectory));
       $output->writeln(sprintf('<info>Try the "%s" command first.</info>', ImportCommand::getDefaultName()));
