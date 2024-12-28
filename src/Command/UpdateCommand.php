@@ -11,6 +11,7 @@ use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\IO\WriteState;
 use AKlump\Directio\Model\TaskState;
 use AKlump\Directio\TextProcessor\ScanForCompletedTasks;
+use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
 use AKlump\LocalTimezone\LocalTimezone;
 use DateInterval;
 use DateTimeInterface;
@@ -69,6 +70,7 @@ class UpdateCommand extends Command {
     foreach ($files_to_update as $document_path) {
       $output->writeln($document_path);
       $document = (new ReadDocument())($document_path);
+      (new ValidateTaskSyntax())($document->getContent());
       $completed_tasks = (new ScanForCompletedTasks())($document->getContent());
       if (empty($completed_tasks)) {
         continue;

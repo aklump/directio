@@ -10,6 +10,7 @@ use AKlump\Directio\IO\ReadDocument;
 use AKlump\Directio\IO\ReadState;
 use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\Model\DocumentInterface;
+use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
 use Exception;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
@@ -50,6 +51,7 @@ class ImportCommand extends Command {
     try {
       $document_path = $input->getArgument('source document');
       $document = (new ReadDocument())($document_path);
+      (new ValidateTaskSyntax())($document->getContent());
       $state = (new ReadState())($this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE);
 
       $this->tryValidateIncomingIdsDoNotAlreadyExists($document);
