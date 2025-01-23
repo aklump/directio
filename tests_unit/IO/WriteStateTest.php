@@ -6,6 +6,7 @@ use AKlump\Directio\IO\WriteState;
 use AKlump\Directio\Model\TaskState;
 use AKlump\Directio\Tests\Unit\TestingTraits\TestWithFilesTrait;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 /**
  * @covers \AKlump\Directio\IO\WriteState
@@ -20,7 +21,7 @@ class WriteStateTest extends TestCase {
     $task = new TaskState();
     $task->setId('foo');
     chmod(dirname($path), 0444);
-    $this->expectException(\RuntimeException::class);
+    $this->expectException(RuntimeException::class);
     (new WriteState())->__invoke($path, [$task]);
   }
 
@@ -30,12 +31,11 @@ class WriteStateTest extends TestCase {
     $task->setId('foo');
     (new WriteState())->__invoke($path, [$task]);
     $this->assertFileExists($path);
-    $this->assertJsonStringEqualsJsonFile($path, '[{"id":"foo"}]');
+    $this->assertJsonStringEqualsJsonFile($path, '[{"id":"foo","completed":"","redo":"","env":"","user":""}]');
   }
 
   protected function tearDown(): void {
     $this->deleteTestFile('.cache/');
   }
-
 
 }

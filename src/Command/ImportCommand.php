@@ -4,6 +4,7 @@
 namespace AKlump\Directio\Command;
 
 use AKlump\Directio\Config\Names;
+use AKlump\Directio\Helper\ApplyStateToDocument;
 use AKlump\Directio\IO\GetResultFilename;
 use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\ReadDocument;
@@ -11,6 +12,7 @@ use AKlump\Directio\IO\ReadState;
 use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\Model\DocumentInterface;
 use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
+use DateTimeInterface;
 use Exception;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
@@ -34,12 +36,14 @@ class ImportCommand extends Command {
 
   private string $directioDirectory;
 
+  private DateTimeInterface $now;
+
   protected function configure() {
     $this->addArgument('source document', InputArgument::REQUIRED, 'The source document to be filtered.');
   }
 
-
   protected function execute(InputInterface $input, OutputInterface $output) {
+    $this->now = date_create('now', LocalTimezone::get());
     $this->output = $output;
 
     $base_dir = $this->getBaseDirOrInitializeCurrent($input, $output);
@@ -55,7 +59,7 @@ class ImportCommand extends Command {
       $state = (new ReadState())($this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE);
 
       $this->tryValidateIncomingIdsDoNotAlreadyExists($document);
-      $document = $this->applyStateToDocument($state, $document);
+      $document = (new ApplyStateToDocument($this->now))($state, $document);
     }
     catch (Exception $exception) {
       $output->writeln(sprintf("<error>%s</error>", $exception->getMessage()));
@@ -69,19 +73,8 @@ class ImportCommand extends Command {
     return Command::SUCCESS;
   }
 
-  private function applyStateToDocument(array $state, DocumentInterface $document): DocumentInterface {
-    foreach ($state as $task) {
-      if ($task->getCompleted()) {
-        $document = $document->withoutTask($task->getId());
-      }
-    }
-
-    return $document;
-  }
-
   private function createNewDocument($document_path, DocumentInterface $document): bool {
-    $now = date_create('now', LocalTimezone::get());
-    $imported_doc_path = $this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_IMPORTED . DIRECTORY_SEPARATOR . (new GetResultFilename($now))($document_path);
+    $imported_doc_path = $this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_IMPORTED . DIRECTORY_SEPARATOR . (new GetResultFilename($this->now))($document_path);
     $parent = dirname($imported_doc_path);
     if (!file_exists($parent)) {
       mkdir($parent, 0755, TRUE);

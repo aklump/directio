@@ -5,15 +5,15 @@ namespace AKlump\Directio\Model;
 
 class TaskState implements TaskStateInterface {
 
-  protected string $id;
+  protected string $id = '';
 
-  protected string $completed;
+  protected string $completed = '';
 
-  protected string $redo;
+  protected string $redo = '';
 
-  protected string $env;
+  protected string $env = '';
 
-  protected string $user;
+  protected string $user = '';
 
   public function setId(string $id): self {
     $this->id = $id;

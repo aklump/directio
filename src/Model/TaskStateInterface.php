@@ -7,6 +7,8 @@ interface TaskStateInterface {
 
   public function getCompleted(): string;
 
+  public function getRedo(): string;
+
   public function getId(): string;
 
 }
