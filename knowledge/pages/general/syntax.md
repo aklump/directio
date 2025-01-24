@@ -1,6 +1,11 @@
+<!--
+id: syntax
+tags: ''
+-->
+
 # Directio Syntax
 
-Directio tasks are demarkated using HTML comments like so:
+Each Directio _task_ is demarcated using two, specialized HTML comments, like so:
 
 ```html
 <!-- directio [] id=foo -->
@@ -11,7 +16,7 @@ Directio tasks are demarkated using HTML comments like so:
 <!-- /directio -->
 ```
 
-A completed task (borrowing from [Markdown task lists](https://www.markdownguide.org/extended-syntax/#task-lists)) is represented by one slight change:
+A completed task is represented by one slight change. (Look familiar?, i.e., [Markdown task lists](https://www.markdownguide.org/extended-syntax/#task-lists))
 
 ```html
 <!-- directio [x] id=foo -->
@@ -22,7 +27,7 @@ A completed task (borrowing from [Markdown task lists](https://www.markdownguide
 <!-- /directio -->
 ```
 
-## Alternatives
+## Alternate Syntax
 
 Instead of `[x]` you can use boolean attributes (`done, complete`) like this:
 
@@ -36,25 +41,26 @@ Instead of `[x]` you can use boolean attributes (`done, complete`) like this:
 ...
 ```
 
-## Requirements
+## Rules
 
 * Tasks must be wrapped with both an open `<!-- directio id=foo -->` and close comment `<!-- /directio -->`.
+* Comment start "`<!-- `" should be followed by a single space.
+* Comment end "` -->`" should be proceeded by a single space.
 * Open comments must have an `id` attribute.
-* Comment tags should be separated by a space:
-    * `<!-- directio -->` and not `<!--directio-->`
-    * `<!-- /directio -->` and not `<!--/directio-->`
+* Close comments must not have any attributes.
 * Attribute order is of no significance.
 * Attribute names must not contain spaces.
-    * `<!-- directio fooBar=value -->` and not `<!-- directio foo bar=value -->`
+    * CORRECT: `<!-- directio fooBar=value -->`
+    * incorrect: `<!-- directio foo bar=value -->`
 * Attributes values with spaces must be wrapped by double quotes.
     * `<!-- directio id=value foo="another value" -->`
 * Attributes may be name only (boolean true), e.g. `complete` as in `<!-- directio id=foo complete -->`.
 
 ## Special Attributes
 
-| Meaning                  | Attributes          | Notes                                           |
-|--------------------------|---------------------|-------------------------------------------------|
-| task identification      | id, name            | Must be unique within an initialized project.   |
-| Complete only for a time | expires             | datetime, or date period                        |
-| Completed                | done, complete, [x] |                                                 |
-| Incompleted              | [], []              | Tasks are assumed incomplete; for clarity only. |
+| Meaning                  | Attributes                | Notes                                                   | Example                       |
+|--------------------------|---------------------------|---------------------------------------------------------|-------------------------------|
+| task identification      | `id`, `name`              | Must be unique within an initialized project.           | `foo`                         |
+| Complete only for a time | `expires`                 | datetime, or date period                                | `P1M`, `2025-01-23T15:23:37Z` |
+| Completed                | `done`, `complete`, `[x]` |                                                         |                               |
+| Incompleted              | `[]`, `[ ]`               | Optional, for clarity, as tasks are assumed incomplete. |                               |

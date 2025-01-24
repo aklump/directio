@@ -1,19 +1,24 @@
+<!--
+id: readme
+tags: ''
+-->
+
 # Directio
 
-Directio is a tool to track task completion across time.
+![Directio](../../images/directio.jpg)
 
-It was built for the following scenario, but surely will find other use cases as it evolves and gets used by others.
+> Directio is a tool to track tasks over time.
 
-Every so often our website needs to be updated. We have a number of master markdown files that lead us through the update process for any website. Some of the tasks are recurring, some are one-time and some should be completed at regular intervals.
+Projects require regular updates. There can be lots of steps to remember, so we write a list of tasks. And then we follow the list each time we do an update. Just to be sure we miss nothing.
 
-When these markdown files are applied to a single website, the one-time tasks should be hidden once they are done, as this presents a smaller document to review. Directio will track all tasks you complete and hide those each time you want to perform a new update session.
+At the start of each update, one makes a duplicate of the tasklist, e.g. _today.md_. Scanning through _today.md_ one notices that some of the tasks have already been done, and are by nature non-recurring. Others recur, but sometimes at different intervals. It's tedius to have to follow along, when not all of the tasks apply to this moment. What if the duplicate somehow KNEW what didn't need to be done today, i.e., what was already completed, or what doesn't need to be done quite yet. What if those tasks were removed from the working file? **Hello Directio.**
 
 ## Quick Start
 
-### Master File Setup
+### Tasklist File Setup
 
-1. Locate your master files outside of your website project.
-2. Create at least one master file, e.g. _/foo/bar/document.md_
+1. Locate your tasklist file(s) outside of your project, this assumes you want the same tasklist for multiple projects.
+2. Create at least one tasklist, e.g. _/foo/bar/document.md_
 3. Add [Directio syntax](@syntax) to that document.
 
 ### Project Usage

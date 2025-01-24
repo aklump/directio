@@ -6,6 +6,6 @@
   pages:
     - '**/README.md'
     - '**/CHANGELOG.md'
-#-
-#  format: website
-#  output: ../docs
+-
+  format: website
+  output: ../docs

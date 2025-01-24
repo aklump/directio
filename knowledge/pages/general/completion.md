@@ -1,5 +1,6 @@
 <!--
 id: completion
+tags: ''
 -->
 
 # Completing Tasks
@@ -7,8 +8,12 @@ id: completion
 Give the following task markup:
 
 ```html
-<!-- directio id=foo -->
-This content will expire on January 1, 2024.
+<!-- directio id=dessert -->
+## Making Dessert
+
+- Measure the eggs and sugar into a bowl
+- Whip for 5 minutes until incorporated
+- Continue mixing the cookies...
 <!-- /directio -->
 ```
 
@@ -22,7 +27,7 @@ To mark this complete you do two things:
 Any of the following can be used to indicate completion of a task.
 
 ```html
-<!-- directio id=foo complete -->
-<!-- directio id=foo done -->
-<!-- directio [x] id=foo -->
+<!-- directio id=dessert complete -->
+<!-- directio id=dessert done -->
+<!-- directio [x] id=dessert -->
 ```

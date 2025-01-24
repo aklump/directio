@@ -1,3 +1,16 @@
-title: Book
-uuid: ''
-chapters: []
+title: Directio
+uuid: 3e468922-c855-4b31-84d8-3d7849dcc002
+chapters:
+  -
+    id: general
+    title: General
+    pages:
+      - readme
+      - syntax
+      - completion
+      - changelog
+  -
+    id: editors
+    title: Editors
+    pages:
+      - phpstorm
