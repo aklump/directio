@@ -1,2 +1,3 @@
 - instance user do such and such
 - change `jig clean` to be an options menu: 1) skip 2) delete 3) keep.  on keep removeTaskById .jig from filename.
+- add "log" command which is date DESC of items completed.
