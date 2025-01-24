@@ -1,7 +1,5 @@
 # Directio
 
-![Directio](images/directio.jpg)
-
 > Directio is a tool to track tasks over time.
 
 Projects require regular updates. There can be lots of steps to remember, so we write a list of tasks. And then we follow the list each time we do an update. Just to be sure we miss nothing.
