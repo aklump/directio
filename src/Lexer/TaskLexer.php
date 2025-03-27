@@ -3,6 +3,8 @@
 
 namespace AKlump\Directio\Lexer;
 
+use AKlump\Directio\HTMLElementStyle;
+use AKlump\Directio\Traits\HasStyleTrait;
 use Doctrine\Common\Lexer\AbstractLexer;
 
 /**
@@ -11,6 +13,8 @@ use Doctrine\Common\Lexer\AbstractLexer;
  * It inherits from AbstractLexer and defines specific token types relevant to task processing.
  */
 class TaskLexer extends AbstractLexer {
+
+  use HasStyleTrait;
 
   const T_NONE = 1;
 
@@ -24,14 +28,17 @@ class TaskLexer extends AbstractLexer {
 
   private array $nested = [];
 
+  public function __construct() {
+    $this->setStyle(new HTMLElementStyle());
+  }
+
   /**
    * @inheritDoc
    */
   protected function getCatchablePatterns() {
     return [
-      '<!-- directio -->',
-      '<!-- directio .+? -->',
-      '<!-- \/directio -->',
+      $this->openTagPattern,
+      $this->closeTagPattern,
     ];
   }
 
@@ -46,13 +53,13 @@ class TaskLexer extends AbstractLexer {
    * @inheritDoc
    */
   protected function getType(&$value) {
-    if (strpos($value, '<!-- directio') === 0) {
+    if (strpos($value, $this->openTagStart) === 0) {
       $this->nested[] = $value;
       $this->tagIsOpen = TRUE;
 
       return self::T_OPEN_TAG;
     }
-    elseif ('<!-- /directio -->' === $value) {
+    elseif ($this->style->getCloseTagConstant() === $value) {
       array_pop($this->nested);
       $this->tagIsOpen = FALSE;
 

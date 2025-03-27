@@ -15,13 +15,14 @@ use PHPUnit\Framework\TestCase;
  * @uses \AKlump\Directio\Model\Document
  * @uses \AKlump\Directio\Model\TaskState
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses \AKlump\Directio\HTMLElementStyle
  */
 class ApplyStateToDocumentTest extends TestCase {
 
   const CONTENT = <<<EOD
-  <!-- directio [] id=foo redo=P1D -->
+  <directio id="foo" redo="P1D">
   foobar
-  <!-- /directio -->
+  </directio>
   EOD;
 
   public static function dataForInvokeProvider(): array {

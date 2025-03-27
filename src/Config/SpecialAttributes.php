@@ -14,7 +14,7 @@ class SpecialAttributes {
 
   private static array $id = ['id', 'name'];
 
-  private static array $done = ['[x]', 'done', 'complete'];
+  private static array $done = ['x', 'done', 'complete'];
 
   private static array $expires = ['redo'];
 

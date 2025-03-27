@@ -3,7 +3,6 @@
 
 namespace AKlump\Directio\Tests\Unit\TextProcessor;
 
-use AKlump\Directio\Exception\BadWhitespaceException;
 use AKlump\Directio\Exception\NestedTagsException;
 use AKlump\Directio\Exception\NoClosingException;
 use AKlump\Directio\Exception\NoIDException;
@@ -16,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \AKlump\Directio\Lexer\AttributesLexer
  * @uses   \AKlump\Directio\Lexer\TaskLexer
  * @uses   \AKlump\Directio\TextProcessor\ParseAttributes
- * @uses   \AKlump\Directio\Exception\BadWhitespaceException
+ * @uses \AKlump\Directio\HTMLElementStyle
  */
 class ValidateTaskSyntaxTest extends TestCase {
 
@@ -24,41 +23,26 @@ class ValidateTaskSyntaxTest extends TestCase {
     $tests = [];
 
     $tests[] = [
-      '<!-- directio [x] id=easy_perms_install -->
-
-- Update to https://github.com/aklump/easy-perms<!-- /directio -->
-
-<!-- directio [] id=easy_perms redo=P1D-->
-
-- `j a && cd opt/aklump/easy-perms && lando composer require aklump/easy-perms:^0.0 && lando composer update`
-- Update the permissions settings if necessary.
-
-<!-- /directio -->',
-      BadWhitespaceException::class,
-      '<!-- directio [] id=easy_perms redo=P1D-->',
-    ];
-
-    $tests[] = [
-      '<!-- directio [] id=foo --><!-- directio [] id=bar --><!-- /directio --><!-- /directio -->',
+      '<directio id="foo"><directio id="bar"></directio></directio>',
       NestedTagsException::class,
     ];
     $tests[] = [
-      '<!-- directio -->foobar<!-- /directio -->',
+      '<directio>foobar</directio>',
       NoIDException::class,
     ];
     $tests[] = [
-      '<!-- directio id=foo -->foobar',
+      '<directio id="foo">foobar',
       NoClosingException::class,
     ];
     $tests[] = [
-      '<!-- directio lorem=ipsum -->foobar<!-- /directio -->',
+      '<directio lorem="ipsum">foobar</directio>',
       NoIDException::class,
     ];
     $tests[] = [
-      '<!-- directio id=ipsum -->foobar<!-- /directio --><!-- directio lorem=ipsum -->',
+      '<directio id="ipsum">foobar</directio><directio lorem="ipsum">',
       NoIDException::class,
     ];
-    $tests[] = ['# Lorem Ipsum<!-- /directio -->', NoOpeningException::class];
+    $tests[] = ['# Lorem Ipsum</directio>', NoOpeningException::class];
     $tests[] = ['', NoOpeningException::class];
 
     return $tests;
@@ -72,6 +56,6 @@ class ValidateTaskSyntaxTest extends TestCase {
     if ($message) {
       $this->expectExceptionMessage($message);
     }
-    (new ValidateTaskSyntax())->__invoke($content);
+    (new ValidateTaskSyntax())($content);
   }
 }

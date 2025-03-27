@@ -3,7 +3,6 @@
 
 namespace AKlump\Directio\TextProcessor;
 
-use AKlump\Directio\Exception\BadWhitespaceException;
 use AKlump\Directio\Exception\NestedTagsException;
 use AKlump\Directio\Exception\NoClosingException;
 use AKlump\Directio\Exception\NoIDException;
@@ -24,7 +23,6 @@ class ValidateTaskSyntax {
    *
    */
   public function __invoke(string $content): void {
-    $this->checkWhitespace($content);
     $this->lexer = new TaskLexer();
     $this->lexer->setInput($content);
     $this->lexer->moveNext();
@@ -75,13 +73,6 @@ class ValidateTaskSyntax {
     }
     if (TRUE === $tag_is_open) {
       throw new NoClosingException();
-    }
-  }
-
-  private function checkWhitespace(string $content) {
-    $result = preg_match_all('#<!--\s?directio.*?[^\s]-->#', $content, $matches);
-    if ($result) {
-      throw new BadWhitespaceException(implode(PHP_EOL, $matches[0]));
     }
   }
 

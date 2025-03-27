@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \AKlump\Directio\Config\SpecialAttributes
  * @uses   \AKlump\Directio\Lexer\AttributesLexer
  * @uses   \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses \AKlump\Directio\HTMLElementStyle
  */
 class ScanForCompletedTaskIdsTest extends TestCase {
 
@@ -19,23 +20,23 @@ class ScanForCompletedTaskIdsTest extends TestCase {
     $tests = [];
     $tests[] = ['', []];
     $tests[] = [
-      '<!-- directio [x] id=foo -->',
+      '<directio x id="foo">',
       [
         [
-          '[x]' => TRUE,
+          'x' => TRUE,
           'id' => 'foo',
         ],
       ],
     ];
     $tests[] = [
-      'lorem <!-- directio [x] id=foo --> ipsum <!-- /directio --> dolar sit  <!-- directio [] id=bar --> ipsum <!-- /directio -->  dolar sit  <!-- directio [x] id=baz expires=P3M --> ipsum <!-- /directio --> alpha bravo',
+      'lorem <directio x id="foo"> ipsum </directio> dolar sit  <directio id="bar"> ipsum </directio>  dolar sit  <directio x id="baz" expires="P3M"> ipsum </directio> alpha bravo',
       [
         [
-          '[x]' => TRUE,
+          'x' => TRUE,
           'id' => 'foo',
         ],
         [
-          '[x]' => TRUE,
+          'x' => TRUE,
           'id' => 'baz',
           'expires' => 'P3M',
         ],

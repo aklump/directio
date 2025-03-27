@@ -2,6 +2,11 @@
 <?php
 // SPDX-License-Identifier: BSD-3-Clause
 
+use AKlump\Directio\Command\ImportCommand;
+use AKlump\Directio\Command\InitializeCommand;
+use AKlump\Directio\Command\UpdateCommand;
+use Symfony\Component\Console\Application;
+
 foreach ([
            __DIR__ . '/../../autoload.php',
            __DIR__ . '/../vendor/autoload.php',
@@ -13,9 +18,9 @@ foreach ([
   }
 }
 
-$application = new \Symfony\Component\Console\Application();
+$application = new Application();
 $application->setName('Directio: Persistent Task Manager');
-$application->add(new \AKlump\Directio\Command\InitializeCommand());
-$application->add(new \AKlump\Directio\Command\UpdateCommand());
-$application->add(new \AKlump\Directio\Command\ImportCommand());
+$application->add(new InitializeCommand());
+$application->add(new UpdateCommand());
+$application->add(new ImportCommand());
 $application->run();

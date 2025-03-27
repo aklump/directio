@@ -8,13 +8,13 @@ tags: ''
 Give the following task markup:
 
 ```html
-<!-- directio id=dessert -->
+<directio id="dessert">
 ## Making Dessert
 
 - Measure the eggs and sugar into a bowl
 - Whip for 5 minutes until incorporated
 - Continue mixing the cookies...
-<!-- /directio -->
+</directio>
 ```
 
 To mark this complete you do two things:
@@ -27,7 +27,7 @@ To mark this complete you do two things:
 Any of the following can be used to indicate completion of a task.
 
 ```html
-<!-- directio id=dessert complete -->
-<!-- directio id=dessert done -->
-<!-- directio [x] id=dessert -->
+<directio id="dessert" complete>
+<directio id="dessert" done>
+<directio x id="dessert">
 ```

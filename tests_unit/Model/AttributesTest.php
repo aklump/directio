@@ -23,6 +23,6 @@ class AttributesTest extends TestCase {
       'foo' => 'some "thing"',
       'bar' => '"thing"',
     ]);
-    $this->assertSame('id=foo title="Lorem Ipsum" done foo="some &quot;thing&quot;" bar=&quot;thing&quot;', (string) $attributes);
+    $this->assertSame('id="foo" title="Lorem Ipsum" done foo="some &quot;thing&quot;" bar="&quot;thing&quot;"', (string) $attributes);
   }
 }

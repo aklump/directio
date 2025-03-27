@@ -25,6 +25,6 @@ class SpecialAttributesTest extends TestCase {
     $done_keys = SpecialAttributes::doneKeys();
     $this->assertArrayHasKey('done', $done_keys);
     $this->assertArrayHasKey('complete', $done_keys);
-    $this->assertArrayHasKey('[x]', $done_keys);
+    $this->assertArrayHasKey('x', $done_keys);
   }
 }

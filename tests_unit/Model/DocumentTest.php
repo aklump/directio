@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \AKlump\Directio\Lexer\TaskLexer
  * @uses   \AKlump\Directio\Lexer\AttributesLexer
  * @uses   \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses \AKlump\Directio\HTMLElementStyle
  */
 class DocumentTest extends TestCase {
 
@@ -19,7 +20,7 @@ class DocumentTest extends TestCase {
 
   public function testGetIdsDoesNotMakeUnique() {
     $document = new Document();
-    $document->setContent('<!-- directio [] id=foo --><!-- /directio --><!-- directio [] id=foo --><!-- /directio -->');
+    $document->setContent('<directio id="foo"></directio><directio id="foo"></directio>');
     $ids = $document->getIds();
     $this->assertCount(2, $ids);
     $this->assertCount(1, array_unique($ids));
@@ -39,13 +40,13 @@ class DocumentTest extends TestCase {
 
     // Duplicate ids are both removed.
     $tests[] = [
-      '<!-- directio [] id=foo --><!-- /directio --><!-- directio [] id=foo --><!-- /directio -->',
+      '<directio id="foo"></directio><directio id="foo"></directio>',
       'foo',
       '',
     ];
     // Duplicate ids are both removed.
     $tests[] = [
-      "lorem\n\n<!-- directio [] id=foo -->\n\nipsum<!-- /directio -->\n\n",
+      "lorem\n\n<directio id=\"foo\">\n\nipsum</directio>\n\n",
       'foo',
       "lorem\n",
     ];
@@ -53,7 +54,7 @@ class DocumentTest extends TestCase {
     $tests[] = ['', 'foo', ''];
 
     $tests[] = [
-      "foo\n<!-- directio [] id=bar -->\nbar\n<!-- /directio -->\nbaz",
+      "foo\n<directio id=\"bar\">\nbar\n</directio>\nbaz",
       'bar',
       "foo\n\nbaz\n",
     ];
