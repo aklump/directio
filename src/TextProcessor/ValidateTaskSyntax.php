@@ -7,9 +7,17 @@ use AKlump\Directio\Exception\NestedTagsException;
 use AKlump\Directio\Exception\NoClosingException;
 use AKlump\Directio\Exception\NoIDException;
 use AKlump\Directio\Exception\NoOpeningException;
+use AKlump\Directio\HTMLElementStyle;
 use AKlump\Directio\Lexer\TaskLexer;
+use AKlump\Directio\Traits\HasStyleTrait;
 
 class ValidateTaskSyntax {
+
+  use HasStyleTrait;
+
+  public function __construct() {
+    $this->setStyle(new HTMLElementStyle());
+  }
 
   /**
    * @var \AKlump\Directio\Lexer\TaskLexer
@@ -23,6 +31,11 @@ class ValidateTaskSyntax {
    *
    */
   public function __invoke(string $content): void {
+
+    if (!$this->quickScanForTags($content)) {
+      return;
+    }
+
     $this->lexer = new TaskLexer();
     $this->lexer->setInput($content);
     $this->lexer->moveNext();
@@ -74,6 +87,10 @@ class ValidateTaskSyntax {
     if (TRUE === $tag_is_open) {
       throw new NoClosingException();
     }
+  }
+
+  private function quickScanForTags(string $content) {
+    return strstr($content, $this->openTagStart) !== FALSE;
   }
 
 }

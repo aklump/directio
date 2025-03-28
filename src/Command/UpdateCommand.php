@@ -68,15 +68,18 @@ class UpdateCommand extends Command {
     }
 
     foreach ($files_to_update as $document_path) {
-      $output->writeln($document_path);
+      $document_label = basename($document_path);
+      $output->writeln($document_label);
       $document = (new ReadDocument())($document_path);
       (new ValidateTaskSyntax())($document->getContent());
       $completed_tasks = (new ScanForCompletedTasks())($document->getContent());
+
       if (empty($completed_tasks)) {
         continue;
       }
 
       foreach ($completed_tasks as $task_data) {
+        $output->writeln('✅ ' . $task_data['id']);
         $document = $document->withoutTask($task_data['id']);
 
         $task = (new TaskState())

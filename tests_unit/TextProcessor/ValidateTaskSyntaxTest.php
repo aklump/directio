@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \AKlump\Directio\Lexer\AttributesLexer
  * @uses   \AKlump\Directio\Lexer\TaskLexer
  * @uses   \AKlump\Directio\TextProcessor\ParseAttributes
- * @uses \AKlump\Directio\HTMLElementStyle
+ * @uses   \AKlump\Directio\HTMLElementStyle
  */
 class ValidateTaskSyntaxTest extends TestCase {
 
@@ -42,8 +42,10 @@ class ValidateTaskSyntaxTest extends TestCase {
       '<directio id="ipsum">foobar</directio><directio lorem="ipsum">',
       NoIDException::class,
     ];
-    $tests[] = ['# Lorem Ipsum</directio>', NoOpeningException::class];
-    $tests[] = ['', NoOpeningException::class];
+    $tests[] = [
+      '# Lorem Ipsum</directio><directio id="lorem">lorem</directio>',
+      NoOpeningException::class,
+    ];
 
     return $tests;
   }
@@ -57,5 +59,16 @@ class ValidateTaskSyntaxTest extends TestCase {
       $this->expectExceptionMessage($message);
     }
     (new ValidateTaskSyntax())($content);
+  }
+
+  public function testContentWithoutTagsDoesNotThrow() {
+    $content = 'Lorem ipsum dolor sit amet.';
+    (new ValidateTaskSyntax())($content);
+    $this->assertTrue(TRUE);
+  }
+
+  public function testEmptyContentDoesNotThrow() {
+    (new ValidateTaskSyntax())('');
+    $this->assertTrue(TRUE);
   }
 }
