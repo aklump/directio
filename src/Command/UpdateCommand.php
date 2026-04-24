@@ -5,8 +5,8 @@ namespace AKlump\Directio\Command;
 
 use AKlump\Directio\Config\Names;
 use AKlump\Directio\Config\SpecialAttributes;
+use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\ReadDocument;
-use AKlump\Directio\IO\ReadState;
 use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\IO\WriteState;
 use AKlump\Directio\Model\TaskState;
@@ -54,8 +54,9 @@ class UpdateCommand extends Command {
     }
 
     $files_to_update = glob($this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_IMPORTED . DIRECTORY_SEPARATOR . '*');
+    $shortpath_directio = (new GetShortPath())($this->directioDirectory);
     if (empty($files_to_update)) {
-      $output->writeln(sprintf('<error>No documents in "%s"</error>', $this->directioDirectory));
+      $output->writeln(sprintf('<error>No documents in "%s"</error>', $shortpath_directio));
       $output->writeln(sprintf('<info>Try the "%s" command first.</info>', ImportCommand::getDefaultName()));
 
       return Command::FAILURE;
@@ -65,7 +66,7 @@ class UpdateCommand extends Command {
     $state_path = $this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
 
     foreach ($files_to_update as $document_path) {
-      $document_label = basename($document_path);
+      $document_label = (new GetShortPath())($document_path);
       $output->writeln($document_label);
       $document = (new ReadDocument())($document_path);
       (new ValidateTaskSyntax())($document->getContent());

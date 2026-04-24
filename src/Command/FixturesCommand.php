@@ -4,6 +4,7 @@
 namespace AKlump\Directio\Command;
 
 use AKlump\Directio\Config\Names;
+use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\ReadDocument;
 use AKlump\Directio\Lexer\TaskLexer;
 use AKlump\Directio\TextProcessor\ParseAttributes;
@@ -70,8 +71,9 @@ class FixturesCommand extends Command {
 
   private function scanForFixtureIds(string $directio_directory, OutputInterface $output): ?array {
     $files_to_scan = glob($directio_directory . DIRECTORY_SEPARATOR . Names::FILENAME_IMPORTED . DIRECTORY_SEPARATOR . '*');
+    $shortpath_directio = (new GetShortPath())($directio_directory);
     if (empty($files_to_scan)) {
-      $output->writeln(sprintf('<error>No documents in "%s"</error>', $directio_directory));
+      $output->writeln(sprintf('<error>No documents in "%s"</error>', $shortpath_directio));
       $output->writeln(sprintf('<info>Try the "%s" command first.</info>', ImportCommand::getDefaultName()));
 
       return NULL;

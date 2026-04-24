@@ -179,6 +179,32 @@ EOD
     
     $this->assertStringContainsString('Fixture imported', $commandTester->getDisplay());
     $this->assertStringContainsString('File imported', $commandTester->getDisplay());
+    $this->assertStringContainsString('Imported 2 of 2 items found', $commandTester->getDisplay());
+  }
+
+  public function testImportDirectoryWithSkips() {
+    $sourceDir = $this->getTestFileFilepath('source_dir_skips/', TRUE);
+    file_put_contents($sourceDir . '/Fixture1.php', <<<'EOD'
+<?php
+namespace AKlump\Directio\Fixture;
+use AKlump\FixtureFramework\Fixture;
+#[Fixture(id: 'f1')]
+class Fixture1 {}
+EOD
+    );
+    file_put_contents($sourceDir . '/markup.md', '<directio id="m1"></directio>');
+
+    // First import all
+    $this->executeCommand(['source document' => $sourceDir], ['yes', 'yes']);
+
+    // Second import, skip both
+    $commandTester = $this->executeCommand(['source document' => $sourceDir], ['no', 'no']);
+    $this->assertStringContainsString('All of the 2 items found', $commandTester->getDisplay());
+    $this->assertStringContainsString('were skipped or failed', $commandTester->getDisplay());
+
+    // Third import, skip one
+    $commandTester = $this->executeCommand(['source document' => $sourceDir], ['yes', 'no']);
+    $this->assertStringContainsString('Imported 1 of 2 items found', $commandTester->getDisplay());
   }
 
   private function executeCommand(array $arguments, array $inputs = []): CommandTester {

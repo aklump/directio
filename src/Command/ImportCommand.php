@@ -125,8 +125,8 @@ class ImportCommand extends Command {
   }
 
   private function importFromDirectory(string $directory): int {
-    $found_fixtures = 0;
-    $found_markup = 0;
+    $found_count = 0;
+    $imported_count = 0;
     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
     foreach ($iterator as $file) {
       if ($file->isDir()) {
@@ -134,19 +134,28 @@ class ImportCommand extends Command {
       }
       $path = $file->getPathname();
       if ($this->isFixtureFile($path)) {
+        $found_count++;
         if ($this->importFixture($path)) {
-          $found_fixtures++;
+          $imported_count++;
         }
       }
       elseif ($this->hasDirectioMarkup($path)) {
+        $found_count++;
         if ($this->importDocumentWithMarkup($path) === Command::SUCCESS) {
-          $found_markup++;
+          $imported_count++;
         }
       }
     }
 
-    if ($found_fixtures === 0 && $found_markup === 0) {
-      $this->output->writeln(sprintf('<comment>No fixtures or documents with directio markup found in %s</comment>', $directory));
+    $shortpath_directory = (new GetShortPath())($directory);
+    if ($found_count === 0) {
+      $this->output->writeln(sprintf('<comment>No fixtures or documents with directio markup found in %s</comment>', $shortpath_directory));
+    }
+    elseif ($imported_count === 0) {
+      $this->output->writeln(sprintf('<comment>All of the %d items found in %s were skipped or failed.</comment>', $found_count, $shortpath_directory));
+    }
+    else {
+      $this->output->writeln(sprintf('<info>Imported %d of %d items found in %s.</info>', $imported_count, $found_count, $shortpath_directory));
     }
 
     return Command::SUCCESS;
@@ -181,13 +190,14 @@ class ImportCommand extends Command {
     }
     $target_path = $target_dir . DIRECTORY_SEPARATOR . basename($path);
 
-    $shortpath = (new GetShortPath(getcwd()))($target_path);
+    $shortpath = (new GetShortPath())($target_path);
     if (file_exists($target_path)) {
       $helper = $this->getHelper('question');
       $question = new ConfirmationQuestion(sprintf('Fixture "%s" already exists. Overwrite? ', basename($target_path)), FALSE);
       if (!$helper->ask($this->input, $this->output, $question)) {
         $message = sprintf("<error>Failed to import \"%s\" because it already exists.</error>", basename($target_path));
         $this->output->writeln(sprintf($message));
+        $this->output->writeln('');
 
         return FALSE;
       }
@@ -211,7 +221,7 @@ class ImportCommand extends Command {
       mkdir($parent, 0755, TRUE);
     }
 
-    $shortpath = (new GetShortPath(getcwd()))($imported_doc_path);
+    $shortpath = (new GetShortPath())($imported_doc_path);
     if (file_exists($imported_doc_path)) {
       $helper = $this->getHelper('question');
       $question = new ConfirmationQuestion(sprintf('Document "%s" already exists. Overwrite? ', basename($imported_doc_path)), FALSE);
@@ -239,7 +249,8 @@ class ImportCommand extends Command {
           $this->output->writeln('The following tasks have already been imported:');
         }
         $invalid = TRUE;
-        $this->output->writeln(sprintf('<info>├── %s</info>', basename($imported_path)));
+        $shortpath_imported = (new GetShortPath())($imported_path);
+        $this->output->writeln(sprintf('<info>├── %s</info>', $shortpath_imported));
         $this->output->write(array_map(function ($line) {
           return "<comment>│   ├── $line</comment>";
         }, $duplicated_ids), TRUE);
@@ -247,8 +258,9 @@ class ImportCommand extends Command {
     }
 
     if ($invalid) {
-      $this->output->writeln(sprintf('<info>Try deleting or moving "%s" if it is no longer in use.</info>', basename($document_path)));
-      $message = sprintf('Failed to import "%s" due to ID collision.', basename($document_path));
+      $shortpath_document_path = (new GetShortPath())($document_path);
+      $this->output->writeln(sprintf('<info>Try deleting or moving "%s" if it is no longer in use.</info>', $shortpath_document_path));
+      $message = sprintf('Failed to import "%s" due to ID collision.', $shortpath_document_path);
       throw new RuntimeException($message);
     }
   }

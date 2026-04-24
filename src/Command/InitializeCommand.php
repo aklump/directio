@@ -3,6 +3,7 @@
 
 namespace AKlump\Directio\Command;
 
+use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\InitializeDirectory;
 use Exception;
 use Symfony\Component\Console\Command\Command;
@@ -17,8 +18,10 @@ class InitializeCommand extends Command {
 
   protected function execute(InputInterface $input, OutputInterface $output) {
     try {
-      (new InitializeDirectory())(getcwd());
-      $output->writeln('<info>Directory is initialized.</info>');
+      $pwd = getcwd();
+      (new InitializeDirectory())($pwd);
+      $shortpath = (new GetShortPath($pwd))($pwd);
+      $output->writeln(sprintf('<info>Directory "%s" is initialized.</info>', $shortpath));
 
       return Command::SUCCESS;
     }

@@ -1,20 +1,22 @@
 <?php
-// SPDX-License-Identifier: BSD-3-Clause
 
 namespace AKlump\Directio\IO;
 
 /**
  * @code
- * // Print a shortened, nice-to-read path when possible.
- * echo (new GetShortPath(getcwd())($long_path)
+ * // Print a shortened, nice-to-read path when possible:
+ * echo (new GetShortPath('/some/base/path')($long_path)
+ *
+ * // Or relative to the CWD:
+ * echo (new GetShortPath()($long_path)
  * @endcode
  */
 class GetShortPath {
 
   private string $basepath;
 
-  public function __construct(string $basepath) {
-    $this->basepath = $basepath;
+  public function __construct(string $basepath = NULL) {
+    $this->basepath = $basepath ?? getcwd();
   }
 
   public function __invoke(string $path): string {
