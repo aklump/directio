@@ -61,11 +61,8 @@ class UpdateCommand extends Command {
       return Command::FAILURE;
     }
 
-    $state = [];
+    $write_state = new WriteState();
     $state_path = $this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
-    if (file_exists($state_path)) {
-      $state = (new ReadState())($state_path);
-    }
 
     foreach ($files_to_update as $document_path) {
       $document_label = basename($document_path);
@@ -96,23 +93,11 @@ class UpdateCommand extends Command {
           }
           $task->setRedo($expiry->format(DateTimeInterface::ATOM));
         }
-        $state[] = $task;
+        $write_state->writeOne($state_path, $task);
       }
       (new WriteDocument())($document_path, $document);
     }
 
-    $state = $this->dedupeState($state);
-    (new WriteState())($state_path, $state);
-
     return Command::SUCCESS;
-  }
-
-  private function dedupeState(array $state): array {
-    $deduped_state = [];
-    foreach ($state as $task) {
-      $deduped_state[$task->getId()] = $task;
-    }
-
-    return array_values($deduped_state);
   }
 }

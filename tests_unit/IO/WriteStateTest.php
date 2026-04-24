@@ -17,21 +17,42 @@ class WriteStateTest extends TestCase {
   use TestWithFilesTrait;
 
   public function testCantWriteThrows() {
-    $path = $this->getTestFileFilepath('.cache/state.json');
+    $path = $this->getTestFileFilepath('.cache/no_write/state.sqlite', true);
+    if (file_exists(dirname($path))) {
+      $this->deleteTestFile('.cache/no_write/');
+    }
     $task = new TaskState();
     $task->setId('foo');
-    chmod(dirname($path), 0444);
+    mkdir(dirname($path), 0555, true);
     $this->expectException(RuntimeException::class);
-    (new WriteState())->__invoke($path, [$task]);
+    (new WriteState())->writeOne($path, $task);
   }
 
-  public function testInvoke() {
-    $path = $this->getTestFileFilepath('.cache/state.json');
-    $task = new TaskState();
-    $task->setId('foo');
-    (new WriteState())->__invoke($path, [$task]);
+  public function testWriteOne() {
+    $path = $this->getTestFileFilepath('.cache/state.sqlite', true);
+    $task = (new TaskState())->setId('foo')->setCompleted('today');
+    (new WriteState())->writeOne($path, $task);
     $this->assertFileExists($path);
-    $this->assertJsonStringEqualsJsonFile($path, '[{"id":"foo","completed":"","redo":"","env":"","user":""}]');
+
+    $read = (new \AKlump\Directio\IO\ReadState())->readById($path, 'foo');
+    $this->assertSame('foo', $read->getId());
+    $this->assertSame('today', $read->getCompleted());
+
+    // Test Update
+    $task->setCompleted('tomorrow');
+    (new WriteState())->writeOne($path, $task);
+    $read = (new \AKlump\Directio\IO\ReadState())->readById($path, 'foo');
+    $this->assertSame('tomorrow', $read->getCompleted());
+  }
+
+  public function testWriteMany() {
+    $path = $this->getTestFileFilepath('.cache/state_many.sqlite', true);
+    $task1 = (new TaskState())->setId('foo');
+    $task2 = (new TaskState())->setId('bar');
+    (new WriteState())->writeMany($path, [$task1, $task2]);
+
+    $state = (new \AKlump\Directio\IO\ReadState())($path);
+    $this->assertCount(2, $state);
   }
 
   protected function tearDown(): void {
