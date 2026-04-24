@@ -13,8 +13,18 @@ final class InitializeDirectory {
   public function __invoke(string $directory) {
     $this->directory = rtrim($directory, '/');
     $this->initDirectory();
+    $this->initFixtureDirectory();
     $this->initStateFile();
     $this->initGitIgnore();
+  }
+
+  private function initFixtureDirectory() {
+    $target = $this->directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Fixture';
+    if (!file_exists($target)) {
+      if (FALSE === @mkdir($target, 0755, TRUE)) {
+        throw new RuntimeException(sprintf('Failed to create %s', $target));
+      }
+    }
   }
 
   private function initStateFile() {
