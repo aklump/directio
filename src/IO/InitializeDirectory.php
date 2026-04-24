@@ -13,8 +13,8 @@ final class InitializeDirectory {
   public function __invoke(string $directory) {
     $this->directory = rtrim($directory, '/');
     $this->initDirectory();
-    $this->initFixtureDirectory();
     $this->initStateFile();
+    $this->initFixtureDirectory();
     $this->initGitIgnore();
   }
 
@@ -31,7 +31,7 @@ final class InitializeDirectory {
     $target = $this->directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
     if (!file_exists($target)) {
       if (FALSE === @file_put_contents($target, '')) {
-        throw new RuntimeException(sprintf('Failed to create %s', $target));
+        throw new RuntimeException(sprintf('Failed to create %s', Names::FILENAME_STATE));
       }
     }
   }

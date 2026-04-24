@@ -28,7 +28,7 @@ class DocumentTest extends TestCase {
 
   public function testGetIds() {
     $document = new Document();
-    $content = file_get_contents($this->getTestFileFilepath('document.md'));
+    $content = '<directio id="install_runs_update"></directio><directio id="drush_control"></directio>';
     $document->setContent($content);
     $ids = $document->getIds();
     $this->assertContains('install_runs_update', $ids);

@@ -18,6 +18,7 @@ class ReadDocumentTest extends TestCase {
 
   public function testCanReadYaml() {
     $path = $this->getTestFileFilepath('document.md');
+    file_put_contents($path, '# My Instructions');
     $document = (new ReadDocument())($path);
     $this->assertStringStartsWith('# My Instructions', $document->getContent());
   }
