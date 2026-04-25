@@ -49,7 +49,7 @@ class Document implements DocumentInterface {
         $attributes = (new ParseAttributes())($lexer->token->value);
         // Check the id of this task against the method argument, and discard
         // the start position (preventing the cut) if the id doesn't match.
-        $this_id = SpecialAttributes::getTaskId($attributes);
+        $this_id = SpecialAttributes::extractId($attributes);
         if ($this_id != $id) {
           unset($start_position);
         }
@@ -97,7 +97,7 @@ class Document implements DocumentInterface {
       }
       $lexer->moveNext();
       $attributes = $parse_attributes($lexer->token->value);
-      $ids[] = SpecialAttributes::getTaskId($attributes);
+      $ids[] = SpecialAttributes::extractId($attributes);
     }
 
     return $ids;

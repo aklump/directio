@@ -77,7 +77,7 @@ class UpdateCommand extends Command {
       }
 
       foreach ($completed_tasks as $task_data) {
-        $task_id = SpecialAttributes::getTaskId($task_data);
+        $task_id = SpecialAttributes::extractId($task_data);
         $output->writeln('✅ ' . $task_id);
         $document = $document->withoutTask($task_id);
 
@@ -87,9 +87,9 @@ class UpdateCommand extends Command {
           ->setCompleted($now->format(DateTimeInterface::ATOM))
           ->setUser(exec('whoami'));
 
-        $expires = array_intersect_key($task_data, SpecialAttributes::expiresKeys());
+        $expires = SpecialAttributes::extractExpires($task_data);
         if ($expires) {
-          $duration = new DateInterval($task_data[key($expires)]);
+          $duration = new DateInterval($expires);
           if ($duration) {
             $expiry = (clone $now)->add($duration);
           }

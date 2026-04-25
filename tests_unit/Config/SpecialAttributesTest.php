@@ -28,15 +28,42 @@ class SpecialAttributesTest extends TestCase {
     $this->assertArrayHasKey('x', $done_keys);
   }
 
+  public function testDefaultIdKey() {
+    $this->assertSame('id', SpecialAttributes::defaultIdKey());
+  }
+
+  public function testDefaultDoneKey() {
+    $this->assertSame('done', SpecialAttributes::defaultDoneKey());
+  }
+
   public function testFixtureKeysContainsExpectedValues() {
     $fixture_keys = SpecialAttributes::fixtureKeys();
     $this->assertArrayHasKey('fixture', $fixture_keys);
   }
 
-  public function testGetTaskId() {
-    $this->assertSame('foo', SpecialAttributes::getTaskId(['id' => 'foo']));
-    $this->assertSame('bar', SpecialAttributes::getTaskId(['name' => 'bar']));
-    $this->assertSame('foo', SpecialAttributes::getTaskId(['id' => 'foo', 'name' => 'bar']));
-    $this->assertNull(SpecialAttributes::getTaskId(['other' => 'baz']));
+  public function testExtractId() {
+    $this->assertSame('foo', SpecialAttributes::extractId(['id' => 'foo']));
+    $this->assertSame('bar', SpecialAttributes::extractId(['name' => 'bar']));
+    $this->assertSame('foo', SpecialAttributes::extractId(['id' => 'foo', 'name' => 'bar']));
+    $this->assertNull(SpecialAttributes::extractId(['other' => 'baz']));
+    $this->assertSame('1', SpecialAttributes::extractId(['id' => TRUE]));
+  }
+
+  public function testExtractDone() {
+    $this->assertSame('foo', SpecialAttributes::extractDone(['done' => 'foo']));
+    $this->assertSame('bar', SpecialAttributes::extractDone(['x' => 'bar']));
+    $this->assertSame('baz', SpecialAttributes::extractDone(['complete' => 'baz']));
+    $this->assertTrue(SpecialAttributes::extractDone(['done' => TRUE]));
+    $this->assertNull(SpecialAttributes::extractDone(['other' => 'baz']));
+  }
+
+  public function testExtractExpires() {
+    $this->assertSame('P1D', SpecialAttributes::extractExpires(['redo' => 'P1D']));
+    $this->assertNull(SpecialAttributes::extractExpires(['other' => 'baz']));
+  }
+
+  public function testExtractFixture() {
+    $this->assertSame('foo', SpecialAttributes::extractFixture(['fixture' => 'foo']));
+    $this->assertNull(SpecialAttributes::extractFixture(['other' => 'baz']));
   }
 }

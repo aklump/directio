@@ -103,11 +103,10 @@ class FixturesCommand extends Command {
         }
         $lexer->moveNext();
         $attributes = $parse_attributes($lexer->token->value);
-        $is_done = (bool) array_intersect_key($attributes, SpecialAttributes::doneKeys());
-        $fixture_attr = array_intersect_key($attributes, SpecialAttributes::fixtureKeys());
-        if ($fixture_attr && !$is_done) {
-          $fixture_id = $attributes[key($fixture_attr)];
-          $task_id = SpecialAttributes::getTaskId($attributes);
+        $is_done = SpecialAttributes::extractDone($attributes);
+        $fixture_id = SpecialAttributes::extractFixture($attributes);
+        if ($fixture_id && !$is_done) {
+          $task_id = SpecialAttributes::extractId($attributes);
           if ($task_id) {
             $mappings[$fixture_id][] = [
               'path' => $document_path,
@@ -199,9 +198,9 @@ class FixturesCommand extends Command {
               ->setCompleted($now->format(DateTimeInterface::ATOM))
               ->setUser(exec('whoami'));
 
-            $expires = array_intersect_key($mapping['attributes'], SpecialAttributes::expiresKeys());
+            $expires = SpecialAttributes::extractExpires($mapping['attributes']);
             if ($expires) {
-              $duration = new DateInterval($mapping['attributes'][key($expires)]);
+              $duration = new DateInterval($expires);
               if ($duration) {
                 $expiry = (clone $now)->add($duration);
               }

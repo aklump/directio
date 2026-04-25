@@ -63,7 +63,7 @@ class ValidateTaskSyntax {
         $open_tags[] = $token->value;
 
         $attributes = (new ParseAttributes())($token->value);
-        if (NULL === SpecialAttributes::getTaskId($attributes)) {
+        if (NULL === SpecialAttributes::extractId($attributes)) {
           throw new NoIDException($position_message);
         }
       }
@@ -78,7 +78,7 @@ class ValidateTaskSyntax {
         $ids = array_map(function ($attributes) {
           $attributes = (new ParseAttributes())($attributes);
 
-          return SpecialAttributes::getTaskId($attributes) ?? 'NULL';
+          return SpecialAttributes::extractId($attributes) ?? 'NULL';
         }, $tags_stack);
         $ids = implode('>', $ids);
         throw new NestedTagsException(sprintf('Nesting directio tags (%s) is not supported.', $ids));

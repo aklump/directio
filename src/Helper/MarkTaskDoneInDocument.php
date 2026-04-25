@@ -37,11 +37,10 @@ final class MarkTaskDoneInDocument {
 
       $originalTag = $lexer->token->value;
       $attributes = $parseAttributes($originalTag);
-      $this_id = SpecialAttributes::getTaskId($attributes);
+      $this_id = SpecialAttributes::extractId($attributes);
 
       if ($this_id === $taskId) {
-        $is_done = (bool) array_intersect_key($attributes, SpecialAttributes::doneKeys());
-        if (!$is_done) {
+        if (!SpecialAttributes::extractDone($attributes)) {
           $newTag = $this->addDoneAttribute($originalTag);
           $updates[] = [
             'pos' => $lexer->token->position,
@@ -73,7 +72,7 @@ final class MarkTaskDoneInDocument {
    * @return string e.g. '<directio done id="foo">' or '<directio done id="foo" redo="P1D">'
    */
   private function addDoneAttribute(string $tag): string {
-    $done_attribute = key(SpecialAttributes::doneKeys());
+    $done_attribute = SpecialAttributes::defaultDoneKey();
     // We want to insert the attribute right after '<directio'
     if (preg_match('/^(<directio)(\s|>)/i', $tag, $matches)) {
       $prefix = $matches[1];
