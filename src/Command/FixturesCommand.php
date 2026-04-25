@@ -12,6 +12,14 @@ use AKlump\FixtureFramework\Discovery\DiscoverFixtureDefinitions;
 use AKlump\FixtureFramework\Runtime\FixtureCollectionBuilder;
 use AKlump\FixtureFramework\Runtime\FixtureRunner;
 use AKlump\FixtureFramework\Runtime\RunContextValidator;
+use AKlump\Directio\Helper\MarkTaskDoneInDocument;
+use AKlump\Directio\IO\WriteDocument;
+use AKlump\Directio\Config\SpecialAttributes;
+use AKlump\Directio\IO\WriteState;
+use AKlump\Directio\Model\TaskState;
+use AKlump\LocalTimezone\LocalTimezone;
+use DateInterval;
+use DateTimeInterface;
 use Exception;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -41,21 +49,22 @@ class FixturesCommand extends Command {
       return Command::FAILURE;
     }
 
-    $fixture_ids = $this->scanForFixtureIds($directio_directory, $output);
-    if ($fixture_ids === NULL) {
+    $fixture_mappings = $this->scanForFixtureMappings($directio_directory, $output);
+    if ($fixture_mappings === NULL) {
       return Command::FAILURE;
     }
 
-    if (empty($fixture_ids)) {
+    if (empty($fixture_mappings)) {
       $output->writeln('<info>No fixtures found in documents.</info>');
 
       return Command::SUCCESS;
     }
 
+    $fixture_ids = array_keys($fixture_mappings);
     $filter = $input->getOption('filter') ?: '';
     $flush = $input->getOption('flush');
 
-    return $this->runFixtures($base_dir, $fixture_ids, $output, $filter, $flush);
+    return $this->runFixtures($base_dir, $directio_directory, $fixture_ids, $fixture_mappings, $output, $filter, $flush);
   }
 
   private function validateInitialized(string $directio_directory, OutputInterface $output): bool {
@@ -69,7 +78,7 @@ class FixturesCommand extends Command {
     return TRUE;
   }
 
-  private function scanForFixtureIds(string $directio_directory, OutputInterface $output): ?array {
+  private function scanForFixtureMappings(string $directio_directory, OutputInterface $output): ?array {
     $files_to_scan = glob($directio_directory . DIRECTORY_SEPARATOR . Names::FILENAME_IMPORTED . DIRECTORY_SEPARATOR . '*');
     $shortpath_directio = (new GetShortPath())($directio_directory);
     if (empty($files_to_scan)) {
@@ -79,7 +88,7 @@ class FixturesCommand extends Command {
       return NULL;
     }
 
-    $fixture_ids = [];
+    $mappings = [];
     $parse_attributes = new ParseAttributes();
     foreach ($files_to_scan as $document_path) {
       $document = (new ReadDocument())($document_path);
@@ -94,20 +103,28 @@ class FixturesCommand extends Command {
         $lexer->moveNext();
         $attributes = $parse_attributes($lexer->token->value);
         if (!empty($attributes['fixture'])) {
-          $fixture_ids[] = $attributes['fixture'];
+          $fixture_id = $attributes['fixture'];
+          $task_id = $attributes['id'] ?? NULL;
+          if ($task_id) {
+            $mappings[$fixture_id][] = [
+              'path' => $document_path,
+              'id' => $task_id,
+              'attributes' => $attributes,
+            ];
+          }
         }
       }
     }
 
-    return $fixture_ids;
+    return $mappings;
   }
 
-  private function runFixtures(string $base_dir, array $fixture_ids, OutputInterface $output, string $filter = '', bool $flush = FALSE): int {
+  private function runFixtures(string $project_directory, string $directio_directory, array $fixture_ids, array $fixture_mappings, OutputInterface $output, string $filter = '', bool $flush = FALSE): int {
     // Prepare fixture framework
-    $vendor_dir = $base_dir . DIRECTORY_SEPARATOR . 'vendor';
+    $vendor_dir = $project_directory . DIRECTORY_SEPARATOR . 'vendor';
     // If we're running from within the app directory in the package itself
     if (!file_exists($vendor_dir)) {
-      $vendor_dir = dirname($base_dir, 2) . DIRECTORY_SEPARATOR . 'vendor';
+      $vendor_dir = dirname($project_directory, 2) . DIRECTORY_SEPARATOR . 'vendor';
     }
 
     require_once $vendor_dir . '/autoload.php';
@@ -143,13 +160,57 @@ class FixturesCommand extends Command {
       }
 
       $options = [
-        'env' => 'test',
+        'directio_directory' => $directio_directory,
       ];
       $validator = new RunContextValidator();
       $fixtures = (new FixtureCollectionBuilder($options, $validator))($ordered_definitions);
       $runner = new FixtureRunner($fixtures);
-      $runner->run();
+      $runner->run(FALSE, $project_directory);
+
+      // Mark fixtures as done in documents
+      $mark_done = new MarkTaskDoneInDocument();
+      $read_document = new ReadDocument();
+      $write_document = new WriteDocument();
+      $write_state = new WriteState();
+      $state_path = $directio_directory . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
+      $now = date_create('now', LocalTimezone::get());
+
+      $messages = [];
+      $get_short_path = new GetShortPath();
+      foreach ($ordered_definitions as $def) {
+        $fixture_id = $def['id'];
+        if (isset($fixture_mappings[$fixture_id])) {
+          foreach ($fixture_mappings[$fixture_id] as $mapping) {
+            $path = $mapping['path'];
+            $task_id = $mapping['id'];
+            $document = $read_document($path);
+            $document = $mark_done($task_id, $document);
+            $write_document($path, $document);
+            $messages[] = sprintf('Marked "%s" as done in %s', $task_id, $get_short_path($path));
+
+            $task = (new TaskState())
+              ->setId($task_id)
+              ->setEnv(exec('echo "$(hostname)"'))
+              ->setCompleted($now->format(DateTimeInterface::ATOM))
+              ->setUser(exec('whoami'));
+
+            $expires = array_intersect_key($mapping['attributes'], SpecialAttributes::expiresKeys());
+            if ($expires) {
+              $duration = new DateInterval($mapping['attributes'][key($expires)]);
+              if ($duration) {
+                $expiry = (clone $now)->add($duration);
+              }
+              $task->setRedo($expiry->format(DateTimeInterface::ATOM));
+            }
+            $write_state->writeOne($state_path, $task);
+          }
+        }
+      }
+
       $output->writeln('<info>Fixtures completed successfully.</info>');
+      foreach ($messages as $message) {
+        $output->writeln(sprintf('<info>%s</info>', $message));
+      }
     }
     catch (Exception $e) {
       $output->writeln(sprintf('<error>Error running fixtures: %s</error>', $e->getMessage()));

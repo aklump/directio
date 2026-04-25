@@ -53,6 +53,8 @@ After updating `composer.json`, be sure to run `composer dump-autoload`.
 
 ## Running Fixtures
 
+The current working directory of all fixtures will be the project directory, which is to say the parent of `.directio`.
+
 Execute the following command to run all fixtures referenced in your documents:
 
 ```bash
