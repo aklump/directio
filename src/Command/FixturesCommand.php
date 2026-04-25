@@ -50,13 +50,19 @@ class FixturesCommand extends Command {
       return Command::FAILURE;
     }
 
-    $fixture_mappings = $this->scanForFixtureMappings($directio_directory, $output);
+    $total_found = 0;
+    $fixture_mappings = $this->scanForFixtureMappings($directio_directory, $output, $total_found);
     if ($fixture_mappings === NULL) {
       return Command::FAILURE;
     }
 
     if (empty($fixture_mappings)) {
-      $output->writeln('<info>No fixtures found in documents.</info>');
+      if ($total_found > 0) {
+        $output->writeln('<info>All fixtures have been marked as done. Nothing more to do.</info>');
+      }
+      else {
+        $output->writeln('<info>No fixtures found in documents.</info>');
+      }
 
       return Command::SUCCESS;
     }
@@ -65,7 +71,7 @@ class FixturesCommand extends Command {
     $filter = $input->getOption('filter') ?: '';
     $flush = $input->getOption('flush');
 
-    return $this->runFixtures($base_dir, $directio_directory, $fixture_ids, $fixture_mappings, $output, $filter, $flush);
+    return $this->runFixtures($base_dir, $directio_directory, $fixture_ids, $fixture_mappings, $input, $output, $filter, $flush);
   }
 
   private function validateInitialized(string $directio_directory, OutputInterface $output): bool {
@@ -79,7 +85,7 @@ class FixturesCommand extends Command {
     return TRUE;
   }
 
-  private function scanForFixtureMappings(string $directio_directory, OutputInterface $output): ?array {
+  private function scanForFixtureMappings(string $directio_directory, OutputInterface $output, int &$total_fixtures_found = 0): ?array {
     $files_to_scan = glob($directio_directory . DIRECTORY_SEPARATOR . Names::FILENAME_IMPORTED . DIRECTORY_SEPARATOR . '*');
     $shortpath_directio = (new GetShortPath())($directio_directory);
     if (empty($files_to_scan)) {
@@ -90,6 +96,7 @@ class FixturesCommand extends Command {
     }
 
     $mappings = [];
+    $total_fixtures_found = 0;
     $parse_attributes = new ParseAttributes();
     foreach ($files_to_scan as $document_path) {
       $document = (new ReadDocument())($document_path);
@@ -105,14 +112,17 @@ class FixturesCommand extends Command {
         $attributes = $parse_attributes($lexer->token->value);
         $is_done = SpecialAttributes::extractDone($attributes);
         $fixture_id = SpecialAttributes::extractFixture($attributes);
-        if ($fixture_id && !$is_done) {
-          $task_id = SpecialAttributes::extractId($attributes);
-          if ($task_id) {
-            $mappings[$fixture_id][] = [
-              'path' => $document_path,
-              'id' => $task_id,
-              'attributes' => $attributes,
-            ];
+        if ($fixture_id) {
+          $total_fixtures_found++;
+          if (!$is_done) {
+            $task_id = SpecialAttributes::extractId($attributes);
+            if ($task_id) {
+              $mappings[$fixture_id][] = [
+                'path' => $document_path,
+                'id' => $task_id,
+                'attributes' => $attributes,
+              ];
+            }
           }
         }
       }
@@ -121,7 +131,7 @@ class FixturesCommand extends Command {
     return $mappings;
   }
 
-  private function runFixtures(string $project_directory, string $directio_directory, array $fixture_ids, array $fixture_mappings, OutputInterface $output, string $filter = '', bool $flush = FALSE): int {
+  private function runFixtures(string $project_directory, string $directio_directory, array $fixture_ids, array $fixture_mappings, InputInterface $input, OutputInterface $output, string $filter = '', bool $flush = FALSE): int {
     // Prepare fixture framework
     $vendor_dir = $project_directory . DIRECTORY_SEPARATOR . 'vendor';
     // If we're running from within the app directory in the package itself
@@ -162,12 +172,16 @@ class FixturesCommand extends Command {
       }
       // <snippet id="fixtures_runtime_options">
       $options = [
+
+        /** @var $directio_directory string File path to .directio/ */
         'directio_directory' => $directio_directory,
+
+        /** @var $logs_directory string File path to the directory where logs are to be stored. */
         'logs_directory' => (new GetLogsDirectory($directio_directory))(),
       ];
       // </snippet>
-      $validator = new RunContextValidator();
-      $fixtures = (new FixtureCollectionBuilder($options, $validator))($ordered_definitions);
+      $instantiator = new \AKlump\Directio\FixtureFramework\Runtime\FixtureInstantiator($options, new RunContextValidator(), $input, $output);
+      $fixtures = (new FixtureCollectionBuilder($instantiator))($ordered_definitions);
       $runner = new FixtureRunner($fixtures);
       $runner->run(FALSE, $project_directory);
 

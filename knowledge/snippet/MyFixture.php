@@ -2,13 +2,15 @@
 
 namespace AKlump\Directio\Fixture;
 
-use AKlump\FixtureFramework\AbstractFixture;
+use AKlump\Directio\FixtureFramework\AbstractFixture;
 
 #[\AKlump\FixtureFramework\Fixture(id: 'my_fixture')]
 class MyFixture extends AbstractFixture {
 
   public function __invoke(): void {
-    $logfile = $this->options->require('logs_directory');
-    file_put_contents($logfile, 'MyFixture invoked');
+    $log_file = $this->logsDirectory() . '/my_log.log';
+    file_put_contents($log_file, 'MyFixture invoked');
+
+    $this->output()->writeln('<info>MyFixture invoked</info>');
   }
 }

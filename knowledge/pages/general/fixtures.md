@@ -12,6 +12,7 @@ Fixtures allow you to run automated setup or teardown logic as part of your task
 Fixture classes should be stored in the `.directio/src/Fixture` directory of your project. They should follow the PSR-4 namespacing convention and be under the `AKlump\Directio\Fixture` namespace.
 
 {{ snippet.MyFixture_php|fenced }}
+{{ snippet.AbstractFixture_php|fenced }}
 
 ### Registering the Namespace
 
@@ -44,6 +45,10 @@ You can reference a fixture in your document using the `fixture` attribute in a 
 ```
 
 When you run the `fixtures` command, Directio will scan the imported documents for these tags and execute the corresponding fixtures in the order they appear.
+
+### Skipping Completed Fixtures
+
+If a `<directio>` tag has the `done` attribute, the fixture will be skipped. This happens automatically once a fixture has successfully run. If you need to re-run a fixture, you must remove the `done` attribute from the tag in the document.
 
 ## Running Fixtures
 

@@ -70,39 +70,39 @@ EOD;
     // To make it discoverable by FixtureDiscovery, we'd need it in the autoloader.
     // However, FixturesCommand uses DiscoverFixtureDefinitions which scans vendor/composer/autoload_psr4.php.
     // This is hard to mock in a unit test without more setup.
-    
+
     // Instead of a full integration test that relies on the real discovery,
     // I will mock the runFixtures method or parts of the discovery if possible.
     // But FixturesCommand doesn't have many injection points.
-    
+
     // Actually, I can mock the Application and the Command.
     $command = $this->getMockBuilder(FixturesCommand::class)
       ->onlyMethods(['runFixtures'])
       ->getMock();
-    
+
     // We want to simulate that runFixtures was called and it "succeeded".
     // But we need to make sure the document update logic (which is inside runFixtures) runs.
-    
+
     // Wait, the logic is IN runFixtures. If I mock it, I skip the logic.
     // I should probably move the logic to a separate method or class if I want it testable without full fixture framework.
-    
+
     // Actually, let's see if I can use a real run but with a fake vendor dir?
     // FixturesCommand:115: $vendor_dir = $base_dir . DIRECTORY_SEPARATOR . 'vendor';
-    
+
     // If I create a fake vendor dir in project/ with the necessary composer files.
     $this->setupFakeVendor($this->projectRoot);
-    
+
     $application = new Application();
     $application->add(new FixturesCommand());
     $command = $application->find('fixtures');
     $commandTester = new CommandTester($command);
-    
+
     ob_start();
     $commandTester->execute(['--flush' => TRUE], ['capture_stderr_separately' => TRUE]);
     ob_end_clean();
-    
+
     $this->assertStringContainsString('Marked "t1" as done in ./.directio/imported/tasks.md', $commandTester->getDisplay());
-    
+
     $updatedContent = file_get_contents($docPath);
     $this->assertStringContainsString('<directio done id="t1" fixture="f1">', $updatedContent);
 
@@ -137,7 +137,7 @@ EOD;
     $commandTester->execute([]);
 
     // 4. Verify output
-    $this->assertStringContainsString('No fixtures found in documents.', $commandTester->getDisplay());
+    $this->assertStringContainsString('All fixtures have been marked as done. Nothing more to do.', $commandTester->getDisplay());
     $this->assertStringNotContainsString('Marked "t1" as done', $commandTester->getDisplay());
   }
 
@@ -160,7 +160,7 @@ EOD;
 
     $commandTester->execute([]);
 
-    $this->assertStringContainsString('No fixtures found in documents.', $commandTester->getDisplay());
+    $this->assertStringContainsString('All fixtures have been marked as done. Nothing more to do.', $commandTester->getDisplay());
   }
 
   public function provideDoneAttributes(): array {
@@ -224,13 +224,33 @@ EOD
     $this->assertStringContainsString('<directio done id="t2" fixture="f2">', $updatedContent);
   }
 
+  public function testMessageWhenNoFixturesAtAll() {
+    $importedDir = $this->projectRoot . '/.directio/imported';
+    if (!is_dir($importedDir)) {
+      mkdir($importedDir, 0755, TRUE);
+    }
+    $docPath = $importedDir . '/tasks.md';
+    $content = '## Tasks' . PHP_EOL . 'No directio tags here.';
+    file_put_contents($docPath, $content);
+
+    $application = new Application();
+    $application->add(new FixturesCommand());
+    $command = $application->find('fixtures');
+    $commandTester = new CommandTester($command);
+
+    $commandTester->execute([]);
+
+    $this->assertStringContainsString('No fixtures found in documents.', $commandTester->getDisplay());
+    $this->assertStringNotContainsString('All fixtures have been marked as done.', $commandTester->getDisplay());
+  }
+
   private function setupFakeVendor(string $root) {
     $vendor = $root . '/vendor';
     $composer = $vendor . '/composer';
     if (!is_dir($composer)) {
       mkdir($composer, 0755, TRUE);
     }
-    
+
     // We need autoload_psr4.php to point to our fixture
     $psr4 = <<<EOD
 <?php

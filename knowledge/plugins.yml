@@ -8,4 +8,5 @@ snippets:
   -
     source:
       - ./snippet/MyFixture.php
+      - ../src/FixtureFramework/AbstractFixture.php
       - ../src/Command/FixturesCommand.php
