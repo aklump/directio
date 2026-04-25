@@ -77,11 +77,12 @@ class UpdateCommand extends Command {
       }
 
       foreach ($completed_tasks as $task_data) {
-        $output->writeln('✅ ' . $task_data['id']);
-        $document = $document->withoutTask($task_data['id']);
+        $task_id = SpecialAttributes::getTaskId($task_data);
+        $output->writeln('✅ ' . $task_id);
+        $document = $document->withoutTask($task_id);
 
         $task = (new TaskState())
-          ->setId($task_data['id'])
+          ->setId($task_id)
           ->setEnv(exec('echo "$(hostname)"'))
           ->setCompleted($now->format(DateTimeInterface::ATOM))
           ->setUser(exec('whoami'));

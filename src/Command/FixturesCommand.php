@@ -104,16 +104,10 @@ class FixturesCommand extends Command {
         $lexer->moveNext();
         $attributes = $parse_attributes($lexer->token->value);
         $is_done = (bool) array_intersect_key($attributes, SpecialAttributes::doneKeys());
-        if (!empty($attributes['fixture']) && !$is_done) {
-          $fixture_id = $attributes['fixture'];
-          $task_id_keys = SpecialAttributes::idKeys();
-          $task_id = NULL;
-          foreach ($task_id_keys as $key => $void) {
-            if (isset($attributes[$key])) {
-              $task_id = $attributes[$key];
-              break;
-            }
-          }
+        $fixture_attr = array_intersect_key($attributes, SpecialAttributes::fixtureKeys());
+        if ($fixture_attr && !$is_done) {
+          $fixture_id = $attributes[key($fixture_attr)];
+          $task_id = SpecialAttributes::getTaskId($attributes);
           if ($task_id) {
             $mappings[$fixture_id][] = [
               'path' => $document_path,

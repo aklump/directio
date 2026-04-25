@@ -27,4 +27,16 @@ class SpecialAttributesTest extends TestCase {
     $this->assertArrayHasKey('complete', $done_keys);
     $this->assertArrayHasKey('x', $done_keys);
   }
+
+  public function testFixtureKeysContainsExpectedValues() {
+    $fixture_keys = SpecialAttributes::fixtureKeys();
+    $this->assertArrayHasKey('fixture', $fixture_keys);
+  }
+
+  public function testGetTaskId() {
+    $this->assertSame('foo', SpecialAttributes::getTaskId(['id' => 'foo']));
+    $this->assertSame('bar', SpecialAttributes::getTaskId(['name' => 'bar']));
+    $this->assertSame('foo', SpecialAttributes::getTaskId(['id' => 'foo', 'name' => 'bar']));
+    $this->assertNull(SpecialAttributes::getTaskId(['other' => 'baz']));
+  }
 }

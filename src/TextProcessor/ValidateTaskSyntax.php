@@ -3,6 +3,7 @@
 
 namespace AKlump\Directio\TextProcessor;
 
+use AKlump\Directio\Config\SpecialAttributes;
 use AKlump\Directio\Exception\NestedTagsException;
 use AKlump\Directio\Exception\NoClosingException;
 use AKlump\Directio\Exception\NoIDException;
@@ -62,7 +63,7 @@ class ValidateTaskSyntax {
         $open_tags[] = $token->value;
 
         $attributes = (new ParseAttributes())($token->value);
-        if (empty($attributes['id'])) {
+        if (NULL === SpecialAttributes::getTaskId($attributes)) {
           throw new NoIDException($position_message);
         }
       }
@@ -75,7 +76,9 @@ class ValidateTaskSyntax {
       }
       if (count($tags_stack) > 1) {
         $ids = array_map(function ($attributes) {
-          return (new ParseAttributes())($attributes)['id'] ?? 'NULL';
+          $attributes = (new ParseAttributes())($attributes);
+
+          return SpecialAttributes::getTaskId($attributes) ?? 'NULL';
         }, $tags_stack);
         $ids = implode('>', $ids);
         throw new NestedTagsException(sprintf('Nesting directio tags (%s) is not supported.', $ids));

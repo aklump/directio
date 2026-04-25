@@ -14,9 +14,11 @@ class SpecialAttributes {
 
   private static array $id = ['id', 'name'];
 
-  private static array $done = ['x', 'done', 'complete'];
+  private static array $done = ['done', 'x', 'complete'];
 
   private static array $expires = ['redo'];
+
+  private static array $fixtures = ['fixture'];
 
   public static function idKeys(): array {
     return array_fill_keys(self::$id, TRUE);
@@ -28,5 +30,19 @@ class SpecialAttributes {
 
   public static function expiresKeys(): array {
     return array_fill_keys(self::$expires, TRUE);
+  }
+
+  public static function fixtureKeys(): array {
+    return array_fill_keys(self::$fixtures, TRUE);
+  }
+
+  public static function getTaskId(array $attributes): ?string {
+    foreach (self::$id as $key) {
+      if (isset($attributes[$key])) {
+        return $attributes[$key];
+      }
+    }
+
+    return NULL;
   }
 }
