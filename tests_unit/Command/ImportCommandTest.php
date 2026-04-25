@@ -207,6 +207,45 @@ EOD
     $this->assertStringContainsString('Imported 1 of 2 items found', $commandTester->getDisplay());
   }
 
+  public function testImportAsksToDeleteLogsAndDeletesThemWithMessage() {
+    $logDir = $this->projectRoot . '/.directio/logs';
+    if (!is_dir($logDir)) {
+      mkdir($logDir, 0755, TRUE);
+    }
+    file_put_contents($logDir . '/test.log', 'some logs');
+    $this->assertDirectoryExists($logDir);
+
+    $docPath = $this->getTestFileFilepath('document.md');
+    file_put_contents($docPath, 'some content');
+
+    // Answer 'yes' to the prompt
+    $commandTester = $this->executeCommand(['source document' => $docPath], ['yes']);
+
+    $this->assertStringContainsString('Delete existing logs?', $commandTester->getDisplay());
+    $this->assertStringContainsString('Logs deleted.', $commandTester->getDisplay());
+    $this->assertDirectoryExists($logDir);
+    $this->assertCount(0, glob($logDir . '/*'));
+  }
+
+  public function testImportAsksToDeleteLogsAndDoesNotDeleteThemNoMessage() {
+    $logDir = $this->projectRoot . '/.directio/logs';
+    if (!is_dir($logDir)) {
+      mkdir($logDir, 0755, TRUE);
+    }
+    file_put_contents($logDir . '/test.log', 'some logs');
+    $this->assertDirectoryExists($logDir);
+
+    $docPath = $this->getTestFileFilepath('document.md');
+    file_put_contents($docPath, 'some content');
+
+    // Answer 'no' to the prompt
+    $commandTester = $this->executeCommand(['source document' => $docPath], ['no']);
+
+    $this->assertStringContainsString('Delete existing logs?', $commandTester->getDisplay());
+    $this->assertStringNotContainsString('Logs deleted.', $commandTester->getDisplay());
+    $this->assertDirectoryExists($logDir);
+  }
+
   private function executeCommand(array $arguments, array $inputs = []): CommandTester {
     $application = new Application();
     $application->add(new ImportCommand());

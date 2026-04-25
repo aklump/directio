@@ -9,6 +9,10 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
+/**
+ * @covers \AKlump\Directio\Command\FixturesCommand
+ * @covers \AKlump\Directio\IO\InitializeDirectory
+ */
 class FixturesCommandTest extends TestCase {
 
   use TestWithFilesTrait;
@@ -93,9 +97,10 @@ EOD;
     $command = $application->find('fixtures');
     $commandTester = new CommandTester($command);
     
+    ob_start();
     $commandTester->execute([], ['capture_stderr_separately' => TRUE]);
+    ob_end_clean();
     
-    fwrite(STDERR, $commandTester->getDisplay());
     $this->assertStringContainsString('Marked "t1" as done in ./.directio/imported/tasks.md', $commandTester->getDisplay());
     
     $updatedContent = file_get_contents($docPath);

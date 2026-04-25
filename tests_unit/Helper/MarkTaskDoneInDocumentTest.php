@@ -6,6 +6,9 @@ use AKlump\Directio\Helper\MarkTaskDoneInDocument;
 use AKlump\Directio\Model\Document;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @covers \AKlump\Directio\Helper\MarkTaskDoneInDocument
+ */
 class MarkTaskDoneInDocumentTest extends TestCase {
 
   public function testMarkTaskDoneAddsDoneAttribute() {

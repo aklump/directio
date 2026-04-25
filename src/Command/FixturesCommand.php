@@ -4,6 +4,7 @@
 namespace AKlump\Directio\Command;
 
 use AKlump\Directio\Config\Names;
+use AKlump\Directio\IO\GetLogsDirectory;
 use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\ReadDocument;
 use AKlump\Directio\Lexer\TaskLexer;
@@ -161,6 +162,7 @@ class FixturesCommand extends Command {
 
       $options = [
         'directio_directory' => $directio_directory,
+        'logs_directory' => (new GetLogsDirectory($directio_directory))(),
       ];
       $validator = new RunContextValidator();
       $fixtures = (new FixtureCollectionBuilder($options, $validator))($ordered_definitions);

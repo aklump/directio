@@ -91,7 +91,10 @@ class InitializeDirectoryTest extends TestCase {
     (new InitializeDirectory())($directory);
     $directio_dir = $directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT;
     $this->assertDirectoryExists($directio_dir);
+    $this->assertDirectoryExists($directio_dir . DIRECTORY_SEPARATOR . 'logs');
     $this->assertFileExists($directio_dir . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE);
+    $this->assertFileExists($directio_dir . DIRECTORY_SEPARATOR . '.gitignore');
+    $this->assertStringContainsString('logs/', file_get_contents($directio_dir . DIRECTORY_SEPARATOR . '.gitignore'));
     $this->deleteTestFile('.cache/project/');
 
   }

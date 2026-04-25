@@ -5,6 +5,7 @@ namespace AKlump\Directio\Command;
 
 use AKlump\Directio\Config\Names;
 use AKlump\Directio\Helper\ApplyStateToDocument;
+use AKlump\Directio\IO\GetLogsDirectory;
 use AKlump\Directio\IO\GetResultFilename;
 use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\ReadDocument;
@@ -61,6 +62,16 @@ class ImportCommand extends Command {
       return Command::FAILURE;
     }
     $this->directioDirectory = $base_dir . DIRECTORY_SEPARATOR . Names::FILENAME_INIT;
+
+    $logs_dir = (new GetLogsDirectory($this->directioDirectory))();
+    if (is_dir($logs_dir) && count(array_diff(scandir($logs_dir), ['.', '..'])) > 0) {
+      $helper = $this->getHelper('question');
+      $question = new ConfirmationQuestion('Delete existing logs? ', FALSE);
+      if ($helper->ask($input, $output, $question)) {
+        $this->deleteDirectory($logs_dir, TRUE);
+        $this->output->writeln('<info>Logs deleted.</info>');
+      }
+    }
 
     $source = $input->getArgument('source document');
     if (is_dir($source)) {
@@ -262,6 +273,25 @@ class ImportCommand extends Command {
       $this->output->writeln(sprintf('<info>Try deleting or moving "%s" if it is no longer in use.</info>', $shortpath_document_path));
       $message = sprintf('Failed to import "%s" due to ID collision.', $shortpath_document_path);
       throw new RuntimeException($message);
+    }
+  }
+
+  private function deleteDirectory(string $dir, bool $keep_root = FALSE): void {
+    if (!is_dir($dir)) {
+      return;
+    }
+    $files = new RecursiveIteratorIterator(
+      new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS),
+      RecursiveIteratorIterator::CHILD_FIRST
+    );
+
+    foreach ($files as $fileinfo) {
+      $todo = ($fileinfo->isDir() ? 'rmdir' : 'unlink');
+      $todo($fileinfo->getRealPath());
+    }
+
+    if (!$keep_root) {
+      rmdir($dir);
     }
   }
 
