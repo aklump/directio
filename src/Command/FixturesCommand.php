@@ -103,9 +103,17 @@ class FixturesCommand extends Command {
         }
         $lexer->moveNext();
         $attributes = $parse_attributes($lexer->token->value);
-        if (!empty($attributes['fixture'])) {
+        $is_done = (bool) array_intersect_key($attributes, SpecialAttributes::doneKeys());
+        if (!empty($attributes['fixture']) && !$is_done) {
           $fixture_id = $attributes['fixture'];
-          $task_id = $attributes['id'] ?? NULL;
+          $task_id_keys = SpecialAttributes::idKeys();
+          $task_id = NULL;
+          foreach ($task_id_keys as $key => $void) {
+            if (isset($attributes[$key])) {
+              $task_id = $attributes[$key];
+              break;
+            }
+          }
           if ($task_id) {
             $mappings[$fixture_id][] = [
               'path' => $document_path,
@@ -159,11 +167,12 @@ class FixturesCommand extends Command {
           }
         }
       }
-
+      // <snippet id="fixtures_runtime_options">
       $options = [
         'directio_directory' => $directio_directory,
         'logs_directory' => (new GetLogsDirectory($directio_directory))(),
       ];
+      // </snippet>
       $validator = new RunContextValidator();
       $fixtures = (new FixtureCollectionBuilder($options, $validator))($ordered_definitions);
       $runner = new FixtureRunner($fixtures);

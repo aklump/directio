@@ -98,7 +98,7 @@ EOD;
     $commandTester = new CommandTester($command);
     
     ob_start();
-    $commandTester->execute([], ['capture_stderr_separately' => TRUE]);
+    $commandTester->execute(['--flush' => TRUE], ['capture_stderr_separately' => TRUE]);
     ob_end_clean();
     
     $this->assertStringContainsString('Marked "t1" as done in ./.directio/imported/tasks.md', $commandTester->getDisplay());
@@ -115,6 +115,113 @@ EOD;
     $this->assertNotEmpty($row);
     $this->assertEquals('t1', $row['id']);
     $this->assertNotEmpty($row['completed']);
+  }
+
+  public function testFixturesWithDoneAttributeAreSkipped() {
+    // 1. Create a document with a fixture that is already marked as done
+    $importedDir = $this->projectRoot . '/.directio/imported';
+    if (!is_dir($importedDir)) {
+      mkdir($importedDir, 0755, TRUE);
+    }
+    $docPath = $importedDir . '/tasks.md';
+    $content = '## Tasks' . PHP_EOL . '<directio done id="t1" fixture="f1"></directio>';
+    file_put_contents($docPath, $content);
+
+    // 2. Setup application and command
+    $application = new Application();
+    $application->add(new FixturesCommand());
+    $command = $application->find('fixtures');
+    $commandTester = new CommandTester($command);
+
+    // 3. Execute the command
+    $commandTester->execute([]);
+
+    // 4. Verify output
+    $this->assertStringContainsString('No fixtures found in documents.', $commandTester->getDisplay());
+    $this->assertStringNotContainsString('Marked "t1" as done', $commandTester->getDisplay());
+  }
+
+  /**
+   * @dataProvider provideDoneAttributes
+   */
+  public function testFixturesWithAlternativeDoneAttributesAreSkipped(string $attribute) {
+    $importedDir = $this->projectRoot . '/.directio/imported';
+    if (!is_dir($importedDir)) {
+      mkdir($importedDir, 0755, TRUE);
+    }
+    $docPath = $importedDir . '/tasks.md';
+    $content = "## Tasks\n<directio $attribute id=\"t1\" fixture=\"f1\"></directio>";
+    file_put_contents($docPath, $content);
+
+    $application = new Application();
+    $application->add(new FixturesCommand());
+    $command = $application->find('fixtures');
+    $commandTester = new CommandTester($command);
+
+    $commandTester->execute([]);
+
+    $this->assertStringContainsString('No fixtures found in documents.', $commandTester->getDisplay());
+  }
+
+  public function provideDoneAttributes(): array {
+    return [
+      ['done'],
+      ['complete'],
+      ['x'],
+    ];
+  }
+
+  public function testFixturesMixedDoneAndNotDone() {
+    // 1. Create a document with mixed done/not-done fixtures
+    $importedDir = $this->projectRoot . '/.directio/imported';
+    if (!is_dir($importedDir)) {
+      mkdir($importedDir, 0755, TRUE);
+    }
+    $docPath = $importedDir . '/tasks.md';
+    $content = '## Tasks' . PHP_EOL
+      . '<directio done id="t1" fixture="f1"></directio>' . PHP_EOL
+      . '<directio id="t2" fixture="f2"></directio>';
+    file_put_contents($docPath, $content);
+
+    // 2. Setup fixtures
+    $fixtureDir = $this->projectRoot . '/.directio/src/Fixture';
+    if (!is_dir($fixtureDir)) {
+      mkdir($fixtureDir, 0755, TRUE);
+    }
+    file_put_contents($fixtureDir . '/F2.php', <<<'EOD'
+<?php
+namespace AKlump\Directio\Fixture;
+use AKlump\FixtureFramework\AbstractFixture;
+use AKlump\FixtureFramework\Fixture;
+
+#[Fixture(id: 'f2')]
+class F2 extends AbstractFixture {
+  public function __invoke(): void {}
+}
+EOD
+    );
+    require_once $fixtureDir . '/F2.php';
+
+    $this->setupFakeVendor($this->projectRoot);
+
+    // 3. Execute
+    $application = new Application();
+    $application->add(new FixturesCommand());
+    $command = $application->find('fixtures');
+    $commandTester = new CommandTester($command);
+
+    ob_start();
+    $commandTester->execute(['--flush' => TRUE]);
+    ob_end_clean();
+
+    // 4. Verify
+    $display = $commandTester->getDisplay();
+    $this->assertStringNotContainsString('Marked "t1"', $display);
+    $this->assertStringContainsString('Marked "t2"', $display);
+
+    $updatedContent = file_get_contents($docPath);
+    $this->assertStringContainsString('<directio done id="t1" fixture="f1">', $updatedContent);
+    $this->assertStringContainsString('<directio done id="t2" fixture="f2">', $updatedContent);
   }
 
   private function setupFakeVendor(string $root) {

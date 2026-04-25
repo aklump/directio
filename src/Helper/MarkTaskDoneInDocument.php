@@ -6,6 +6,7 @@ use AKlump\Directio\Lexer\TaskLexer;
 use AKlump\Directio\Model\Document;
 use AKlump\Directio\Model\DocumentInterface;
 use AKlump\Directio\TextProcessor\ParseAttributes;
+use AKlump\Directio\Config\SpecialAttributes;
 
 /**
  * Adds the 'done' attribute to a specific task in a document.
@@ -37,8 +38,18 @@ final class MarkTaskDoneInDocument {
       $originalTag = $lexer->token->value;
       $attributes = $parseAttributes($originalTag);
 
-      if (isset($attributes['id']) && $attributes['id'] === $taskId) {
-        if (!isset($attributes['done'])) {
+      $id_keys = SpecialAttributes::idKeys();
+      $this_id = NULL;
+      foreach ($id_keys as $key => $void) {
+        if (isset($attributes[$key])) {
+          $this_id = $attributes[$key];
+          break;
+        }
+      }
+
+      if ($this_id === $taskId) {
+        $is_done = (bool) array_intersect_key($attributes, SpecialAttributes::doneKeys());
+        if (!$is_done) {
           $newTag = $this->addDoneAttribute($originalTag);
           $updates[] = [
             'pos' => $lexer->token->position,
