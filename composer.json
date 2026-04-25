@@ -20,7 +20,8 @@
     "symfony/property-access": "^5.4",
     "aklump/local-timezone": "^0.0.1",
     "doctrine/lexer": "^2.1",
-    "aklump/fixture-framework": "^0.0.10"
+    "aklump/fixture-framework": "^0.0.10",
+    "symfony/yaml": "^6.4"
   },
   "license": "BSD-3-Clause",
   "bin": [

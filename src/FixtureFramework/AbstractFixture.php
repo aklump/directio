@@ -3,9 +3,11 @@
 namespace AKlump\Directio\FixtureFramework;
 
 use AKlump\Directio\IO\GetShortPath;
+use AKlump\FixtureFramework\Runtime\RunOptions;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use AKlump\FixtureFramework\AbstractFixture as BaseFixture;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Represents an abstract fixture for handling direct input/output operations.
@@ -23,6 +25,10 @@ abstract class AbstractFixture extends BaseFixture {
   public function __construct(InputInterface $input, OutputInterface $output) {
     $this->input = $input;
     $this->output = $output;
+  }
+
+  public function __invoke(): void {
+    $this->handleRunOptionsInYaml();
   }
 
   /**
@@ -62,6 +68,17 @@ abstract class AbstractFixture extends BaseFixture {
 
   public function logsDirectory(): string {
     return $this->options->require('logs_directory');
+  }
+
+  private function handleRunOptionsInYaml(): void {
+    $config_path = $this->directioDirectory() . '/fixture_run_options.yml';
+    if (file_exists($config_path)) {
+      $options = Yaml::parseFile($config_path);
+      if (!is_array($options)) {
+        throw new \InvalidArgumentException('Config file must be an array.');
+      }
+      $this->options = $this->options->withAddedOptions($options);
+    }
   }
 
 }
