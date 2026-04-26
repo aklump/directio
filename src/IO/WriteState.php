@@ -3,17 +3,17 @@
 
 namespace AKlump\Directio\IO;
 
+use AKlump\Directio\Model\TaskStateInterface;
+use PDO;
 use RuntimeException;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Serializer;
 
 class WriteState {
 
+  private array $pdos = [];
+
   /**
    * @param string $path
-   * @param \AKlump\Directio\Model\TaskState[] $state
+   * @param \AKlump\Directio\Model\TaskStateInterface[] $state
    *
    * @return void
    *
@@ -21,18 +21,63 @@ class WriteState {
    *
    */
   public function __invoke(string $path, array $state): void {
-    $normalizers = [
-      new ObjectNormalizer(),
-      new ArrayDenormalizer(),
-    ];
-    $encoders = [new JsonEncoder()];
-    $serializer = new Serializer($normalizers, $encoders);
-    $format = pathinfo($path, PATHINFO_EXTENSION);
-    $context = [];
-    $data = $serializer->serialize($state, $format, $context);
-    if (!@file_put_contents($path, $data)) {
-      throw new RuntimeException(sprintf('Failed to write "%s"', $path));
+    $this->writeMany($path, $state);
+  }
+
+  public function writeOne(string $path, TaskStateInterface $state): void {
+    $pdo = $this->getPdo($path);
+    $sql = "INSERT INTO task_state (id, completed, redo, env, user)
+            VALUES (:id, :completed, :redo, :env, :user)
+            ON CONFLICT(id) DO UPDATE SET
+              completed = excluded.completed,
+              redo = excluded.redo,
+              env = excluded.env,
+              user = excluded.user";
+    $stmt = $pdo->prepare($sql);
+    try {
+      $stmt->execute([
+        'id' => $state->getId(),
+        'completed' => $state->getCompleted(),
+        'redo' => $state->getRedo(),
+        'env' => $state->getEnv(),
+        'user' => $state->getUser(),
+      ]);
     }
+    catch (\Exception $e) {
+      throw new RuntimeException(sprintf('Failed to write to "%s": %s', $path, $e->getMessage()), 0, $e);
+    }
+  }
+
+  public function writeMany(string $path, array $state): void {
+    $pdo = $this->getPdo($path);
+    $pdo->beginTransaction();
+    try {
+      foreach ($state as $item) {
+        $this->writeOne($path, $item);
+      }
+      $pdo->commit();
+    }
+    catch (\Exception $e) {
+      $pdo->rollBack();
+      throw new RuntimeException(sprintf('Failed to write to "%s": %s', $path, $e->getMessage()), 0, $e);
+    }
+  }
+
+  private function getPdo(string $path): PDO {
+    if (!isset($this->pdos[$path])) {
+      $pdo = new PDO('sqlite:' . $path);
+      $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      $pdo->exec("CREATE TABLE IF NOT EXISTS task_state (
+      id TEXT PRIMARY KEY,
+      completed TEXT NOT NULL DEFAULT '',
+      redo TEXT NOT NULL DEFAULT '',
+      env TEXT NOT NULL DEFAULT '',
+      user TEXT NOT NULL DEFAULT ''
+    )");
+      $this->pdos[$path] = $pdo;
+    }
+
+    return $this->pdos[$path];
   }
 
 }

@@ -11,4 +11,8 @@ interface TaskStateInterface {
 
   public function getId(): string;
 
+  public function getEnv(): string;
+
+  public function getUser(): string;
+
 }

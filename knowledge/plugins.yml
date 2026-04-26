@@ -4,3 +4,9 @@
 image:
   max_width: 830
   pixel_density: 2
+snippets:
+  -
+    source:
+      - ./snippet/MyFixture.php
+      - ../src/FixtureFramework/AbstractFixture.php
+      - ../src/Command/FixturesCommand.php

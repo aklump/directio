@@ -29,7 +29,7 @@ class ScanForCompletedTasks {
       $lexer->moveNext();
       if ($lexer->token->isA(TaskLexer::T_OPEN_TAG)) {
         $attributes = (new ParseAttributes())($lexer->token->value);
-        if (array_intersect_key($attributes, SpecialAttributes::doneKeys())) {
+        if (SpecialAttributes::extractDone($attributes)) {
           $completed_tasks[] = $attributes;
         }
       }

@@ -7,7 +7,7 @@ class Names {
 
   const FILENAME_STATE = 'state';
 
-  const EXTENSION_STATE = 'json';
+  const EXTENSION_STATE = 'sqlite';
 
   const FILENAME_INIT = '.directio';
 

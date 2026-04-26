@@ -14,14 +14,25 @@ final class InitializeDirectory {
     $this->directory = rtrim($directory, '/');
     $this->initDirectory();
     $this->initStateFile();
+    $this->initFixtureDirectory();
+    $this->initLogsDirectory();
     $this->initGitIgnore();
+  }
+
+  private function initFixtureDirectory() {
+    $target = $this->directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Fixture';
+    if (!file_exists($target)) {
+      if (FALSE === @mkdir($target, 0755, TRUE)) {
+        throw new RuntimeException(sprintf('Failed to create %s', $target));
+      }
+    }
   }
 
   private function initStateFile() {
     $target = $this->directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
     if (!file_exists($target)) {
       if (FALSE === @file_put_contents($target, '')) {
-        throw new RuntimeException(sprintf('Failed to create %s', $target));
+        throw new RuntimeException(sprintf('Failed to create %s', Names::FILENAME_STATE));
       }
     }
   }
@@ -35,12 +46,17 @@ final class InitializeDirectory {
     }
   }
 
+  private function initLogsDirectory() {
+    $target = $this->directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT;
+    (new GetLogsDirectory($target))();
+  }
 
   private function initGitIgnore() {
     $target = $this->directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT . DIRECTORY_SEPARATOR . '.gitignore';
     if (!file_exists($target)) {
       $gitignore = <<<EOD
       imported/
+      logs/
       EOD;
       if (FALSE === @file_put_contents($target, rtrim($gitignore) . PHP_EOL)) {
         throw new RuntimeException(sprintf('Failed to create %s', $target));

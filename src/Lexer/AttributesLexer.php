@@ -3,22 +3,26 @@
 
 namespace AKlump\Directio\Lexer;
 
+use AKlump\Directio\HTMLElementStyle;
+use AKlump\Directio\Traits\HasStyleTrait;
 use Doctrine\Common\Lexer\AbstractLexer;
 
 /**
  * Responsible for parsing attribute strings from open tags or attribute lists.
  *
  * Example inputs:
- * - <!-- directio id=foo -->
+ * - <directio id="foo">
  * - id=foo
- * - <!-- directio id="lorem ipsum" -->
+ * - <directio id="lorem ipsum">
  * - id="lorem ipsum"
- * - <!-- directio id=foo done -->
+ * - <directio id="foo" done>
  * - id=foo done
  *
  * @see \AKlump\Directio\Lexer\TaskLexer::T_OPEN_TAG
  */
 class AttributesLexer extends AbstractLexer {
+
+  use HasStyleTrait;
 
   const T_NONE = 1;
 
@@ -30,14 +34,16 @@ class AttributesLexer extends AbstractLexer {
 
   private bool $assignValue = FALSE;
 
+  public function __construct() {
+    $this->setStyle(new HTMLElementStyle());
+  }
+
   /**
    * @inheritDoc
    */
   protected function getCatchablePatterns() {
     return [
-      '\[[x ]?\]',
       '(\w+)="(.+?)"',
-      '(\w+)=([^\W]+)',
       '\b\w+\b',
     ];
   }
@@ -47,8 +53,8 @@ class AttributesLexer extends AbstractLexer {
    */
   protected function getNonCatchablePatterns() {
     return [
-      '<!-- directio ',
-      ' -->',
+      $this->openTagStart,
+      $this->openTagEnd,
       ' ',
     ];
   }

@@ -3,6 +3,7 @@
 
 namespace AKlump\Directio\Model;
 
+use AKlump\Directio\Config\SpecialAttributes;
 use AKlump\Directio\Lexer\TaskLexer;
 use AKlump\Directio\TextProcessor\ParseAttributes;
 
@@ -48,7 +49,8 @@ class Document implements DocumentInterface {
         $attributes = (new ParseAttributes())($lexer->token->value);
         // Check the id of this task against the method argument, and discard
         // the start position (preventing the cut) if the id doesn't match.
-        if ($attributes['id'] != $id) {
+        $this_id = SpecialAttributes::extractId($attributes);
+        if ($this_id != $id) {
           unset($start_position);
         }
       }
@@ -94,7 +96,8 @@ class Document implements DocumentInterface {
         break;
       }
       $lexer->moveNext();
-      $ids[] = $parse_attributes($lexer->token->value)['id'] ?? NULL;
+      $attributes = $parse_attributes($lexer->token->value);
+      $ids[] = SpecialAttributes::extractId($attributes);
     }
 
     return $ids;

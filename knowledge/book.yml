@@ -9,6 +9,7 @@ chapters:
       - syntax
       - completion
       - changelog
+      - fixtures
   -
     id: editors
     title: Editors

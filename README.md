@@ -17,7 +17,7 @@ At the start of each update, one makes a duplicate of the tasklist, e.g. _today.
 ### Project Usage
 
 1. In the shell, cd to your project root.
-2. `./vendor/bin/directio new /foo/bar/document.md`
+2. `./vendor/bin/directio import /foo/bar/document.md`
 3. Answer that you want to initialize your project.
 4. Open the created document and mark each task complete.
 5. Use `./vendor/bin/directio update` to flush the completed tasks from the file.
@@ -25,7 +25,7 @@ At the start of each update, one makes a duplicate of the tasklist, e.g. _today.
 ### Next Time
 
 1. In the shell, cd to your project root.
-2. `./vendor/bin/directio new /foo/bar/document.md`
+2. `./vendor/bin/directio import /foo/bar/document.md`
 3. Open the created document and notice all completed tasks have been removed.
 4. Continue as before marking complete and updating.
 

@@ -12,30 +12,57 @@ use PHPUnit\Framework\TestCase;
  * @uses   \AKlump\Directio\Config\SpecialAttributes
  * @uses   \AKlump\Directio\Lexer\AttributesLexer
  * @uses   \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses   \AKlump\Directio\HTMLElementStyle
  */
-class ScanForCompletedTaskIdsTest extends TestCase {
+class ScanForCompletedTasksTest extends TestCase {
 
   public static function dataFortestInvokeProvider(): array {
     $tests = [];
-    $tests[] = ['', []];
     $tests[] = [
-      '<!-- directio [x] id=foo -->',
+      '<feature>
+---
+
+## Server Backup Files
+
+> Use cron to create backups of key server files (crontab, .bash_profile, etc). Create a files group in LDP for these backups, that can be pulled in the repo, redacted if necessary, and committed to source control. This facilitates easier server rebuilds.
+
+<directio x id="review_ldp_files_server" redo="P1W">
+
+- `ldp pull -f --group=server`
+- Ensure the dates are current in the file headers in install/server/*
+- Commit any changes.
+- Add any missing files.
+
+</directio>
+',
       [
         [
-          '[x]' => TRUE,
+          'x' => TRUE,
+          'id' => 'review_ldp_files_server',
+          'redo' => 'P1W',
+        ],
+      ],
+    ];
+
+    $tests[] = ['', []];
+    $tests[] = [
+      '<directio x id="foo">',
+      [
+        [
+          'x' => TRUE,
           'id' => 'foo',
         ],
       ],
     ];
     $tests[] = [
-      'lorem <!-- directio [x] id=foo --> ipsum <!-- /directio --> dolar sit  <!-- directio [] id=bar --> ipsum <!-- /directio -->  dolar sit  <!-- directio [x] id=baz expires=P3M --> ipsum <!-- /directio --> alpha bravo',
+      'lorem <directio x id="foo"> ipsum </directio> dolar sit  <directio id="bar"> ipsum </directio>  dolar sit  <directio x id="baz" expires="P3M"> ipsum </directio> alpha bravo',
       [
         [
-          '[x]' => TRUE,
+          'x' => TRUE,
           'id' => 'foo',
         ],
         [
-          '[x]' => TRUE,
+          'x' => TRUE,
           'id' => 'baz',
           'expires' => 'P3M',
         ],

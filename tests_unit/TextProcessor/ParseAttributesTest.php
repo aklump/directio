@@ -9,22 +9,29 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \AKlump\Directio\TextProcessor\ParseAttributes
  * @uses   \AKlump\Directio\Lexer\AttributesLexer
+ * @uses \AKlump\Directio\HTMLElementStyle
  */
 class ParseAttributesTest extends TestCase {
 
   public static function dataFortestInvokeProvider(): array {
     $tests = [];
     $tests[] = [
-      '<!-- directio [ ] -->',
-      ['[ ]' => TRUE],
+      '   X    id="foobar"   ',
+      [
+        'X' => TRUE,
+        'id' => 'foobar',
+      ],
     ];
     $tests[] = [
-      '<!-- directio [] -->',
-      ['[]' => TRUE],
+      '<directio X id="foobar">',
+      [
+        'X' => TRUE,
+        'id' => 'foobar',
+      ],
     ];
     $tests[] = [
-      '<!-- directio [x] -->',
-      ['[x]' => TRUE],
+      '<directio x>',
+      ['x' => TRUE],
     ];
     $tests[] = [
       'id="lorem ipsum dolar"',
@@ -33,20 +40,20 @@ class ParseAttributesTest extends TestCase {
       ],
     ];
     $tests[] = [
-      '<!-- directio id=install_runs_update -->',
+      '<directio id="install_runs_update">',
       [
         'id' => 'install_runs_update',
       ],
     ];
     $tests[] = [
-      '<!-- directio id=install_runs_update complete -->',
+      '<directio id="install_runs_update" complete>',
       [
         'id' => 'install_runs_update',
         'complete' => TRUE,
       ],
     ];
     $tests[] = [
-      'id=foo expires=P5D',
+      'id="foo" expires="P5D"',
       [
         'id' => 'foo',
         'expires' => 'P5D',

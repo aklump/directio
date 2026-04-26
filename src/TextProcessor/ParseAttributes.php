@@ -8,7 +8,7 @@ use AKlump\Directio\Lexer\AttributesLexer;
 class ParseAttributes {
 
   /**
-   * @param string $open_tag , e.g., "<!-- directio id=foo -->".
+   * @param string $open_tag , e.g., "<directio id="foo">".
    *
    * @return array
    */

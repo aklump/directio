@@ -3,14 +3,22 @@
 
 namespace AKlump\Directio\TextProcessor;
 
-use AKlump\Directio\Exception\BadWhitespaceException;
+use AKlump\Directio\Config\SpecialAttributes;
 use AKlump\Directio\Exception\NestedTagsException;
 use AKlump\Directio\Exception\NoClosingException;
 use AKlump\Directio\Exception\NoIDException;
 use AKlump\Directio\Exception\NoOpeningException;
+use AKlump\Directio\HTMLElementStyle;
 use AKlump\Directio\Lexer\TaskLexer;
+use AKlump\Directio\Traits\HasStyleTrait;
 
 class ValidateTaskSyntax {
+
+  use HasStyleTrait;
+
+  public function __construct() {
+    $this->setStyle(new HTMLElementStyle());
+  }
 
   /**
    * @var \AKlump\Directio\Lexer\TaskLexer
@@ -24,7 +32,11 @@ class ValidateTaskSyntax {
    *
    */
   public function __invoke(string $content): void {
-    $this->checkWhitespace($content);
+
+    if (!$this->quickScanForTags($content)) {
+      return;
+    }
+
     $this->lexer = new TaskLexer();
     $this->lexer->setInput($content);
     $this->lexer->moveNext();
@@ -51,7 +63,7 @@ class ValidateTaskSyntax {
         $open_tags[] = $token->value;
 
         $attributes = (new ParseAttributes())($token->value);
-        if (empty($attributes['id'])) {
+        if (NULL === SpecialAttributes::extractId($attributes)) {
           throw new NoIDException($position_message);
         }
       }
@@ -64,7 +76,9 @@ class ValidateTaskSyntax {
       }
       if (count($tags_stack) > 1) {
         $ids = array_map(function ($attributes) {
-          return (new ParseAttributes())($attributes)['id'] ?? 'NULL';
+          $attributes = (new ParseAttributes())($attributes);
+
+          return SpecialAttributes::extractId($attributes) ?? 'NULL';
         }, $tags_stack);
         $ids = implode('>', $ids);
         throw new NestedTagsException(sprintf('Nesting directio tags (%s) is not supported.', $ids));
@@ -78,11 +92,8 @@ class ValidateTaskSyntax {
     }
   }
 
-  private function checkWhitespace(string $content) {
-    $result = preg_match_all('#<!--\s?directio.*?[^\s]-->#', $content, $matches);
-    if ($result) {
-      throw new BadWhitespaceException(implode(PHP_EOL, $matches[0]));
-    }
+  private function quickScanForTags(string $content) {
+    return strstr($content, $this->openTagStart) !== FALSE;
   }
 
 }

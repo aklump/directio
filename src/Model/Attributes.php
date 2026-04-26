@@ -6,30 +6,26 @@ use Stringable;
 
 class Attributes implements Stringable {
 
-  private array $value = [];
+  private array $value;
 
   public function __construct(array $attributes = []) {
     $this->value = $attributes;
   }
 
   public function __toString() {
-
-    $foo = [];
+    $nodes = [];
     foreach ($this->value as $key => $value) {
-      if (FALSE === $value) {
-        continue;
+      if (is_bool($value)) {
+        if (TRUE === $value) {
+          $nodes[] = $key;
+        }
       }
-      if (TRUE === $value) {
-        $foo[] = $key;
-        continue;
+      else {
+        $value = htmlspecialchars((string) $value, ENT_QUOTES);
+        $nodes[] = sprintf('%s="%s"', $key, $value);
       }
-      $value = htmlspecialchars((string) $value, ENT_QUOTES);
-      if (strstr($value, ' ')) {
-        $value = '"' . $value . '"';
-      }
-      $foo[] = sprintf('%s=%s', $key, $value);
     }
 
-    return implode(' ', $foo);
+    return implode(' ', $nodes);
   }
 }

@@ -8,25 +8,26 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \AKlump\Directio\Lexer\AttributesLexer
+ * @uses \AKlump\Directio\HTMLElementStyle
  */
 class AttributesLexerTest extends TestCase {
 
   public static function dataFortestCompletionMarkProvider(): array {
     $tests = [];
     $tests[] = [
-      '<!-- directio id=foo complete -->',
+      '<directio id="foo" complete>',
       'complete',
     ];
     $tests[] = [
-      '<!-- directio id=foo done -->',
+      '<directio id="foo" done>',
       'done',
     ];
     $tests[] = [
-      '<!-- directio id=foo x -->',
+      '<directio id="foo" x>',
       'x',
     ];
     $tests[] = [
-      '<!-- directio id=foo X -->',
+      '<directio id="foo" X>',
       'X',
     ];
 
@@ -59,7 +60,7 @@ class AttributesLexerTest extends TestCase {
 
   public function testTwoAttributes(): void {
     $lexer = new AttributesLexer();
-    $lexer->setInput('id="check foo bar" expires=P5D');
+    $lexer->setInput('id="check foo bar" expires="P5D"');
     $lexer->moveNext();
 
     $lexer->skipUntil(AttributesLexer::T_ATTRIBUTE_NAME);
@@ -75,7 +76,7 @@ class AttributesLexerTest extends TestCase {
 
   public function testOneAttribute(): void {
     $lexer = new AttributesLexer();
-    $lexer->setInput('id=check');
+    $lexer->setInput('id="check"');
     $lexer->moveNext();
 
     $lexer->skipUntil(AttributesLexer::T_ATTRIBUTE_NAME);
@@ -83,6 +84,4 @@ class AttributesLexerTest extends TestCase {
     $lexer->skipUntil(AttributesLexer::T_ATTRIBUTE_VALUE);
     $this->assertSame('check', $lexer->lookahead->value);
   }
-
-
 }

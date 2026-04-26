@@ -5,8 +5,8 @@ namespace AKlump\Directio\Command;
 
 use AKlump\Directio\Config\Names;
 use AKlump\Directio\Config\SpecialAttributes;
+use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\ReadDocument;
-use AKlump\Directio\IO\ReadState;
 use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\IO\WriteState;
 use AKlump\Directio\Model\TaskState;
@@ -54,62 +54,52 @@ class UpdateCommand extends Command {
     }
 
     $files_to_update = glob($this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_IMPORTED . DIRECTORY_SEPARATOR . '*');
+    $shortpath_directio = (new GetShortPath())($this->directioDirectory);
     if (empty($files_to_update)) {
-      $output->writeln(sprintf('<error>No documents in "%s"</error>', $this->directioDirectory));
+      $output->writeln(sprintf('<error>No documents in "%s"</error>', $shortpath_directio));
       $output->writeln(sprintf('<info>Try the "%s" command first.</info>', ImportCommand::getDefaultName()));
 
       return Command::FAILURE;
     }
 
-    $state = [];
+    $write_state = new WriteState();
     $state_path = $this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
-    if (file_exists($state_path)) {
-      $state = (new ReadState())($state_path);
-    }
 
     foreach ($files_to_update as $document_path) {
-      $output->writeln($document_path);
+      $document_label = (new GetShortPath())($document_path);
+      $output->writeln($document_label);
       $document = (new ReadDocument())($document_path);
       (new ValidateTaskSyntax())($document->getContent());
       $completed_tasks = (new ScanForCompletedTasks())($document->getContent());
+
       if (empty($completed_tasks)) {
         continue;
       }
 
       foreach ($completed_tasks as $task_data) {
-        $document = $document->withoutTask($task_data['id']);
+        $task_id = SpecialAttributes::extractId($task_data);
+        $output->writeln('✅ ' . $task_id);
+        $document = $document->withoutTask($task_id);
 
         $task = (new TaskState())
-          ->setId($task_data['id'])
+          ->setId($task_id)
           ->setEnv(exec('echo "$(hostname)"'))
           ->setCompleted($now->format(DateTimeInterface::ATOM))
           ->setUser(exec('whoami'));
 
-        $expires = array_intersect_key($task_data, SpecialAttributes::expiresKeys());
+        $expires = SpecialAttributes::extractExpires($task_data);
         if ($expires) {
-          $duration = new DateInterval($task_data[key($expires)]);
+          $duration = new DateInterval($expires);
           if ($duration) {
             $expiry = (clone $now)->add($duration);
           }
           $task->setRedo($expiry->format(DateTimeInterface::ATOM));
         }
-        $state[] = $task;
+        $write_state->writeOne($state_path, $task);
       }
       (new WriteDocument())($document_path, $document);
     }
 
-    $state = $this->dedupeState($state);
-    (new WriteState())($state_path, $state);
-
     return Command::SUCCESS;
-  }
-
-  private function dedupeState(array $state): array {
-    $deduped_state = [];
-    foreach ($state as $task) {
-      $deduped_state[$task->getId()] = $task;
-    }
-
-    return array_values($deduped_state);
   }
 }
