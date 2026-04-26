@@ -3,6 +3,7 @@
 namespace AKlump\Directio\FixtureFramework;
 
 use AKlump\Directio\IO\GetShortPath;
+use AKlump\FixtureFramework\Runtime\RunOptions;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use AKlump\FixtureFramework\AbstractFixture as BaseFixture;
@@ -26,8 +27,17 @@ abstract class AbstractFixture extends BaseFixture {
     $this->output = $output;
   }
 
-  public function initialize(): void {
-    $this->handleRunOptionsInYaml();
+  public function setRunOptions(RunOptions $options): void {
+    parent::setRunOptions($options);
+
+    $run_options_filepath = $this->directioDirectory() . '/fixture_run_options.yml';
+    if (file_exists($run_options_filepath)) {
+      $file_provided_options = Yaml::parseFile($run_options_filepath);
+      if (!is_array($file_provided_options)) {
+        throw new \InvalidArgumentException('Config file must be an array.');
+      }
+      $this->options = $this->options->withAddedOptions($file_provided_options);
+    }
   }
 
   /**
@@ -67,17 +77,6 @@ abstract class AbstractFixture extends BaseFixture {
 
   public function logsDirectory(): string {
     return $this->options->require('logs_directory');
-  }
-
-  private function handleRunOptionsInYaml(): void {
-    $config_path = $this->directioDirectory() . '/fixture_run_options.yml';
-    if (file_exists($config_path)) {
-      $options = Yaml::parseFile($config_path);
-      if (!is_array($options)) {
-        throw new \InvalidArgumentException('Config file must be an array.');
-      }
-      $this->options = $this->options->withAddedOptions($options);
-    }
   }
 
 }

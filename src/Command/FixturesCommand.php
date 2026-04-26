@@ -4,6 +4,7 @@
 namespace AKlump\Directio\Command;
 
 use AKlump\Directio\Config\Names;
+use AKlump\Directio\FixtureFramework\Runtime\FixtureInstantiator;
 use AKlump\Directio\IO\GetLogsDirectory;
 use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\ReadDocument;
@@ -12,12 +13,12 @@ use AKlump\Directio\TextProcessor\ParseAttributes;
 use AKlump\FixtureFramework\Discovery\DiscoverFixtureDefinitions;
 use AKlump\FixtureFramework\Runtime\FixtureCollectionBuilder;
 use AKlump\FixtureFramework\Runtime\FixtureRunner;
-use AKlump\FixtureFramework\Runtime\RunContextValidator;
 use AKlump\Directio\Helper\MarkTaskDoneInDocument;
 use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\Config\SpecialAttributes;
 use AKlump\Directio\IO\WriteState;
 use AKlump\Directio\Model\TaskState;
+use AKlump\FixtureFramework\Runtime\RunOptions;
 use AKlump\LocalTimezone\LocalTimezone;
 use DateInterval;
 use DateTimeInterface;
@@ -171,16 +172,20 @@ class FixturesCommand extends Command {
         }
       }
       // <snippet id="fixtures_runtime_options">
-      $options = [
-
+      /**
+       * @var \AKlump\FixtureFramework\Runtime\RunOptions $options These
+       * options can be accessed using $this->options() in any fixture.
+       */
+      $options = new RunOptions([
         /** @var $directio_directory string File path to .directio/ */
         'directio_directory' => $directio_directory,
 
         /** @var $logs_directory string File path to the directory where logs are to be stored. */
         'logs_directory' => (new GetLogsDirectory($directio_directory))(),
-      ];
+      ]);
       // </snippet>
-      $instantiator = new \AKlump\Directio\FixtureFramework\Runtime\FixtureInstantiator($options, new RunContextValidator(), $input, $output);
+
+      $instantiator = new FixtureInstantiator($options, $input, $output);
       $fixtures = (new FixtureCollectionBuilder($instantiator))($ordered_definitions);
       $runner = new FixtureRunner($fixtures);
       $runner->run(FALSE, $project_directory);
