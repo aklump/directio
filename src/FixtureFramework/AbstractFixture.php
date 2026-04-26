@@ -6,6 +6,8 @@ use AKlump\Directio\IO\GetShortPath;
 use AKlump\FixtureFramework\Runtime\RunOptions;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\StyleInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 use AKlump\FixtureFramework\AbstractFixture as BaseFixture;
 use Symfony\Component\Yaml\Yaml;
 
@@ -20,6 +22,7 @@ abstract class AbstractFixture extends BaseFixture {
   private OutputInterface $output;
 
   /**
+   * @param \Symfony\Component\Console\Input\InputInterface $input
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    */
   public function __construct(InputInterface $input, OutputInterface $output) {
@@ -36,28 +39,13 @@ abstract class AbstractFixture extends BaseFixture {
       if (!is_array($file_provided_options)) {
         throw new \InvalidArgumentException('Config file must be an array.');
       }
-      $this->options = $this->options->withAddedOptions($file_provided_options);
+      $this->setRunOptions($this->options()
+        ->withAddedOptions($file_provided_options));
     }
   }
 
-  /**
-   * Returns the input instance for collecting data from the user.
-   *
-   * @return \Symfony\Component\Console\Input\InputInterface
-   */
-  public function input(): InputInterface {
-    return $this->input;
-  }
-
-  /**
-   * Returns output instance for user messaging.
-   *
-   * @return OutputInterface The output interface instance.
-   *
-   * @url https://symfony.com/doc/current/components/console/helpers/index.html
-   */
-  public function output(): OutputInterface {
-    return $this->output;
+  public function io(): StyleInterface {
+    return new SymfonyStyle($this->input, $this->output);
   }
 
   /**
@@ -72,11 +60,11 @@ abstract class AbstractFixture extends BaseFixture {
   }
 
   public function directioDirectory(): string {
-    return $this->options->require('directio_directory');
+    return $this->options()->require('directio_directory');
   }
 
   public function logsDirectory(): string {
-    return $this->options->require('logs_directory');
+    return $this->options()->require('logs_directory');
   }
 
 }

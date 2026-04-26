@@ -198,7 +198,7 @@ class FixturesCommand extends Command {
         if (($description = $fixture->description())) {
           $output->writeln(sprintf('<info>%s</info>', $description));
         }
-        $question = new ConfirmationQuestion(sprintf('Run fixture %s (y/n)? ', $fixture->id()), FALSE);
+        $question = new ConfirmationQuestion(sprintf('Run fixture "%s" (y/n)? ', $fixture->id()), FALSE);
         if (!(new QuestionHelper())->ask($input, $output, $question)) {
           $output->writeln('<info>Fixture skipped.</info>');
           ++$skipped_count;
@@ -207,7 +207,10 @@ class FixturesCommand extends Command {
 
         $runner = new FixtureRunner([$fixture]);
         $runner->run(FALSE, $project_directory);
-        $this->markFixtureDone($fixture_mappings[$fixture->id()], $directio_directory);
+        $question = new ConfirmationQuestion('Success. Mark as done (y/n)? ', FALSE);
+        if ((new QuestionHelper())->ask($input, $output, $question)) {
+          $this->markFixtureDone($fixture_mappings[$fixture->id()], $directio_directory);
+        }
       }
 
       if ($skipped_count > 0) {
