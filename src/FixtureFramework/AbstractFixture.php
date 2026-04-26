@@ -3,7 +3,6 @@
 namespace AKlump\Directio\FixtureFramework;
 
 use AKlump\Directio\IO\GetShortPath;
-use AKlump\FixtureFramework\Runtime\RunOptions;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use AKlump\FixtureFramework\AbstractFixture as BaseFixture;
@@ -27,7 +26,7 @@ abstract class AbstractFixture extends BaseFixture {
     $this->output = $output;
   }
 
-  public function __invoke(): void {
+  public function initialize(): void {
     $this->handleRunOptionsInYaml();
   }
 

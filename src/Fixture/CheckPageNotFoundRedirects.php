@@ -12,7 +12,6 @@ use Symfony\Component\Serializer\Serializer;
 class CheckPageNotFoundRedirects extends AbstractFixture {
 
   public function __invoke(): void {
-    parent::__invoke();
     $urls_to_check = $this->getUrlsToCheck();
     $base_url = $this->options->require('base_url');
     $failed_assert_count = 0;
