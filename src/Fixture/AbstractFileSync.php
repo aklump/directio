@@ -128,7 +128,7 @@ abstract class AbstractFileSync extends AbstractFixture {
     $files = array_unique($files);
 
     if (empty($files)) {
-      $this->output()->writeln("<error>No instances of $target were found.</error>");
+      $this->io()->writeln("<error>No instances of $target were found.</error>");
 
       return;
     }
@@ -140,22 +140,22 @@ abstract class AbstractFileSync extends AbstractFixture {
       if ($this->isUpdateRequired($current_content, $new_content)) {
         $backup_file = $file . $this->getBackupExtension();
         if (!copy($file, $backup_file)) {
-          $this->output()->writeln("<error>Failed to create backup for $short_file. Skipping update.</error>");
+          $this->io()->writeln("<error>Failed to create backup for $short_file. Skipping update.</error>");
           continue;
         }
         $short_backup_file = $this->shortPath($backup_file);
-        $this->output()->writeln("<warning>Updated: $short_file (Backup: " . basename($short_backup_file) . ")</warning>");
+        $this->io()->writeln("<warning>Updated: $short_file (Backup: " . basename($short_backup_file) . ")</warning>");
 
         file_put_contents($file, $new_content);
         $updated_count++;
       }
       else {
-        $this->output()->writeln("<info>Up to date: $short_file</info>");
+        $this->io()->writeln("<info>Up to date: $short_file</info>");
       }
     }
 
     if ($updated_count === 0) {
-      $this->output()->writeln("<info>All files are already up to date.</info>");
+      $this->io()->writeln("<info>All files are already up to date.</info>");
     }
   }
 }

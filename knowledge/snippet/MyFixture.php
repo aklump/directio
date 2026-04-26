@@ -11,6 +11,6 @@ class MyFixture extends AbstractFixture {
     $log_file = $this->logsDirectory() . '/my_log.log';
     file_put_contents($log_file, 'MyFixture invoked');
 
-    $this->output()->writeln('<info>MyFixture invoked</info>');
+    $this->io()->writeln('<info>MyFixture invoked</info>');
   }
 }

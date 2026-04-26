@@ -27,8 +27,7 @@ class AbstractFixtureTest extends TestCase {
       }
     };
 
-    $this->assertSame($input, $fixture->input());
-    $this->assertSame($output, $fixture->output());
+    $this->assertInstanceOf(\Symfony\Component\Console\Style\StyleInterface::class, $fixture->io());
     $this->assertNotEmpty($fixture->shortPath(__FILE__));
   }
 

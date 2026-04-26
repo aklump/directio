@@ -39,12 +39,12 @@ abstract class AbstractFixture extends BaseFixture {
       if (!is_array($file_provided_options)) {
         throw new \InvalidArgumentException('Config file must be an array.');
       }
-      $this->setRunOptions($this->options()
+      parent::setRunOptions($this->options()
         ->withAddedOptions($file_provided_options));
     }
   }
 
-  public function io(): StyleInterface {
+  public function io(): SymfonyStyle {
     return new SymfonyStyle($this->input, $this->output);
   }
 

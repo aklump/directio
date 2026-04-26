@@ -23,18 +23,18 @@ class CheckPageNotFoundRedirects extends AbstractFixture {
       $status = $this->getFinalStatusCode($headers);
 
       if (str_starts_with($status, '4') && !$this->isServedByDrupal($headers)) {
-        $this->output()
+        $this->io()
           ->writeln(sprintf('<info>%s - %s: %s</info>', $count, $status, $full_url));
       }
       else {
-        $this->output()
+        $this->io()
           ->writeln(sprintf('<error>%s - %s: %s</error>', $count, $status, $full_url));
         $failed_assert_count++;
       }
     }
 
     if ($failed_assert_count === 0) {
-      $this->output()
+      $this->io()
         ->writeln('<info>All checked URLs are correctly handled (no 404s found).</info>');
     }
     else {
@@ -77,7 +77,7 @@ class CheckPageNotFoundRedirects extends AbstractFixture {
     $headers = get_headers($url, 0, $context);
     restore_error_handler();
     if ($error_message) {
-      $this->output()->writeln(sprintf('<error>%s</error>', $error_message));
+      $this->io()->writeln(sprintf('<error>%s</error>', $error_message));
     }
 
     return $headers ?: [];
