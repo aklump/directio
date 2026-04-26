@@ -65,7 +65,7 @@ class FixturesCommandTest extends TestCase {
     $fixtureContent = <<<'EOD'
 <?php
 namespace AKlump\Directio\Fixture;
-use AKlump\FixtureFramework\AbstractFixture;
+use AKlump\Directio\FixtureFramework\AbstractFixture;
 use AKlump\FixtureFramework\Fixture;
 
 #[Fixture(id: 'f1')]
@@ -208,7 +208,7 @@ EOD;
     file_put_contents($fixtureDir . '/F2.php', <<<'EOD'
 <?php
 namespace AKlump\Directio\Fixture;
-use AKlump\FixtureFramework\AbstractFixture;
+use AKlump\Directio\FixtureFramework\AbstractFixture;
 use AKlump\FixtureFramework\Fixture;
 
 #[Fixture(id: 'f2')]

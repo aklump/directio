@@ -2,11 +2,18 @@
 
 namespace AKlump\Directio\FixtureFramework;
 
+use AKlump\Directio\Config\Names;
+use AKlump\Directio\Config\SpecialAttributes;
+use AKlump\Directio\Helper\MarkTaskDoneInDocument;
 use AKlump\Directio\IO\GetShortPath;
+use AKlump\Directio\IO\ReadDocument;
+use AKlump\Directio\IO\WriteDocument;
+use AKlump\Directio\IO\WriteState;
+use AKlump\Directio\Model\TaskState;
+use AKlump\LocalTimezone\LocalTimezone;
 use AKlump\FixtureFramework\Runtime\RunOptions;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\StyleInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use AKlump\FixtureFramework\AbstractFixture as BaseFixture;
 use Symfony\Component\Yaml\Yaml;
@@ -65,6 +72,56 @@ abstract class AbstractFixture extends BaseFixture {
 
   public function logsDirectory(): string {
     return $this->options()->require('logs_directory');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function onSuccess(bool $silent = FALSE) {
+    if (!$silent && $this->io()
+        ->confirm('Success. Mark as done (y/n)? ', FALSE)) {
+      $this->markDone();
+    }
+  }
+
+  public function markDone(): void {
+    $mappings = $this->fixture()['mappings'] ?? [];
+    if (empty($mappings)) {
+      return;
+    }
+
+    $mark_done = new MarkTaskDoneInDocument();
+    $read_document = new ReadDocument();
+    $write_document = new WriteDocument();
+    $write_state = new WriteState();
+    $state_path = $this->directioDirectory() . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
+    $now = date_create('now', LocalTimezone::get());
+
+    foreach ($mappings as $mapping) {
+      $path = $mapping['path'];
+      $task_id = $mapping['id'];
+      $document = $read_document($path);
+      $document = $mark_done($task_id, $document);
+      $write_document($path, $document);
+      $this->io()
+        ->writeln(sprintf('Marked "%s" as done in %s', $task_id, $this->shortPath($path)));
+
+      $task = (new TaskState())
+        ->setId($task_id)
+        ->setEnv(exec('echo "$(hostname)"'))
+        ->setCompleted($now->format(\DateTimeInterface::ATOM))
+        ->setUser(exec('whoami'));
+
+      $expires = SpecialAttributes::extractExpires($mapping['attributes']);
+      if ($expires) {
+        $duration = new \DateInterval($expires);
+        if ($duration) {
+          $expiry = (clone $now)->add($duration);
+          $task->setRedo($expiry->format(\DateTimeInterface::ATOM));
+        }
+      }
+      $write_state->writeOne($state_path, $task);
+    }
   }
 
 }

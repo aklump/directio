@@ -13,15 +13,8 @@ use AKlump\Directio\TextProcessor\ParseAttributes;
 use AKlump\FixtureFramework\Discovery\DiscoverFixtureDefinitions;
 use AKlump\FixtureFramework\Runtime\FixtureCollectionBuilder;
 use AKlump\FixtureFramework\Runtime\FixtureRunner;
-use AKlump\Directio\Helper\MarkTaskDoneInDocument;
-use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\Config\SpecialAttributes;
-use AKlump\Directio\IO\WriteState;
-use AKlump\Directio\Model\TaskState;
 use AKlump\FixtureFramework\Runtime\RunOptions;
-use AKlump\LocalTimezone\LocalTimezone;
-use DateInterval;
-use DateTimeInterface;
 use Exception;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\QuestionHelper;
@@ -37,8 +30,6 @@ class FixturesCommand extends Command {
   protected static $defaultName = 'fixtures';
 
   protected static $defaultDescription = 'Run fixtures defined in document tags';
-
-  protected array $messages;
 
   protected function configure() {
     $this->addOption('filter', NULL, InputOption::VALUE_REQUIRED, 'Filter fixtures by ID.');
@@ -170,6 +161,7 @@ class FixturesCommand extends Command {
       foreach ($fixture_ids as $id) {
         foreach ($definitions as $def) {
           if ($def['id'] === $id) {
+            $def['mappings'] = $fixture_mappings[$id] ?? [];
             $ordered_definitions[] = $def;
             break;
           }
@@ -192,8 +184,10 @@ class FixturesCommand extends Command {
       $instantiator = new FixtureInstantiator($options, $input, $output);
       $fixtures = (new FixtureCollectionBuilder($instantiator))($ordered_definitions);
 
-      $this->messages = [];
       $skipped_count = 0;
+
+      // Because we want a confirmation of each one, we will itereate on the
+      // array rather than letting the fixture runner do so.
       while (($fixture = array_shift($fixtures)) !== NULL) {
         if (($description = $fixture->description())) {
           $output->writeln(sprintf('<info>%s</info>', $description));
@@ -207,10 +201,6 @@ class FixturesCommand extends Command {
 
         $runner = new FixtureRunner([$fixture]);
         $runner->run(FALSE, $project_directory);
-        $question = new ConfirmationQuestion('Success. Mark as done (y/n)? ', FALSE);
-        if ((new QuestionHelper())->ask($input, $output, $question)) {
-          $this->markFixtureDone($fixture_mappings[$fixture->id()], $directio_directory);
-        }
       }
 
       if ($skipped_count > 0) {
@@ -218,9 +208,6 @@ class FixturesCommand extends Command {
       }
       else {
         $output->writeln('<info>Fixtures completed successfully.</info>');
-      }
-      foreach ($this->messages as $message) {
-        $output->writeln(sprintf('<info>%s</info>', $message));
       }
     }
     catch (Exception $e) {
@@ -232,37 +219,4 @@ class FixturesCommand extends Command {
     return Command::SUCCESS;
   }
 
-  private function markFixtureDone($fixture_mapping, string $directio_directory): void {
-    $mark_done = new MarkTaskDoneInDocument();
-    $read_document = new ReadDocument();
-    $write_document = new WriteDocument();
-    $write_state = new WriteState();
-    $state_path = $directio_directory . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
-    $now = date_create('now', LocalTimezone::get());
-    $get_short_path = new GetShortPath();
-    foreach ($fixture_mapping as $mapping) {
-      $path = $mapping['path'];
-      $task_id = $mapping['id'];
-      $document = $read_document($path);
-      $document = $mark_done($task_id, $document);
-      $write_document($path, $document);
-      $this->messages[] = sprintf('Marked "%s" as done in %s', $task_id, $get_short_path($path));
-
-      $task = (new TaskState())
-        ->setId($task_id)
-        ->setEnv(exec('echo "$(hostname)"'))
-        ->setCompleted($now->format(DateTimeInterface::ATOM))
-        ->setUser(exec('whoami'));
-
-      $expires = SpecialAttributes::extractExpires($mapping['attributes']);
-      if ($expires) {
-        $duration = new DateInterval($expires);
-        if ($duration) {
-          $expiry = (clone $now)->add($duration);
-        }
-        $task->setRedo($expiry->format(DateTimeInterface::ATOM));
-      }
-      $write_state->writeOne($state_path, $task);
-    }
-  }
 }
