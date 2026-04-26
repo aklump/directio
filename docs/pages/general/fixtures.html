@@ -4,9 +4,9 @@
   <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-      <link rel="stylesheet" href="../../dist/node_modules/bootstrap/dist/css/bootstrap.css?ver=0.0.2">
-      <link rel="stylesheet" href="../../dist/dist/bootstrap_theme.css?ver=0.0.2">
-      <link rel="stylesheet" href="../../dist/node_modules/bootstrap-icons/font/bootstrap-icons.min.css?ver=0.0.2">
+      <link rel="stylesheet" href="../../dist/node_modules/bootstrap/dist/css/bootstrap.css?ver=0.0.3">
+      <link rel="stylesheet" href="../../dist/dist/bootstrap_theme.css?ver=0.0.3">
+      <link rel="stylesheet" href="../../dist/node_modules/bootstrap-icons/font/bootstrap-icons.min.css?ver=0.0.3">
         <title>Fixtures | Directio</title>
   </head>
 <body class="my-5">
@@ -59,7 +59,7 @@ class MyFixture extends AbstractFixture {
     $log_file = $this-&gt;logsDirectory() . '/my_log.log';
     file_put_contents($log_file, 'MyFixture invoked');
 
-    $this-&gt;output()-&gt;writeln('&lt;info&gt;MyFixture invoked&lt;/info&gt;');
+    $this-&gt;io()-&gt;writeln('&lt;info&gt;MyFixture invoked&lt;/info&gt;');
   }
 }
 </code></pre>
@@ -68,9 +68,19 @@ class MyFixture extends AbstractFixture {
 
 namespace AKlump\Directio\FixtureFramework;
 
+use AKlump\Directio\Config\Names;
+use AKlump\Directio\Config\SpecialAttributes;
+use AKlump\Directio\Helper\MarkTaskDoneInDocument;
 use AKlump\Directio\IO\GetShortPath;
+use AKlump\Directio\IO\ReadDocument;
+use AKlump\Directio\IO\WriteDocument;
+use AKlump\Directio\IO\WriteState;
+use AKlump\Directio\Model\TaskState;
+use AKlump\LocalTimezone\LocalTimezone;
+use AKlump\FixtureFramework\Runtime\RunOptions;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 use AKlump\FixtureFramework\AbstractFixture as BaseFixture;
 use Symfony\Component\Yaml\Yaml;
 
@@ -80,11 +90,14 @@ use Symfony\Component\Yaml\Yaml;
  */
 abstract class AbstractFixture extends BaseFixture {
 
+  const YAML_OPTIONS_FILENAME = 'options.yml';
+
   private InputInterface $input;
 
   private OutputInterface $output;
 
   /**
+   * @param \Symfony\Component\Console\Input\InputInterface $input
    * @param \Symfony\Component\Console\Output\OutputInterface $output
    */
   public function __construct(InputInterface $input, OutputInterface $output) {
@@ -92,28 +105,22 @@ abstract class AbstractFixture extends BaseFixture {
     $this-&gt;output = $output;
   }
 
-  public function initialize(): void {
-    $this-&gt;handleRunOptionsInYaml();
+  public function setRunOptions(RunOptions $options): void {
+    parent::setRunOptions($options);
+
+    $file_options_path = $this-&gt;directioDirectory() . DIRECTORY_SEPARATOR . self::YAML_OPTIONS_FILENAME;
+    if (file_exists($file_options_path)) {
+      $file_provided_options = Yaml::parseFile($file_options_path);
+      if (!is_array($file_provided_options)) {
+        throw new \InvalidArgumentException('Config file must be an array.');
+      }
+      parent::setRunOptions($this-&gt;options()
+        -&gt;withAddedOptions($file_provided_options));
+    }
   }
 
-  /**
-   * Returns the input instance for collecting data from the user.
-   *
-   * @return \Symfony\Component\Console\Input\InputInterface
-   */
-  public function input(): InputInterface {
-    return $this-&gt;input;
-  }
-
-  /**
-   * Returns output instance for user messaging.
-   *
-   * @return OutputInterface The output interface instance.
-   *
-   * @url https://symfony.com/doc/current/components/console/helpers/index.html
-   */
-  public function output(): OutputInterface {
-    return $this-&gt;output;
+  public function io(): SymfonyStyle {
+    return new SymfonyStyle($this-&gt;input, $this-&gt;output);
   }
 
   /**
@@ -128,21 +135,60 @@ abstract class AbstractFixture extends BaseFixture {
   }
 
   public function directioDirectory(): string {
-    return $this-&gt;options-&gt;require('directio_directory');
+    return $this-&gt;options()-&gt;require('directio_directory');
   }
 
   public function logsDirectory(): string {
-    return $this-&gt;options-&gt;require('logs_directory');
+    return $this-&gt;options()-&gt;require('logs_directory');
   }
 
-  private function handleRunOptionsInYaml(): void {
-    $config_path = $this-&gt;directioDirectory() . '/fixture_run_options.yml';
-    if (file_exists($config_path)) {
-      $options = Yaml::parseFile($config_path);
-      if (!is_array($options)) {
-        throw new \InvalidArgumentException('Config file must be an array.');
+  /**
+   * {@inheritdoc}
+   */
+  public function onSuccess(bool $silent = FALSE, bool $mark_as_done_default = TRUE) {
+    if (!$silent &amp;&amp; $this-&gt;io()
+        -&gt;confirm('Success. Mark as done? ', $mark_as_done_default)) {
+      $this-&gt;markDone();
+    }
+  }
+
+  public function markDone(): void {
+    $mappings = $this-&gt;fixture()['mappings'] ?? [];
+    if (empty($mappings)) {
+      return;
+    }
+
+    $mark_done = new MarkTaskDoneInDocument();
+    $read_document = new ReadDocument();
+    $write_document = new WriteDocument();
+    $write_state = new WriteState();
+    $state_path = $this-&gt;directioDirectory() . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
+    $now = date_create('now', LocalTimezone::get());
+
+    foreach ($mappings as $mapping) {
+      $path = $mapping['path'];
+      $task_id = $mapping['id'];
+      $document = $read_document($path);
+      $document = $mark_done($task_id, $document);
+      $write_document($path, $document);
+      $this-&gt;io()
+        -&gt;writeln(sprintf('Marked "%s" as done in %s', $task_id, $this-&gt;shortPath($path)));
+
+      $task = (new TaskState())
+        -&gt;setId($task_id)
+        -&gt;setEnv(exec('echo "$(hostname)"'))
+        -&gt;setCompleted($now-&gt;format(\DateTimeInterface::ATOM))
+        -&gt;setUser(exec('whoami'));
+
+      $expires = SpecialAttributes::extractExpires($mapping['attributes']);
+      if ($expires) {
+        $duration = new \DateInterval($expires);
+        if ($duration) {
+          $expiry = (clone $now)-&gt;add($duration);
+          $task-&gt;setRedo($expiry-&gt;format(\DateTimeInterface::ATOM));
+        }
       }
-      $this-&gt;options = $this-&gt;options-&gt;withAddedOptions($options);
+      $write_state-&gt;writeOne($state_path, $task);
     }
   }
 
@@ -161,14 +207,17 @@ abstract class AbstractFixture extends BaseFixture {
 <p>After updating <code>composer.json</code>, be sure to run <code>composer dump-autoload</code>.</p>
 <h3>Available Runtime Options</h3>
 <p>You can see usage in the example above.</p>
-<pre><code>$options = [
-
+<pre><code>/**
+ * @var \AKlump\FixtureFramework\Runtime\RunOptions $options These
+ * options can be accessed using $this-&gt;options() in any fixture.
+ */
+$options = new RunOptions([
   /** @var $directio_directory string File path to .directio/ */
   'directio_directory' =&gt; $directio_directory,
 
   /** @var $logs_directory string File path to the directory where logs are to be stored. */
   'logs_directory' =&gt; (new GetLogsDirectory($directio_directory))(),
-];
+]);
 </code></pre>
 <h2>How to Use Fixtures in Directio Documents</h2>
 <p>You can reference a fixture in your document using the <code>fixture</code> attribute in a <code>&lt;directio&gt;</code> tag.</p>
@@ -187,6 +236,16 @@ abstract class AbstractFixture extends BaseFixture {
 <li><code>--filter={id}</code>: Filter fixtures by ID. You can use a string or a regular expression.</li>
 <li><code>--flush</code>: Rebuild the fixture cache before running.</li>
 </ul>
+<h2>On Success</h2>
+<p>You will be asked if you want to mark the fixture as done in the Directio document.  The default is <code>Yes</code>.</p>
+<p>To make a certain fixture default to <code>No</code> add this method like this:</p>
+<pre><code class="php">  /**
+   * {@inheritdoc}
+   */
+  public function onSuccess(bool $silent = FALSE, bool $mark_as_done_default = TRUE) {
+    parent::onSuccess($silent, FALSE);
+  }
+</code></pre>
     </article>
   </div>
 </main>
@@ -194,9 +253,9 @@ abstract class AbstractFixture extends BaseFixture {
   <footer class="footer d-flex justify-content-center">
     <div class="flex-column justify-content-center">
               Version:
-        <strong>0.0.2</strong>
+        <strong>0.0.3</strong>
         &bull;
-                    Last Update: <strong>4/25/2026</strong>
+                    Last Update: <strong>4/26/2026</strong>
           </div>
   </footer>
 
@@ -359,9 +418,9 @@ abstract class AbstractFixture extends BaseFixture {
   </div>
 </div>
 
-  <script src="../../dist/node_modules/bootstrap/dist/js/bootstrap.min.js?ver=0.0.2"></script>
-  <script src="../../dist/lunr.js?ver=0.0.2"></script>
-  <script src="../../dist/knowledge.min.js?ver=0.0.2"></script>
+  <script src="../../dist/node_modules/bootstrap/dist/js/bootstrap.min.js?ver=0.0.3"></script>
+  <script src="../../dist/lunr.js?ver=0.0.3"></script>
+  <script src="../../dist/knowledge.min.js?ver=0.0.3"></script>
 
 </body>
 </html>
