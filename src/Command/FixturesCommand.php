@@ -150,6 +150,9 @@ class FixturesCommand extends Command {
       $definitions = array_filter($definitions, function (array $def) use ($fixture_ids) {
         return in_array($def['id'], $fixture_ids);
       });
+      foreach ($definitions as &$definition) {
+        $definition['mappings'] = $fixture_mappings[$definition['id']] ?? [];
+      }
 
       if (empty($definitions)) {
         $output->writeln('<info>No fixture definitions found for the referenced IDs.</info>');
