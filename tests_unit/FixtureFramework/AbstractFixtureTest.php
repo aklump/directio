@@ -42,7 +42,7 @@ class AbstractFixtureTest extends TestCase {
 
   public function testSetRunOptionsMergesFileOptions() {
     $tempDir = $this->getTestFileFilepath('project/', TRUE);
-    $runOptionsFile = $tempDir . '/fixture_run_options.yml';
+    $runOptionsFile = $tempDir . DIRECTORY_SEPARATOR . AbstractFixture::YAML_OPTIONS_FILENAME;
     file_put_contents($runOptionsFile, "extra_option: foo\n");
 
     $input = $this->createMock(InputInterface::class);

@@ -24,6 +24,8 @@ use Symfony\Component\Yaml\Yaml;
  */
 abstract class AbstractFixture extends BaseFixture {
 
+  const YAML_OPTIONS_FILENAME = 'options.yml';
+
   private InputInterface $input;
 
   private OutputInterface $output;
@@ -40,9 +42,9 @@ abstract class AbstractFixture extends BaseFixture {
   public function setRunOptions(RunOptions $options): void {
     parent::setRunOptions($options);
 
-    $run_options_filepath = $this->directioDirectory() . '/fixture_run_options.yml';
-    if (file_exists($run_options_filepath)) {
-      $file_provided_options = Yaml::parseFile($run_options_filepath);
+    $file_options_path = $this->directioDirectory() . DIRECTORY_SEPARATOR . self::YAML_OPTIONS_FILENAME;
+    if (file_exists($file_options_path)) {
+      $file_provided_options = Yaml::parseFile($file_options_path);
       if (!is_array($file_provided_options)) {
         throw new \InvalidArgumentException('Config file must be an array.');
       }

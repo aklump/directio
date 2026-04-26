@@ -3,6 +3,7 @@
 
 namespace AKlump\Directio\Command;
 
+use AKlump\Directio\FixtureFramework\AbstractFixture;
 use AKlump\Directio\Config\Names;
 use AKlump\Directio\Helper\ApplyStateToDocument;
 use AKlump\Directio\IO\GetLogsDirectory;
@@ -78,7 +79,13 @@ class ImportCommand extends Command {
       return $this->importFromDirectory($source);
     }
 
+    if (basename($source) === AbstractFixture::YAML_OPTIONS_FILENAME) {
+      return $this->importOptionsFile($source) ? Command::SUCCESS : Command::FAILURE;
+    }
+
     if ($this->isFixtureFile($source)) {
+      $this->importOptionsFile(dirname($source) . DIRECTORY_SEPARATOR . AbstractFixture::YAML_OPTIONS_FILENAME);
+
       return $this->importFixture($source) ? Command::SUCCESS : Command::FAILURE;
     }
 
@@ -147,6 +154,12 @@ class ImportCommand extends Command {
       if ($this->isFixtureFile($path)) {
         $found_count++;
         if ($this->importFixture($path)) {
+          $imported_count++;
+        }
+      }
+      elseif (basename($path) === AbstractFixture::YAML_OPTIONS_FILENAME) {
+        $found_count++;
+        if ($this->importOptionsFile($path)) {
           $imported_count++;
         }
       }
@@ -293,6 +306,32 @@ class ImportCommand extends Command {
     if (!$keep_root) {
       rmdir($dir);
     }
+  }
+
+  private function importOptionsFile(string $path): bool {
+    if (!is_file($path)) {
+      return FALSE;
+    }
+    $target_path = $this->directioDirectory . DIRECTORY_SEPARATOR . basename($path);
+    if (file_exists($target_path)) {
+      $helper = $this->getHelper('question');
+      $question = new ConfirmationQuestion(sprintf('Options file "%s" already exists. Overwrite? ', basename($target_path)), FALSE);
+      if (!$helper->ask($this->input, $this->output, $question)) {
+        return FALSE;
+      }
+    }
+
+    if (!copy($path, $target_path)) {
+      $shortpath = (new GetShortPath())($target_path);
+      $this->output->writeln(sprintf('<error>Failed to copy options file to %s</error>', $shortpath));
+
+      return FALSE;
+    }
+
+    $shortpath = (new GetShortPath())($target_path);
+    $this->output->writeln(sprintf('<info>Options imported to %s</info>', $shortpath));
+
+    return TRUE;
   }
 
 }
