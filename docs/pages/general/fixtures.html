@@ -7,7 +7,7 @@
       <link rel="stylesheet" href="../../dist/node_modules/bootstrap/dist/css/bootstrap.css?ver=0.0.2">
       <link rel="stylesheet" href="../../dist/dist/bootstrap_theme.css?ver=0.0.2">
       <link rel="stylesheet" href="../../dist/node_modules/bootstrap-icons/font/bootstrap-icons.min.css?ver=0.0.2">
-        <title>Completing Tasks | Directio</title>
+        <title>Fixtures | Directio</title>
   </head>
 <body class="my-5">
 
@@ -32,7 +32,7 @@
 
       </div>
       <div class="header__tags me-3">  </div>
-      <div class="header__page-numbers flex-shrink-1">3
+      <div class="header__page-numbers flex-shrink-1">5
         / 6</div>
     </div>
   </div>
@@ -41,27 +41,152 @@
 <main class="container-md flex-column">
   <div class="row mb-5 pt-5">
     <article class="col">
-      <h1 class="mb-4 text-primary">Completing Tasks</h1>
-      <p>Give the following task markup:</p>
-<pre><code class="html">&lt;directio id="dessert"&gt;
-## Making Dessert
+      <h1 class="mb-4 text-primary">Fixtures</h1>
+      <p>Fixtures allow you to run automated setup or teardown logic as part of your task workflow.</p>
+<h2>Where to Save Fixture Classes</h2>
+<p>Fixture classes should be stored in the <code>.directio/src/Fixture</code> directory of your project. They should follow the PSR-4 namespacing convention and be under the <code>AKlump\Directio\Fixture</code> namespace.</p>
+<p><strong>File:</strong> <code>MyFixture.php</code></p>
+<pre><code class="php">&lt;?php
 
-- Measure the eggs and sugar into a bowl
-- Whip for 5 minutes until incorporated
-- Continue mixing the cookies...
-&lt;/directio&gt;
+namespace AKlump\Directio\Fixture;
+
+use AKlump\Directio\FixtureFramework\AbstractFixture;
+
+#[\AKlump\FixtureFramework\Fixture(id: 'my_fixture')]
+class MyFixture extends AbstractFixture {
+
+  public function __invoke(): void {
+    $log_file = $this-&gt;logsDirectory() . '/my_log.log';
+    file_put_contents($log_file, 'MyFixture invoked');
+
+    $this-&gt;output()-&gt;writeln('&lt;info&gt;MyFixture invoked&lt;/info&gt;');
+  }
+}
 </code></pre>
-<p>To mark this complete you do two things:</p>
-<ol>
-<li>Add the completion markup to the open tag.</li>
-<li>Run the <code>update</code> command.</li>
-</ol>
-<h2>Completion Markup</h2>
-<p>Any of the following can be used to indicate completion of a task.</p>
-<pre><code class="html">&lt;directio id="dessert" complete&gt;
-&lt;directio id="dessert" done&gt;
-&lt;directio x id="dessert"&gt;
+<p><strong>File:</strong> <code>AbstractFixture.php</code></p>
+<pre><code class="php">&lt;?php
+
+namespace AKlump\Directio\FixtureFramework;
+
+use AKlump\Directio\IO\GetShortPath;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use AKlump\FixtureFramework\AbstractFixture as BaseFixture;
+use Symfony\Component\Yaml\Yaml;
+
+/**
+ * Represents an abstract fixture for handling direct input/output operations.
+ * Provides utility methods for managing console output and file path resolution.
+ */
+abstract class AbstractFixture extends BaseFixture {
+
+  private InputInterface $input;
+
+  private OutputInterface $output;
+
+  /**
+   * @param \Symfony\Component\Console\Output\OutputInterface $output
+   */
+  public function __construct(InputInterface $input, OutputInterface $output) {
+    $this-&gt;input = $input;
+    $this-&gt;output = $output;
+  }
+
+  public function initialize(): void {
+    $this-&gt;handleRunOptionsInYaml();
+  }
+
+  /**
+   * Returns the input instance for collecting data from the user.
+   *
+   * @return \Symfony\Component\Console\Input\InputInterface
+   */
+  public function input(): InputInterface {
+    return $this-&gt;input;
+  }
+
+  /**
+   * Returns output instance for user messaging.
+   *
+   * @return OutputInterface The output interface instance.
+   *
+   * @url https://symfony.com/doc/current/components/console/helpers/index.html
+   */
+  public function output(): OutputInterface {
+    return $this-&gt;output;
+  }
+
+  /**
+   * Resolves and returns the shortened version of the provided file path.
+   *
+   * @param string $path The input file path to be shortened.
+   *
+   * @return string The shortened file path.
+   */
+  public function shortPath(string $path): string {
+    return (new GetShortPath())($path);
+  }
+
+  public function directioDirectory(): string {
+    return $this-&gt;options-&gt;require('directio_directory');
+  }
+
+  public function logsDirectory(): string {
+    return $this-&gt;options-&gt;require('logs_directory');
+  }
+
+  private function handleRunOptionsInYaml(): void {
+    $config_path = $this-&gt;directioDirectory() . '/fixture_run_options.yml';
+    if (file_exists($config_path)) {
+      $options = Yaml::parseFile($config_path);
+      if (!is_array($options)) {
+        throw new \InvalidArgumentException('Config file must be an array.');
+      }
+      $this-&gt;options = $this-&gt;options-&gt;withAddedOptions($options);
+    }
+  }
+
+}
 </code></pre>
+<h3>Registering the Namespace</h3>
+<p>To make your fixtures discoverable, you must add the <code>AKlump\Directio</code> namespace to your project's <code>composer.json</code> file under the <code>autoload</code> or <code>autoload-dev</code> section.</p>
+<pre><code class="json">{
+  "autoload": {
+    "psr-4": {
+      "AKlump\\Directio\\": ".directio/src/"
+    }
+  }
+}
+</code></pre>
+<p>After updating <code>composer.json</code>, be sure to run <code>composer dump-autoload</code>.</p>
+<h3>Available Runtime Options</h3>
+<p>You can see usage in the example above.</p>
+<pre><code>$options = [
+
+  /** @var $directio_directory string File path to .directio/ */
+  'directio_directory' =&gt; $directio_directory,
+
+  /** @var $logs_directory string File path to the directory where logs are to be stored. */
+  'logs_directory' =&gt; (new GetLogsDirectory($directio_directory))(),
+];
+</code></pre>
+<h2>How to Use Fixtures in Directio Documents</h2>
+<p>You can reference a fixture in your document using the <code>fixture</code> attribute in a <code>&lt;directio&gt;</code> tag.</p>
+<pre><code class="html">&lt;!-- &lt;directio fixture="my_fixture_id" /&gt; --&gt;
+</code></pre>
+<p>When you run the <code>fixtures</code> command, Directio will scan the imported documents for these tags and execute the corresponding fixtures in the order they appear.</p>
+<h3>Skipping Completed Fixtures</h3>
+<p>If a <code>&lt;directio&gt;</code> tag has the <code>done</code> attribute, the fixture will be skipped. This happens automatically once a fixture has successfully run. If you need to re-run a fixture, you must remove the <code>done</code> attribute from the tag in the document.</p>
+<h2>Running Fixtures</h2>
+<p>The current working directory of all fixtures will be the project directory, which is to say the parent of <code>.directio</code>.</p>
+<p>Execute the following command to run all fixtures referenced in your documents. If the fixture succeeds the &lt;directio/&gt; tag will receive <code>done</code>.</p>
+<pre><code class="bash">./directio fixtures
+</code></pre>
+<h3>Options</h3>
+<ul>
+<li><code>--filter={id}</code>: Filter fixtures by ID. You can use a string or a regular expression.</li>
+<li><code>--flush</code>: Rebuild the fixture cache before running.</li>
+</ul>
     </article>
   </div>
 </main>
@@ -83,7 +208,7 @@
       bi-caret-left-fill"></i> Directio</a>
   
     
-              <a href="syntax.html" class="btn nav__prev-page js-nav__prev-page
+              <a href="changelog.html" class="btn nav__prev-page js-nav__prev-page
     btn-primary"><i class="bi
       bi-caret-left-fill"></i></a>
   
@@ -94,8 +219,8 @@
        aria-controls="table-of-contents"><i class="bi
            bi-list-ol"></i></a>
     
-              <a href="changelog.html" class="btn nav__next-page js-nav__next-page
-    btn-primary"><i class="bi bi-file-earmark"></i> Changelog <i class="bi
+              <a href="../editors/phpstorm.html" class="btn nav__next-page js-nav__next-page
+    btn-primary"><i class="bi bi-file-earmark"></i> PHP Storm <i class="bi
        bi-caret-right-fill"></i></a>
   
     
