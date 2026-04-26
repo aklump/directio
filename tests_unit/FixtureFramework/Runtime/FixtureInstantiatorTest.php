@@ -35,6 +35,9 @@ class FixtureInstantiatorTest extends TestCase {
       public function id(): string {
           return '';
       }
+      public function description(): string {
+          return '';
+      }
       public function setRunOptions(\AKlump\FixtureFramework\Runtime\RunOptions $options): void {
       }
       public function options(): \AKlump\FixtureFramework\Runtime\RunOptions {

@@ -113,6 +113,7 @@ EOD;
     $command = $application->find('fixtures');
     $commandTester = new CommandTester($command);
 
+    $commandTester->setInputs(['y', 'y']);
     ob_start();
     $commandTester->execute(['--flush' => TRUE], ['capture_stderr_separately' => TRUE]);
     ob_end_clean();
@@ -226,6 +227,7 @@ EOD
     $command = $application->find('fixtures');
     $commandTester = new CommandTester($command);
 
+    $commandTester->setInputs(['y', 'y', 'y', 'y', 'y', 'y']);
     ob_start();
     $commandTester->execute(['--flush' => TRUE]);
     ob_end_clean();
