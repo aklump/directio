@@ -12,6 +12,22 @@ use Symfony\Component\Console\Tester\CommandTester;
 /**
  * @covers \AKlump\Directio\Command\FixturesCommand
  * @covers \AKlump\Directio\IO\InitializeDirectory
+ *
+ * @uses \AKlump\Directio\Config\SpecialAttributes
+ * @uses \AKlump\Directio\FixtureFramework\Runtime\FixtureInstantiator
+ * @uses \AKlump\Directio\HTMLElementStyle
+ * @uses \AKlump\Directio\Helper\MarkTaskDoneInDocument
+ * @uses \AKlump\Directio\IO\GetDirectioRoot
+ * @uses \AKlump\Directio\IO\GetLogsDirectory
+ * @uses \AKlump\Directio\IO\GetShortPath
+ * @uses \AKlump\Directio\IO\ReadDocument
+ * @uses \AKlump\Directio\IO\WriteDocument
+ * @uses \AKlump\Directio\IO\WriteState
+ * @uses \AKlump\Directio\Lexer\AttributesLexer
+ * @uses \AKlump\Directio\Lexer\TaskLexer
+ * @uses \AKlump\Directio\Model\Document
+ * @uses \AKlump\Directio\Model\TaskState
+ * @uses \AKlump\Directio\TextProcessor\ParseAttributes
  */
 class FixturesCommandTest extends TestCase {
 

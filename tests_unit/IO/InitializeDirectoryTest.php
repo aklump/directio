@@ -13,38 +13,32 @@ use Symfony\Component\Yaml\Yaml;
 
 /**
  * @covers \AKlump\Directio\IO\InitializeDirectory
+ * @uses \AKlump\Directio\IO\GetLogsDirectory
  */
 class InitializeDirectoryTest extends TestCase {
 
   use TestWithFilesTrait;
 
+  protected function tearDown(): void {
+    $this->deleteTestFile('.cache/project/');
+    $this->deleteAllTestFiles();
+  }
+
   public function testThrowsWhenCantCreateStateFile() {
-    $directory = $this->getTestFileFilepath('.cache/project/', TRUE);
+    $directory = $this->getTestFileFilepath('.cache/project_state/', TRUE);
     mkdir($directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT);
     chmod($directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT, 0444);
     $this->expectException(RuntimeException::class);
     $this->expectExceptionMessage(Names::FILENAME_STATE);
-    try {
-      (new InitializeDirectory())($directory);
-    }
-    catch (RuntimeException $exception) {
-      $this->deleteTestFile('.cache/project/');
-      throw $exception;
-    }
+    (new InitializeDirectory())($directory);
   }
 
   public function testThrowsWhenCantCreateDirectory() {
-    $directory = $this->getTestFileFilepath('.cache/project/', TRUE);
+    $directory = $this->getTestFileFilepath('.cache/project_dir/', TRUE);
     chmod($directory, 0444);
     $this->expectException(RuntimeException::class);
     $this->expectExceptionMessage(Names::FILENAME_INIT);
-    try {
-      (new InitializeDirectory())($directory);
-    }
-    catch (RuntimeException $exception) {
-      $this->deleteTestFile('.cache/project/');
-      throw $exception;
-    }
+    (new InitializeDirectory())($directory);
   }
 
   public function testInitilizeOnExistingDirectoryDoesNotDeleteAnyPaths() {
@@ -96,6 +90,16 @@ class InitializeDirectoryTest extends TestCase {
     $this->assertFileExists($directio_dir . DIRECTORY_SEPARATOR . '.gitignore');
     $this->assertStringContainsString('logs/', file_get_contents($directio_dir . DIRECTORY_SEPARATOR . '.gitignore'));
     $this->deleteTestFile('.cache/project/');
+  }
 
+  public function testThrowsWhenCantCreateFixtureDirectory() {
+    $directory = $this->getTestFileFilepath('.cache/project_fixture/', TRUE);
+    mkdir($directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT);
+    // Create a file where 'src' should be a directory
+    touch($directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT . DIRECTORY_SEPARATOR . 'src');
+
+    $this->expectException(RuntimeException::class);
+    $this->expectExceptionMessage('Failed to create');
+    (new InitializeDirectory())($directory);
   }
 }

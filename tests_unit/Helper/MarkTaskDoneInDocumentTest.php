@@ -8,6 +8,12 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \AKlump\Directio\Helper\MarkTaskDoneInDocument
+ * @uses \AKlump\Directio\Config\SpecialAttributes
+ * @uses \AKlump\Directio\HTMLElementStyle
+ * @uses \AKlump\Directio\Lexer\AttributesLexer
+ * @uses \AKlump\Directio\Lexer\TaskLexer
+ * @uses \AKlump\Directio\Model\Document
+ * @uses \AKlump\Directio\TextProcessor\ParseAttributes
  */
 class MarkTaskDoneInDocumentTest extends TestCase {
 

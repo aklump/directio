@@ -69,4 +69,40 @@ EOD;
     $this->assertTrue($decoder->supportsDecoding('mhtml'));
     $this->assertFalse($decoder->supportsDecoding('json'));
   }
+
+  public function testDecodeNoBoundaryReturnsOriginalData() {
+    $data = 'just some text';
+    $decoder = new MhtmlDecoder();
+    $this->assertEquals($data, $decoder->decode($data, 'mhtml'));
+  }
+
+  public function testDecodeNoHtmlPartReturnsEmptyString() {
+    $mhtml = <<<EOD
+MIME-Version: 1.0
+Content-Type: multipart/related; boundary="boundary"
+
+--boundary
+Content-Type: text/plain
+
+Hello
+--boundary--
+EOD;
+    $decoder = new MhtmlDecoder();
+    $this->assertEquals('', $decoder->decode($mhtml, 'mhtml'));
+  }
+
+  public function testDecodeInvalidPartReturnsEmptyString() {
+    $mhtml = <<<EOD
+MIME-Version: 1.0
+Content-Type: multipart/related; boundary="boundary"
+
+--boundary
+Content-Type: text/html
+
+--boundary--
+EOD;
+    // The decodePart logic expects two sets of newlines separating headers from body
+    $decoder = new MhtmlDecoder();
+    $this->assertEquals('', $decoder->decode($mhtml, 'mhtml'));
+  }
 }

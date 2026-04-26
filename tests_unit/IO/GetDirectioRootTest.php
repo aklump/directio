@@ -9,7 +9,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \AKlump\Directio\IO\GetDirectioRoot
- * @uses   \AKlump\Directio\IO\InitializeDirectory
+ * @uses \AKlump\Directio\IO\GetLogsDirectory
+ * @uses \AKlump\Directio\IO\InitializeDirectory
  */
 class GetDirectioRootTest extends TestCase {
 

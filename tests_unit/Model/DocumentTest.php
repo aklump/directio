@@ -9,9 +9,10 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \AKlump\Directio\Model\Document
- * @uses   \AKlump\Directio\Lexer\TaskLexer
- * @uses   \AKlump\Directio\Lexer\AttributesLexer
- * @uses   \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses \AKlump\Directio\Config\SpecialAttributes
+ * @uses \AKlump\Directio\Lexer\TaskLexer
+ * @uses \AKlump\Directio\Lexer\AttributesLexer
+ * @uses \AKlump\Directio\TextProcessor\ParseAttributes
  * @uses \AKlump\Directio\HTMLElementStyle
  */
 class DocumentTest extends TestCase {

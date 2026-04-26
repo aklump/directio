@@ -13,6 +13,24 @@ use Symfony\Component\Console\Tester\CommandTester;
 /**
  * @covers \AKlump\Directio\Command\ImportCommand
  * @covers \AKlump\Directio\IO\InitializeDirectory
+ *
+ * @uses \AKlump\Directio\Config\Names
+ * @uses \AKlump\Directio\Config\SpecialAttributes
+ * @uses \AKlump\Directio\HTMLElementStyle
+ * @uses \AKlump\Directio\Helper\ApplyStateToDocument
+ * @uses \AKlump\Directio\IO\GetDirectioRoot
+ * @uses \AKlump\Directio\IO\GetLogsDirectory
+ * @uses \AKlump\Directio\IO\GetResultFilename
+ * @uses \AKlump\Directio\IO\GetShortPath
+ * @uses \AKlump\Directio\IO\ReadDocument
+ * @uses \AKlump\Directio\IO\ReadState
+ * @uses \AKlump\Directio\IO\WriteDocument
+ * @uses \AKlump\Directio\Lexer\AttributesLexer
+ * @uses \AKlump\Directio\Lexer\TaskLexer
+ * @uses \AKlump\Directio\Model\Document
+ * @uses \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses \AKlump\Directio\TextProcessor\ValidateTaskSyntax
+ * @uses \AKlump\Directio\Traits\HasStyleTrait
  */
 class ImportCommandTest extends TestCase {
 
@@ -81,7 +99,7 @@ EOD;
 
     // First import
     $this->executeCommand(['source document' => $docPath]);
-    
+
     // Modify content so we don't trigger ID collision if it was being checked too early
     // (though in this test it is checking against the file about to be overwritten)
     $content2 = '## My Tasks 2' . PHP_EOL . '<directio id="task2">Do something else</directio>';
@@ -131,7 +149,7 @@ EOD;
   public function testImportDirectoryMixedContent() {
     $sourceDir = $this->getTestFileFilepath('source_dir/', TRUE);
     $this->assertDirectoryExists($sourceDir);
-    
+
     // 1. Valid Fixture
     file_put_contents($sourceDir . '/ValidFixture.php', <<<'EOD'
 <?php
@@ -165,18 +183,18 @@ EOD
 
     // Check Valid Fixture
     $this->assertFileExists($this->projectRoot . '/.directio/src/Fixture/ValidFixture.php');
-    
+
     // Check Invalid Fixture (should NOT be in Fixture dir)
     $this->assertFileDoesNotExist($this->projectRoot . '/.directio/src/Fixture/InvalidNamespace.php');
-    
+
     // Check Document with Markup
     $importedMarkup = glob($this->projectRoot . '/.directio/imported/*_markup.md');
     $this->assertCount(1, $importedMarkup);
-    
+
     // Check Plain Document (should be ignored in directory import)
     $importedPlain = glob($this->projectRoot . '/.directio/imported/*_plain.txt');
     $this->assertCount(0, $importedPlain);
-    
+
     $this->assertStringContainsString('Fixture imported', $commandTester->getDisplay());
     $this->assertStringContainsString('File imported', $commandTester->getDisplay());
     $this->assertStringContainsString('Imported 2 of 2 items found', $commandTester->getDisplay());

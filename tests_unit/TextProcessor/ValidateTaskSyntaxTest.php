@@ -12,10 +12,11 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \AKlump\Directio\TextProcessor\ValidateTaskSyntax
- * @uses   \AKlump\Directio\Lexer\AttributesLexer
- * @uses   \AKlump\Directio\Lexer\TaskLexer
- * @uses   \AKlump\Directio\TextProcessor\ParseAttributes
- * @uses   \AKlump\Directio\HTMLElementStyle
+ * @uses \AKlump\Directio\Config\SpecialAttributes
+ * @uses \AKlump\Directio\Lexer\AttributesLexer
+ * @uses \AKlump\Directio\Lexer\TaskLexer
+ * @uses \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses \AKlump\Directio\HTMLElementStyle
  */
 class ValidateTaskSyntaxTest extends TestCase {
 

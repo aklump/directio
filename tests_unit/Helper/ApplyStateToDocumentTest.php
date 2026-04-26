@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \AKlump\Directio\Helper\ApplyStateToDocument
+ * @uses \AKlump\Directio\Config\SpecialAttributes
  * @uses \AKlump\Directio\Lexer\AttributesLexer
  * @uses \AKlump\Directio\Lexer\TaskLexer
  * @uses \AKlump\Directio\Model\Document

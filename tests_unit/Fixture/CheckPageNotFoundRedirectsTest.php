@@ -10,6 +10,10 @@ use Symfony\Component\Console\Output\BufferedOutput;
 
 /**
  * @covers \AKlump\Directio\Fixture\CheckPageNotFoundRedirects
+ *
+ * @uses \AKlump\Directio\FixtureFramework\AbstractFixture
+ * @uses \AKlump\Directio\Serializer\DrupalPageNotFoundCollection
+ * @uses \AKlump\Directio\Serializer\MhtmlDecoder
  */
 class CheckPageNotFoundRedirectsTest extends TestCase {
 

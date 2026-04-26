@@ -10,7 +10,8 @@ use RuntimeException;
 
 /**
  * @covers \AKlump\Directio\IO\ReadState
- * @uses   \AKlump\Directio\Model\TaskState
+ * @uses \AKlump\Directio\IO\WriteState
+ * @uses \AKlump\Directio\Model\TaskState
  */
 class ReadStateTest extends TestCase {
 
@@ -73,4 +74,9 @@ class ReadStateTest extends TestCase {
     $path = $this->getTestFileFilepath('.cache/state.md');
     (new ReadState())($path);
   }
+
+  protected function tearDown(): void {
+    $this->deleteAllTestFiles();
+  }
+
 }
