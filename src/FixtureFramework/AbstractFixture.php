@@ -77,9 +77,9 @@ abstract class AbstractFixture extends BaseFixture {
   /**
    * {@inheritdoc}
    */
-  public function onSuccess(bool $silent = FALSE) {
+  public function onSuccess(bool $silent = FALSE, bool $mark_as_done_default = TRUE) {
     if (!$silent && $this->io()
-        ->confirm('Success. Mark as done (y/n)? ', FALSE)) {
+        ->confirm('Success. Mark as done? ', $mark_as_done_default)) {
       $this->markDone();
     }
   }

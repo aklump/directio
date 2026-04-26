@@ -4,6 +4,7 @@
 namespace AKlump\Directio\Command;
 
 use AKlump\Directio\Config\Names;
+use AKlump\Directio\FixtureFramework\AbstractFixture;
 use AKlump\Directio\FixtureFramework\Runtime\FixtureInstantiator;
 use AKlump\Directio\IO\GetLogsDirectory;
 use AKlump\Directio\IO\GetShortPath;
@@ -182,8 +183,11 @@ class FixturesCommand extends Command {
         if (($description = $fixture->description())) {
           $output->writeln(sprintf('<info>%s</info>', $description));
         }
-        $question = new ConfirmationQuestion(sprintf('Run fixture "%s" (y/n)? ', $fixture->id()), FALSE);
-        if (!(new QuestionHelper())->ask($input, $output, $question)) {
+
+        // We can only be sure io() exists on fixtures that extend
+        // AbstractFixture.  Therefor the skip option will only apply to those.
+        if ($fixture instanceof AbstractFixture && !$fixture->io()
+            ->confirm(sprintf('Run fixture "%s"?', $fixture->id()))) {
           $output->writeln('<info>Fixture skipped.</info>');
           ++$skipped_count;
           continue;

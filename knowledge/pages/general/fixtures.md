@@ -64,3 +64,18 @@ Execute the following command to run all fixtures referenced in your documents. 
 
 - `--filter={id}`: Filter fixtures by ID. You can use a string or a regular expression.
 - `--flush`: Rebuild the fixture cache before running.
+
+## On Success
+
+You will be asked if you want to mark the fixture as done in the Directio document.  The default is `Yes`.
+
+To make a certain fixture default to `No` add this method like this:
+
+```php
+  /**
+   * {@inheritdoc}
+   */
+  public function onSuccess(bool $silent = FALSE, bool $mark_as_done_default = TRUE) {
+    parent::onSuccess($silent, FALSE);
+  }
+```
