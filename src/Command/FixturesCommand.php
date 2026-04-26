@@ -24,9 +24,11 @@ use DateInterval;
 use DateTimeInterface;
 use Exception;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 class FixturesCommand extends Command {
 
@@ -35,6 +37,8 @@ class FixturesCommand extends Command {
   protected static $defaultName = 'fixtures';
 
   protected static $defaultDescription = 'Run fixtures defined in document tags';
+
+  protected array $messages;
 
   protected function configure() {
     $this->addOption('filter', NULL, InputOption::VALUE_REQUIRED, 'Filter fixtures by ID.');
@@ -187,51 +191,32 @@ class FixturesCommand extends Command {
 
       $instantiator = new FixtureInstantiator($options, $input, $output);
       $fixtures = (new FixtureCollectionBuilder($instantiator))($ordered_definitions);
-      $runner = new FixtureRunner($fixtures);
-      $runner->run(FALSE, $project_directory);
 
-      // Mark fixtures as done in documents
-      $mark_done = new MarkTaskDoneInDocument();
-      $read_document = new ReadDocument();
-      $write_document = new WriteDocument();
-      $write_state = new WriteState();
-      $state_path = $directio_directory . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
-      $now = date_create('now', LocalTimezone::get());
-
-      $messages = [];
-      $get_short_path = new GetShortPath();
-      foreach ($ordered_definitions as $def) {
-        $fixture_id = $def['id'];
-        if (isset($fixture_mappings[$fixture_id])) {
-          foreach ($fixture_mappings[$fixture_id] as $mapping) {
-            $path = $mapping['path'];
-            $task_id = $mapping['id'];
-            $document = $read_document($path);
-            $document = $mark_done($task_id, $document);
-            $write_document($path, $document);
-            $messages[] = sprintf('Marked "%s" as done in %s', $task_id, $get_short_path($path));
-
-            $task = (new TaskState())
-              ->setId($task_id)
-              ->setEnv(exec('echo "$(hostname)"'))
-              ->setCompleted($now->format(DateTimeInterface::ATOM))
-              ->setUser(exec('whoami'));
-
-            $expires = SpecialAttributes::extractExpires($mapping['attributes']);
-            if ($expires) {
-              $duration = new DateInterval($expires);
-              if ($duration) {
-                $expiry = (clone $now)->add($duration);
-              }
-              $task->setRedo($expiry->format(DateTimeInterface::ATOM));
-            }
-            $write_state->writeOne($state_path, $task);
-          }
+      $this->messages = [];
+      $skipped_count = 0;
+      while (($fixture = array_shift($fixtures)) !== NULL) {
+        if (($description = $fixture->description())) {
+          $output->writeln(sprintf('<info>%s</info>', $description));
         }
+        $question = new ConfirmationQuestion(sprintf('Run fixture %s (y/n)? ', $fixture->id()), FALSE);
+        if (!(new QuestionHelper())->ask($input, $output, $question)) {
+          $output->writeln('<info>Fixture skipped.</info>');
+          ++$skipped_count;
+          continue;
+        }
+
+        $runner = new FixtureRunner([$fixture]);
+        $runner->run(FALSE, $project_directory);
+        $this->markFixtureDone($fixture_mappings[$fixture->id()], $directio_directory);
       }
 
-      $output->writeln('<info>Fixtures completed successfully.</info>');
-      foreach ($messages as $message) {
+      if ($skipped_count > 0) {
+        $output->writeln('<info>Fixtures completed successfully or skipped.</info>');
+      }
+      else {
+        $output->writeln('<info>Fixtures completed successfully.</info>');
+      }
+      foreach ($this->messages as $message) {
         $output->writeln(sprintf('<info>%s</info>', $message));
       }
     }
@@ -242,5 +227,39 @@ class FixturesCommand extends Command {
     }
 
     return Command::SUCCESS;
+  }
+
+  private function markFixtureDone($fixture_mapping, string $directio_directory): void {
+    $mark_done = new MarkTaskDoneInDocument();
+    $read_document = new ReadDocument();
+    $write_document = new WriteDocument();
+    $write_state = new WriteState();
+    $state_path = $directio_directory . DIRECTORY_SEPARATOR . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE;
+    $now = date_create('now', LocalTimezone::get());
+    $get_short_path = new GetShortPath();
+    foreach ($fixture_mapping as $mapping) {
+      $path = $mapping['path'];
+      $task_id = $mapping['id'];
+      $document = $read_document($path);
+      $document = $mark_done($task_id, $document);
+      $write_document($path, $document);
+      $this->messages[] = sprintf('Marked "%s" as done in %s', $task_id, $get_short_path($path));
+
+      $task = (new TaskState())
+        ->setId($task_id)
+        ->setEnv(exec('echo "$(hostname)"'))
+        ->setCompleted($now->format(DateTimeInterface::ATOM))
+        ->setUser(exec('whoami'));
+
+      $expires = SpecialAttributes::extractExpires($mapping['attributes']);
+      if ($expires) {
+        $duration = new DateInterval($expires);
+        if ($duration) {
+          $expiry = (clone $now)->add($duration);
+        }
+        $task->setRedo($expiry->format(DateTimeInterface::ATOM));
+      }
+      $write_state->writeOne($state_path, $task);
+    }
   }
 }
