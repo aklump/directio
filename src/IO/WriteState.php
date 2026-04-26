@@ -9,6 +9,8 @@ use RuntimeException;
 
 class WriteState {
 
+  private array $pdos = [];
+
   /**
    * @param string $path
    * @param \AKlump\Directio\Model\TaskStateInterface[] $state
@@ -62,17 +64,20 @@ class WriteState {
   }
 
   private function getPdo(string $path): PDO {
-    $pdo = new PDO('sqlite:' . $path);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->exec("CREATE TABLE IF NOT EXISTS task_state (
+    if (!isset($this->pdos[$path])) {
+      $pdo = new PDO('sqlite:' . $path);
+      $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      $pdo->exec("CREATE TABLE IF NOT EXISTS task_state (
       id TEXT PRIMARY KEY,
       completed TEXT NOT NULL DEFAULT '',
       redo TEXT NOT NULL DEFAULT '',
       env TEXT NOT NULL DEFAULT '',
       user TEXT NOT NULL DEFAULT ''
     )");
+      $this->pdos[$path] = $pdo;
+    }
 
-    return $pdo;
+    return $this->pdos[$path];
   }
 
 }
