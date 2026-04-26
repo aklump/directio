@@ -156,17 +156,6 @@ class FixturesCommand extends Command {
         return Command::SUCCESS;
       }
 
-      // Sort definitions by the order they appear in $fixture_ids
-      $ordered_definitions = [];
-      foreach ($fixture_ids as $id) {
-        foreach ($definitions as $def) {
-          if ($def['id'] === $id) {
-            $def['mappings'] = $fixture_mappings[$id] ?? [];
-            $ordered_definitions[] = $def;
-            break;
-          }
-        }
-      }
       // <snippet id="fixtures_runtime_options">
       /**
        * @var \AKlump\FixtureFramework\Runtime\RunOptions $options These
@@ -182,7 +171,8 @@ class FixturesCommand extends Command {
       // </snippet>
 
       $instantiator = new FixtureInstantiator($options, $input, $output);
-      $fixtures = (new FixtureCollectionBuilder($instantiator))($ordered_definitions);
+
+      $fixtures = (new FixtureCollectionBuilder($instantiator))($definitions);
 
       $skipped_count = 0;
 
