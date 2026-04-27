@@ -24,7 +24,7 @@ use Symfony\Component\Yaml\Yaml;
  */
 abstract class AbstractFixture extends BaseFixture {
 
-  const YAML_OPTIONS_FILENAME = 'options.yml';
+  public const YAML_OPTIONS_FILENAME = 'options.yml';
 
   private InputInterface $input;
 
