@@ -6,11 +6,13 @@ namespace AKlump\Directio\Command;
 use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\InitializeDirectory;
 use Exception;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+#[AsCommand(name: 'init', description: 'Initialize PWD as task tracking root')]
 class InitializeCommand extends Command {
 
   protected static $defaultName = 'init';

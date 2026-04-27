@@ -15,11 +15,13 @@ use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
 use AKlump\LocalTimezone\LocalTimezone;
 use DateInterval;
 use DateTimeInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+#[AsCommand(name: 'update', description: 'Remove completed tasks from all project documents')]
 class UpdateCommand extends Command {
 
   use InitializedDirCommandTrait;

@@ -15,12 +15,12 @@ class FixtureInstantiator extends \AKlump\FixtureFramework\Runtime\FixtureInstan
   protected OutputInterface $output;
 
   public function __construct(
-    array|RunOptions $global_options,
+    array|RunOptions $run_options,
     InputInterface $input,
     OutputInterface $output,
-    ?RunContextValidator $validator = NULL,
+    ?RunContextValidator $run_context_validator = NULL,
   ) {
-    parent::__construct($global_options, $validator);
+    parent::__construct($run_options, $run_context_validator);
     $this->input = $input;
     $this->output = $output;
   }

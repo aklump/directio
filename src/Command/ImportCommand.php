@@ -20,6 +20,7 @@ use Exception;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -27,6 +28,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use AKlump\LocalTimezone\LocalTimezone;
 
+#[AsCommand(name: 'import', description: 'Import document, applying project task state')]
 class ImportCommand extends Command {
 
   use InitializedDirCommandTrait;

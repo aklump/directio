@@ -15,14 +15,17 @@ use AKlump\FixtureFramework\Discovery\DiscoverFixtureDefinitions;
 use AKlump\FixtureFramework\Runtime\FixtureCollectionBuilder;
 use AKlump\FixtureFramework\Runtime\FixtureRunner;
 use AKlump\Directio\Config\SpecialAttributes;
+use AKlump\FixtureFramework\Runtime\RunContextStoreSqLite;
 use AKlump\FixtureFramework\Runtime\RunOptions;
 use Exception;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+#[AsCommand(name: 'fixtures', description: 'Run fixtures defined in document tags')]
 class FixturesCommand extends Command {
 
   use InitializedDirCommandTrait;
@@ -66,7 +69,8 @@ class FixturesCommand extends Command {
 
     if (empty($fixture_mappings)) {
       if ($total_found > 0) {
-        $this->io()->info('All fixtures have been marked as done. Nothing more to do.');
+        $this->io()
+          ->info('All fixtures have been marked as done. Nothing more to do.');
       }
       else {
         $this->io()->info('No fixtures found in documents.');
@@ -85,7 +89,8 @@ class FixturesCommand extends Command {
   private function validateInitialized(string $directio_directory): bool {
     if (!file_exists($directio_directory)) {
       $this->io()->error('Current directory is not initialized.');
-      $this->io()->info(sprintf('Try the "%s" command first.', InitializeCommand::getDefaultName()));
+      $this->io()
+        ->info(sprintf('Try the "%s" command first.', InitializeCommand::getDefaultName()));
 
       return FALSE;
     }
@@ -98,7 +103,8 @@ class FixturesCommand extends Command {
     $shortpath_directio = (new GetShortPath())($directio_directory);
     if (empty($files_to_scan)) {
       $this->io()->error(sprintf('No documents in "%s"', $shortpath_directio));
-      $this->io()->info(sprintf('Try the "%s" command first.', ImportCommand::getDefaultName()));
+      $this->io()
+        ->info(sprintf('Try the "%s" command first.', ImportCommand::getDefaultName()));
 
       return NULL;
     }
@@ -166,7 +172,8 @@ class FixturesCommand extends Command {
       }
 
       if (empty($definitions)) {
-        $this->io()->info('No fixture definitions found for the referenced IDs.');
+        $this->io()
+          ->info('No fixture definitions found for the referenced IDs.');
 
         return Command::SUCCESS;
       }
@@ -187,7 +194,8 @@ class FixturesCommand extends Command {
 
       $instantiator = new FixtureInstantiator($options, $this->input, $this->output);
 
-      $fixtures = (new FixtureCollectionBuilder($instantiator))($definitions);
+      $context_store = new RunContextStoreSqLite($directio_directory . '/' . Names::FILENAME_STATE . '.' . Names::EXTENSION_STATE);
+      $fixtures = (new FixtureCollectionBuilder($instantiator))($definitions, $context_store);
 
       $skipped_count = 0;
 
@@ -219,7 +227,8 @@ class FixturesCommand extends Command {
       }
     }
     catch (Exception $e) {
-      $this->io()->error(sprintf('Error running fixtures: %s', $e->getMessage()));
+      $this->io()
+        ->error(sprintf('Error running fixtures: %s', $e->getMessage()));
 
       return Command::FAILURE;
     }
