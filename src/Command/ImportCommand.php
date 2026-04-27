@@ -24,12 +24,18 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Symfony\Component\Console\Style\SymfonyStyle;
 use AKlump\LocalTimezone\LocalTimezone;
 
 class ImportCommand extends Command {
 
   use InitializedDirCommandTrait;
+
+  private const IMPORT_STATUS_FAILURE = 0;
+
+  private const IMPORT_STATUS_SUCCESS = 1;
+
+  private const IMPORT_STATUS_IDENTICAL = 2;
 
   protected static $defaultName = 'import';
 
@@ -47,6 +53,12 @@ class ImportCommand extends Command {
   private DateTimeInterface $now;
 
   private string $openTagPattern;
+
+  private SymfonyStyle $io;
+
+  private function io(): SymfonyStyle {
+    return $this->io ??= new SymfonyStyle($this->input, $this->output);
+  }
 
   protected function configure() {
     $this->addArgument('source document', InputArgument::REQUIRED, 'The source document to be filtered.');
@@ -66,11 +78,9 @@ class ImportCommand extends Command {
 
     $logs_dir = (new GetLogsDirectory($this->directioDirectory))();
     if (is_dir($logs_dir) && count(array_diff(scandir($logs_dir), ['.', '..'])) > 0) {
-      $helper = $this->getHelper('question');
-      $question = new ConfirmationQuestion('Delete existing logs? ', FALSE);
-      if ($helper->ask($input, $output, $question)) {
+      if ($this->io()->confirm('Delete existing logs? ', FALSE)) {
         $this->deleteDirectory($logs_dir, TRUE);
-        $this->output->writeln('<info>Logs deleted.</info>');
+        $this->io()->info('Logs deleted.');
       }
     }
 
@@ -80,13 +90,17 @@ class ImportCommand extends Command {
     }
 
     if (basename($source) === AbstractFixture::YAML_OPTIONS_FILENAME) {
-      return $this->importOptionsFile($source) ? Command::SUCCESS : Command::FAILURE;
+      $status = $this->importOptionsFile($source);
+
+      return $status === self::IMPORT_STATUS_FAILURE ? Command::FAILURE : Command::SUCCESS;
     }
 
     if ($this->isFixtureFile($source)) {
       $this->importOptionsFile(dirname($source) . DIRECTORY_SEPARATOR . AbstractFixture::YAML_OPTIONS_FILENAME);
 
-      return $this->importFixture($source) ? Command::SUCCESS : Command::FAILURE;
+      $status = $this->importFixture($source);
+
+      return $status === self::IMPORT_STATUS_FAILURE ? Command::FAILURE : Command::SUCCESS;
     }
 
     if ($this->hasDirectioMarkup($source)) {
@@ -106,12 +120,11 @@ class ImportCommand extends Command {
       $document = (new ApplyStateToDocument($this->now))($state, $document);
     }
     catch (Exception $exception) {
-      $output->writeln(sprintf("<error>%s</error>", $exception->getMessage()));
-      $output->writeln('');
+      $this->io()->error($exception->getMessage());
 
       return Command::FAILURE;
     }
-    if (!$this->createNewDocument($document_path, $document)) {
+    if ($this->createNewDocument($document_path, $document) === self::IMPORT_STATUS_FAILURE) {
       return Command::FAILURE;
     }
 
@@ -144,7 +157,8 @@ class ImportCommand extends Command {
 
   private function importFromDirectory(string $directory): int {
     $found_count = 0;
-    $imported_count = 0;
+    $newly_imported_count = 0;
+    $identical_count = 0;
     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
     foreach ($iterator as $file) {
       if ($file->isDir()) {
@@ -153,39 +167,56 @@ class ImportCommand extends Command {
       $path = $file->getPathname();
       if ($this->isFixtureFile($path)) {
         $found_count++;
-        if ($this->importFixture($path)) {
-          $imported_count++;
+        $status = $this->importFixture($path);
+        if ($status === self::IMPORT_STATUS_SUCCESS) {
+          $newly_imported_count++;
+        }
+        elseif ($status === self::IMPORT_STATUS_IDENTICAL) {
+          $identical_count++;
         }
       }
       elseif (basename($path) === AbstractFixture::YAML_OPTIONS_FILENAME) {
         $found_count++;
-        if ($this->importOptionsFile($path)) {
-          $imported_count++;
+        $status = $this->importOptionsFile($path);
+        if ($status === self::IMPORT_STATUS_SUCCESS) {
+          $newly_imported_count++;
+        }
+        elseif ($status === self::IMPORT_STATUS_IDENTICAL) {
+          $identical_count++;
         }
       }
       elseif ($this->hasDirectioMarkup($path)) {
         $found_count++;
-        if ($this->importDocumentWithMarkup($path) === Command::SUCCESS) {
-          $imported_count++;
+        $status = $this->importDocumentWithMarkupAsStatus($path);
+        if ($status === self::IMPORT_STATUS_SUCCESS) {
+          $newly_imported_count++;
+        }
+        elseif ($status === self::IMPORT_STATUS_IDENTICAL) {
+          $identical_count++;
         }
       }
     }
 
     $shortpath_directory = (new GetShortPath())($directory);
     if ($found_count === 0) {
-      $this->output->writeln(sprintf('<comment>No fixtures or documents with directio markup found in %s</comment>', $shortpath_directory));
+      $this->io()->warning(sprintf('No fixtures or documents with directio markup found in %s', $shortpath_directory));
     }
-    elseif ($imported_count === 0) {
-      $this->output->writeln(sprintf('<comment>All of the %d items found in %s were skipped or failed.</comment>', $found_count, $shortpath_directory));
+    elseif ($newly_imported_count + $identical_count === 0) {
+      $this->io()->warning(sprintf('All of the %d items found in %s were skipped or failed.', $found_count, $shortpath_directory));
     }
     else {
-      $this->output->writeln(sprintf('<info>Imported %d of %d items found in %s.</info>', $imported_count, $found_count, $shortpath_directory));
+      $message = sprintf('Imported %d', $newly_imported_count);
+      if ($identical_count > 0) {
+        $message .= sprintf(', skipped %d identical', $identical_count);
+      }
+      $message .= sprintf(' of %d items found in %s.', $found_count, $shortpath_directory);
+      $this->io()->success($message);
     }
 
     return Command::SUCCESS;
   }
 
-  private function importDocumentWithMarkup(string $path): int {
+  private function importDocumentWithMarkupAsStatus(string $path): int {
     try {
       $document = (new ReadDocument())($path);
       (new ValidateTaskSyntax())($document->getContent());
@@ -195,19 +226,21 @@ class ImportCommand extends Command {
       $document = (new ApplyStateToDocument($this->now))($state, $document);
     }
     catch (Exception $exception) {
-      $this->output->writeln(sprintf("<error>%s</error>", $exception->getMessage()));
-      $this->output->writeln('');
+      $this->io()->error($exception->getMessage());
 
-      return Command::FAILURE;
-    }
-    if (!$this->createNewDocument($path, $document)) {
-      return Command::FAILURE;
+      return self::IMPORT_STATUS_FAILURE;
     }
 
-    return Command::SUCCESS;
+    return $this->createNewDocument($path, $document);
   }
 
-  private function importFixture(string $path): bool {
+  private function importDocumentWithMarkup(string $path): int {
+    $status = $this->importDocumentWithMarkupAsStatus($path);
+
+    return $status === self::IMPORT_STATUS_FAILURE ? Command::FAILURE : Command::SUCCESS;
+  }
+
+  private function importFixture(string $path): int {
     $target_dir = $this->directioDirectory . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Fixture';
     if (!file_exists($target_dir)) {
       mkdir($target_dir, 0755, TRUE);
@@ -216,29 +249,31 @@ class ImportCommand extends Command {
 
     $shortpath = (new GetShortPath())($target_path);
     if (file_exists($target_path)) {
-      $helper = $this->getHelper('question');
-      $question = new ConfirmationQuestion(sprintf('Fixture "%s" already exists. Overwrite? ', basename($target_path)), FALSE);
-      if (!$helper->ask($this->input, $this->output, $question)) {
-        $message = sprintf("<error>Failed to import \"%s\" because it already exists.</error>", basename($target_path));
-        $this->output->writeln(sprintf($message));
-        $this->output->writeln('');
+      if (md5_file($path) === md5_file($target_path)) {
+        $this->io()->writeln(sprintf('Fixture %s skipped as contents are identical.', $shortpath));
 
-        return FALSE;
+        return self::IMPORT_STATUS_IDENTICAL;
+      }
+      if (!$this->io()->confirm(sprintf('Fixture "%s" already exists. Overwrite? ', basename($target_path)), FALSE)) {
+        $message = sprintf("Failed to import \"%s\" because it already exists.", basename($target_path));
+        $this->io()->error($message);
+
+        return self::IMPORT_STATUS_FAILURE;
       }
     }
 
     if (!copy($path, $target_path)) {
-      $this->output->writeln(sprintf('<error>Failed to copy fixture to %s</error>', $shortpath));
+      $this->io()->error(sprintf('Failed to copy fixture to %s', $shortpath));
 
-      return FALSE;
+      return self::IMPORT_STATUS_FAILURE;
     }
 
-    $this->output->writeln(sprintf('<info>Fixture imported to %s</info>', $shortpath));
+    $this->io()->success(sprintf('Fixture imported to %s', $shortpath));
 
-    return TRUE;
+    return self::IMPORT_STATUS_SUCCESS;
   }
 
-  private function createNewDocument($document_path, DocumentInterface $document): bool {
+  private function createNewDocument($document_path, DocumentInterface $document): int {
     $imported_doc_path = $this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_IMPORTED . DIRECTORY_SEPARATOR . (new GetResultFilename($this->now))($document_path);
     $parent = dirname($imported_doc_path);
     if (!file_exists($parent)) {
@@ -247,35 +282,42 @@ class ImportCommand extends Command {
 
     $shortpath = (new GetShortPath())($imported_doc_path);
     if (file_exists($imported_doc_path)) {
-      $helper = $this->getHelper('question');
-      $question = new ConfirmationQuestion(sprintf('Document "%s" already exists. Overwrite? ', basename($imported_doc_path)), FALSE);
-      if (!$helper->ask($this->input, $this->output, $question)) {
-        return FALSE;
+      if (file_get_contents($imported_doc_path) === $document->getContent()) {
+        $this->io()->writeln(sprintf('File %s skipped as contents are identical.', $shortpath));
+
+        return self::IMPORT_STATUS_IDENTICAL;
+      }
+      if (!$this->io()->confirm(sprintf('Document "%s" already exists. Overwrite? ', basename($imported_doc_path)), FALSE)) {
+        return self::IMPORT_STATUS_FAILURE;
       }
     }
     (new WriteDocument())($imported_doc_path, $document);
-    $this->output->writeln(sprintf('<info>File imported to %s</info>', $shortpath));
+    $this->io()->success(sprintf('File imported to %s', $shortpath));
 
-    return TRUE;
+    return self::IMPORT_STATUS_SUCCESS;
   }
 
   private function tryValidateIncomingIdsDoNotAlreadyExists(DocumentInterface $importing_document, string $document_path): void {
+    $target_filename = (new GetResultFilename($this->now))($document_path);
     $new_ids = $importing_document->getIds();
     $read_document = new ReadDocument();
     $imported_files = glob($this->directioDirectory . DIRECTORY_SEPARATOR . Names::FILENAME_IMPORTED . DIRECTORY_SEPARATOR . '*');
     $invalid = FALSE;
     foreach ($imported_files as $imported_path) {
+      if (basename($imported_path) === $target_filename) {
+        continue;
+      }
       $existing_document = $read_document($imported_path);
       $existing_ids = $existing_document->getIds();
       $duplicated_ids = array_intersect($new_ids, $existing_ids);
       if ($duplicated_ids) {
         if (!$invalid) {
-          $this->output->writeln('The following tasks have already been imported:');
+          $this->io()->writeln('The following tasks have already been imported:');
         }
         $invalid = TRUE;
         $shortpath_imported = (new GetShortPath())($imported_path);
-        $this->output->writeln(sprintf('<info>├── %s</info>', $shortpath_imported));
-        $this->output->write(array_map(function ($line) {
+        $this->io()->writeln(sprintf('<info>├── %s</info>', $shortpath_imported));
+        $this->io()->write(array_map(function ($line) {
           return "<comment>│   ├── $line</comment>";
         }, $duplicated_ids), TRUE);
       }
@@ -283,7 +325,7 @@ class ImportCommand extends Command {
 
     if ($invalid) {
       $shortpath_document_path = (new GetShortPath())($document_path);
-      $this->output->writeln(sprintf('<info>Try deleting or moving "%s" if it is no longer in use.</info>', $shortpath_document_path));
+      $this->io()->note(sprintf('Try deleting or moving "%s" if it is no longer in use.', $shortpath_document_path));
       $message = sprintf('Failed to import "%s" due to ID collision.', $shortpath_document_path);
       throw new RuntimeException($message);
     }
@@ -308,30 +350,32 @@ class ImportCommand extends Command {
     }
   }
 
-  private function importOptionsFile(string $path): bool {
+  private function importOptionsFile(string $path): int {
     if (!is_file($path)) {
-      return FALSE;
+      return self::IMPORT_STATUS_FAILURE;
     }
     $target_path = $this->directioDirectory . DIRECTORY_SEPARATOR . basename($path);
+    $shortpath = (new GetShortPath())($target_path);
     if (file_exists($target_path)) {
-      $helper = $this->getHelper('question');
-      $question = new ConfirmationQuestion(sprintf('Options file "%s" already exists. Overwrite? ', basename($target_path)), FALSE);
-      if (!$helper->ask($this->input, $this->output, $question)) {
-        return FALSE;
+      if (md5_file($path) === md5_file($target_path)) {
+        $this->io()->writeln(sprintf('Options %s skipped as contents are identical.', $shortpath));
+
+        return self::IMPORT_STATUS_IDENTICAL;
+      }
+      if (!$this->io()->confirm(sprintf('Options file "%s" already exists. Overwrite? ', basename($target_path)), FALSE)) {
+        return self::IMPORT_STATUS_FAILURE;
       }
     }
 
     if (!copy($path, $target_path)) {
-      $shortpath = (new GetShortPath())($target_path);
-      $this->output->writeln(sprintf('<error>Failed to copy options file to %s</error>', $shortpath));
+      $this->io()->error(sprintf('Failed to copy options file to %s', $shortpath));
 
-      return FALSE;
+      return self::IMPORT_STATUS_FAILURE;
     }
 
-    $shortpath = (new GetShortPath())($target_path);
-    $this->output->writeln(sprintf('<info>Options imported to %s</info>', $shortpath));
+    $this->io()->success(sprintf('Options imported to %s', $shortpath));
 
-    return TRUE;
+    return self::IMPORT_STATUS_SUCCESS;
   }
 
 }

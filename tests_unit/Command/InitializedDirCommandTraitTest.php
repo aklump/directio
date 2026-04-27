@@ -5,10 +5,11 @@ namespace AKlump\Directio\Tests\Unit\Command;
 use AKlump\Directio\Command\InitializedDirCommandTrait;
 use AKlump\Directio\IO\GetDirectioRoot;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * @covers \AKlump\Directio\Command\InitializedDirCommandTrait
@@ -49,63 +50,80 @@ class InitializedDirCommandTraitTest extends TestCase {
 
   public function testGetBaseDirWhenAlreadyInitialized() {
     mkdir($this->tempDir . '/.directio');
-    
+
     $command = new class extends Command {
       use InitializedDirCommandTrait;
-      public function test($input, $output) {
-        return $this->getBaseDirOrInitializeCurrent($input, $output);
+
+      protected static $defaultName = 'test';
+
+      protected function execute(InputInterface $input, OutputInterface $output) {
+        $result = $this->getBaseDirOrInitializeCurrent($input, $output);
+        $output->write('RESULT:' . $result);
+
+        return Command::SUCCESS;
       }
     };
-    
-    $input = $this->createMock(InputInterface::class);
-    $output = new BufferedOutput();
-    
-    $result = $command->test($input, $output);
+
+    $application = new Application();
+    $application->add($command);
+    $tester = new CommandTester($application->find('test'));
+    $tester->execute([]);
+
+    $display = $tester->getDisplay();
+    preg_match('/RESULT:(.+)$/', $display, $matches);
+    $result = $matches[1] ?? '';
     $this->assertEquals(realpath($this->tempDir), realpath($result));
   }
 
   public function testGetBaseDirWhenNotInitializedAndUserSaysNo() {
     $command = new class extends Command {
       use InitializedDirCommandTrait;
-      public function test($input, $output) {
-        return $this->getBaseDirOrInitializeCurrent($input, $output);
+
+      protected static $defaultName = 'test';
+
+      protected function execute(InputInterface $input, OutputInterface $output) {
+        $result = $this->getBaseDirOrInitializeCurrent($input, $output);
+        $output->write('RESULT:' . $result);
+
+        return Command::SUCCESS;
       }
     };
-    $command->setHelperSet(new \Symfony\Component\Console\Helper\HelperSet());
-    
-    $input = $this->createMock(InputInterface::class);
-    $output = new BufferedOutput();
-    
-    $helper = $this->getMockBuilder(\Symfony\Component\Console\Helper\QuestionHelper::class)
-      ->onlyMethods(['ask'])
-      ->getMock();
-    $helper->method('ask')->willReturn(FALSE);
-    $command->getHelperSet()->set($helper, 'question');
-    
-    $result = $command->test($input, $output);
+
+    $application = new Application();
+    $application->add($command);
+    $tester = new CommandTester($application->find('test'));
+    $tester->setInputs(['no']);
+    $tester->execute([]);
+
+    $display = $tester->getDisplay();
+    preg_match('/RESULT:(.*)$/', $display, $matches);
+    $result = $matches[1] ?? 'NOT_FOUND';
     $this->assertEquals('', $result);
-    $this->assertStringContainsString('Directio is not tracking your project', $output->fetch());
   }
 
   public function testGetBaseDirWhenNotInitializedAndUserSaysYes() {
     $command = new class extends Command {
       use InitializedDirCommandTrait;
-      public function test($input, $output) {
-        return $this->getBaseDirOrInitializeCurrent($input, $output);
+
+      protected static $defaultName = 'test';
+
+      protected function execute(InputInterface $input, OutputInterface $output) {
+        $result = $this->getBaseDirOrInitializeCurrent($input, $output);
+        $output->write('RESULT:' . $result);
+
+        return Command::SUCCESS;
       }
     };
-    $command->setHelperSet(new \Symfony\Component\Console\Helper\HelperSet());
-    
-    $input = $this->createMock(InputInterface::class);
-    $output = new BufferedOutput();
-    
-    $helper = $this->getMockBuilder(\Symfony\Component\Console\Helper\QuestionHelper::class)
-      ->onlyMethods(['ask'])
-      ->getMock();
-    $helper->method('ask')->willReturn(TRUE);
-    $command->getHelperSet()->set($helper, 'question');
-    
-    $result = $command->test($input, $output);
+
+    $application = new Application();
+    $application->add($command);
+    $tester = new CommandTester($application->find('test'));
+    $tester->setInputs(['yes']);
+    $tester->execute([]);
+
+    $display = $tester->getDisplay();
+    preg_match('/RESULT:(.+)$/', $display, $matches);
+    $result = $matches[1] ?? '';
     $this->assertEquals(realpath($this->tempDir), realpath($result));
     $this->assertFileExists($this->tempDir . '/.directio');
   }

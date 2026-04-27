@@ -16,11 +16,14 @@ Fixture classes should be stored in the `.directio/src/Fixture` directory of you
 
 ### Registering the Namespace
 
+1. Add namespace declaration to `composer.json`
+2. `composer dump`
+
 To make your fixtures discoverable, you must add the `AKlump\Directio` namespace to your project's `composer.json` file under the `autoload` or `autoload-dev` section.
 
 ```json
 {
-  "autoload": {
+  "autoload-dev": {
     "psr-4": {
       "AKlump\\Directio\\": ".directio/src/"
     }
@@ -67,7 +70,7 @@ Execute the following command to run all fixtures referenced in your documents. 
 
 ## On Success
 
-You will be asked if you want to mark the fixture as done in the Directio document.  The default is `Yes`.
+You will be asked if you want to mark the fixture as done in the Directio document. The default is `Yes`.
 
 To make a certain fixture default to `No` add this method like this:
 

@@ -18,11 +18,10 @@ use AKlump\Directio\Config\SpecialAttributes;
 use AKlump\FixtureFramework\Runtime\RunOptions;
 use Exception;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 class FixturesCommand extends Command {
 
@@ -32,33 +31,45 @@ class FixturesCommand extends Command {
 
   protected static $defaultDescription = 'Run fixtures defined in document tags';
 
+  private InputInterface $input;
+
+  private OutputInterface $output;
+
+  private SymfonyStyle $io;
+
+  private function io(): SymfonyStyle {
+    return $this->io ??= new SymfonyStyle($this->input, $this->output);
+  }
+
   protected function configure() {
     $this->addOption('filter', NULL, InputOption::VALUE_REQUIRED, 'Filter fixtures by ID.');
     $this->addOption('flush', NULL, InputOption::VALUE_NONE, 'Flush the fixture cache.');
   }
 
   protected function execute(InputInterface $input, OutputInterface $output) {
+    $this->input = $input;
+    $this->output = $output;
     $base_dir = $this->getBaseDirOrInitializeCurrent($input, $output);
     if (!$base_dir) {
       return Command::FAILURE;
     }
     $directio_directory = $base_dir . DIRECTORY_SEPARATOR . Names::FILENAME_INIT;
-    if (!$this->validateInitialized($directio_directory, $output)) {
+    if (!$this->validateInitialized($directio_directory)) {
       return Command::FAILURE;
     }
 
     $total_found = 0;
-    $fixture_mappings = $this->scanForFixtureMappings($directio_directory, $output, $total_found);
+    $fixture_mappings = $this->scanForFixtureMappings($directio_directory, $total_found);
     if ($fixture_mappings === NULL) {
       return Command::FAILURE;
     }
 
     if (empty($fixture_mappings)) {
       if ($total_found > 0) {
-        $output->writeln('<info>All fixtures have been marked as done. Nothing more to do.</info>');
+        $this->io()->info('All fixtures have been marked as done. Nothing more to do.');
       }
       else {
-        $output->writeln('<info>No fixtures found in documents.</info>');
+        $this->io()->info('No fixtures found in documents.');
       }
 
       return Command::SUCCESS;
@@ -68,13 +79,13 @@ class FixturesCommand extends Command {
     $filter = $input->getOption('filter') ?: '';
     $flush = $input->getOption('flush');
 
-    return $this->runFixtures($base_dir, $directio_directory, $fixture_ids, $fixture_mappings, $input, $output, $filter, $flush);
+    return $this->runFixtures($base_dir, $directio_directory, $fixture_ids, $fixture_mappings, $filter, $flush);
   }
 
-  private function validateInitialized(string $directio_directory, OutputInterface $output): bool {
+  private function validateInitialized(string $directio_directory): bool {
     if (!file_exists($directio_directory)) {
-      $output->writeln('<error>Current directory is not initialized.</error>');
-      $output->writeln(sprintf('<info>Try the "%s" command first.</info>', InitializeCommand::getDefaultName()));
+      $this->io()->error('Current directory is not initialized.');
+      $this->io()->info(sprintf('Try the "%s" command first.', InitializeCommand::getDefaultName()));
 
       return FALSE;
     }
@@ -82,12 +93,12 @@ class FixturesCommand extends Command {
     return TRUE;
   }
 
-  private function scanForFixtureMappings(string $directio_directory, OutputInterface $output, int &$total_fixtures_found = 0): ?array {
+  private function scanForFixtureMappings(string $directio_directory, int &$total_fixtures_found = 0): ?array {
     $files_to_scan = glob($directio_directory . DIRECTORY_SEPARATOR . Names::FILENAME_IMPORTED . DIRECTORY_SEPARATOR . '*');
     $shortpath_directio = (new GetShortPath())($directio_directory);
     if (empty($files_to_scan)) {
-      $output->writeln(sprintf('<error>No documents in "%s"</error>', $shortpath_directio));
-      $output->writeln(sprintf('<info>Try the "%s" command first.</info>', ImportCommand::getDefaultName()));
+      $this->io()->error(sprintf('No documents in "%s"', $shortpath_directio));
+      $this->io()->info(sprintf('Try the "%s" command first.', ImportCommand::getDefaultName()));
 
       return NULL;
     }
@@ -128,7 +139,7 @@ class FixturesCommand extends Command {
     return $mappings;
   }
 
-  private function runFixtures(string $project_directory, string $directio_directory, array $fixture_ids, array $fixture_mappings, InputInterface $input, OutputInterface $output, string $filter = '', bool $flush = FALSE): int {
+  private function runFixtures(string $project_directory, string $directio_directory, array $fixture_ids, array $fixture_mappings, string $filter = '', bool $flush = FALSE): int {
     // Prepare fixture framework
     $vendor_dir = $project_directory . DIRECTORY_SEPARATOR . 'vendor';
     // If we're running from within the app directory in the package itself
@@ -155,7 +166,7 @@ class FixturesCommand extends Command {
       }
 
       if (empty($definitions)) {
-        $output->writeln('<info>No fixture definitions found for the referenced IDs.</info>');
+        $this->io()->info('No fixture definitions found for the referenced IDs.');
 
         return Command::SUCCESS;
       }
@@ -174,7 +185,7 @@ class FixturesCommand extends Command {
       ]);
       // </snippet>
 
-      $instantiator = new FixtureInstantiator($options, $input, $output);
+      $instantiator = new FixtureInstantiator($options, $this->input, $this->output);
 
       $fixtures = (new FixtureCollectionBuilder($instantiator))($definitions);
 
@@ -184,14 +195,14 @@ class FixturesCommand extends Command {
       // array rather than letting the fixture runner do so.
       while (($fixture = array_shift($fixtures)) !== NULL) {
         if (($description = $fixture->description())) {
-          $output->writeln(sprintf('<info>%s</info>', $description));
+          $this->io()->info($description);
         }
 
         // We can only be sure io() exists on fixtures that extend
         // AbstractFixture.  Therefor the skip option will only apply to those.
         if ($fixture instanceof AbstractFixture && !$fixture->io()
             ->confirm(sprintf('Run fixture "%s"?', $fixture->id()))) {
-          $output->writeln('<info>Fixture skipped.</info>');
+          $this->io()->info('Fixture skipped.');
           ++$skipped_count;
           continue;
         }
@@ -201,14 +212,14 @@ class FixturesCommand extends Command {
       }
 
       if ($skipped_count > 0) {
-        $output->writeln('<info>Fixtures completed successfully or skipped.</info>');
+        $this->io()->info('Fixtures completed successfully or skipped.');
       }
       else {
-        $output->writeln('<info>Fixtures completed successfully.</info>');
+        $this->io()->info('Fixtures completed successfully.');
       }
     }
     catch (Exception $e) {
-      $output->writeln(sprintf('<error>Error running fixtures: %s</error>', $e->getMessage()));
+      $this->io()->error(sprintf('Error running fixtures: %s', $e->getMessage()));
 
       return Command::FAILURE;
     }

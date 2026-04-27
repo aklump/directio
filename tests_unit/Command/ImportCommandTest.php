@@ -81,6 +81,7 @@ EOD;
     $this->assertFileExists($this->projectRoot . '/.directio/src/Fixture/SourceFixture.php');
 
     // Second import, answer No
+    file_put_contents($fixturePath, $content . "\n// Changed");
     $commandTester = $this->executeCommand(['source document' => $fixturePath], ['no']);
     $this->assertStringContainsString('Fixture "SourceFixture.php" already exists. Overwrite?', $commandTester->getDisplay());
     // In this case it returns Command::FAILURE because importFixture returns FALSE
@@ -216,11 +217,33 @@ EOD
     $this->executeCommand(['source document' => $sourceDir], ['yes', 'yes']);
 
     // Second import, skip both
+    file_put_contents($sourceDir . '/Fixture1.php', <<<'EOD'
+<?php
+namespace AKlump\Directio\Fixture;
+use AKlump\FixtureFramework\Fixture;
+#[Fixture(id: 'f1')]
+class Fixture1 {
+  // Changed
+}
+EOD
+    );
+    file_put_contents($sourceDir . '/markup.md', '<directio id="m1">changed</directio>');
     $commandTester = $this->executeCommand(['source document' => $sourceDir], ['no', 'no']);
     $this->assertStringContainsString('All of the 2 items found', $commandTester->getDisplay());
     $this->assertStringContainsString('were skipped or failed', $commandTester->getDisplay());
 
     // Third import, skip one
+    file_put_contents($sourceDir . '/Fixture1.php', <<<'EOD'
+<?php
+namespace AKlump\Directio\Fixture;
+use AKlump\FixtureFramework\Fixture;
+#[Fixture(id: 'f1')]
+class Fixture1 {
+  // Changed again
+}
+EOD
+    );
+    file_put_contents($sourceDir . '/markup.md', '<directio id="m1">changed again</directio>');
     $commandTester = $this->executeCommand(['source document' => $sourceDir], ['yes', 'no']);
     $this->assertStringContainsString('Imported 1 of 2 items found', $commandTester->getDisplay());
   }

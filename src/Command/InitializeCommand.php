@@ -9,6 +9,7 @@ use Exception;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 class InitializeCommand extends Command {
 
@@ -17,11 +18,12 @@ class InitializeCommand extends Command {
   protected static $defaultDescription = 'Initialize PWD as task tracking root';
 
   protected function execute(InputInterface $input, OutputInterface $output) {
+    $io = new SymfonyStyle($input, $output);
     try {
       $pwd = getcwd();
       (new InitializeDirectory())($pwd);
       $shortpath = (new GetShortPath($pwd))($pwd);
-      $output->writeln(sprintf('<info>Directory "%s" is initialized.</info>', $shortpath));
+      $io->success(sprintf('Directory "%s" is initialized.', $shortpath));
 
       return Command::SUCCESS;
     }

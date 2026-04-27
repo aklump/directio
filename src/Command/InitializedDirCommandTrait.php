@@ -6,7 +6,7 @@ use AKlump\Directio\IO\GetDirectioRoot;
 use AKlump\Directio\IO\GetShortPath;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 trait InitializedDirCommandTrait {
 
@@ -15,13 +15,12 @@ trait InitializedDirCommandTrait {
     if ($base_dir) {
       return $base_dir;
     }
-    $output->writeln('<error>Directio is not tracking your project.</error>');
-    $helper = $this->getHelper('question');
+    $io = new SymfonyStyle($input, $output);
+    $io->error('Directio is not tracking your project.');
     $pwd = getcwd();
     $shortpath = (new GetShortPath($pwd))($pwd);
-    $question = new ConfirmationQuestion(sprintf('Set up %s for task tracking?', $shortpath), FALSE);
-    if (!$helper->ask($input, $output, $question)) {
-      $output->writeln('<error>Import cancelled.</error>');
+    if (!$io->confirm(sprintf('Set up %s for task tracking?', $shortpath), FALSE)) {
+      $io->error('Import cancelled.');
 
       return '';
     }
