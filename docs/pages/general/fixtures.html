@@ -4,9 +4,9 @@
   <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-      <link rel="stylesheet" href="../../dist/node_modules/bootstrap/dist/css/bootstrap.css?ver=0.0.3">
-      <link rel="stylesheet" href="../../dist/dist/bootstrap_theme.css?ver=0.0.3">
-      <link rel="stylesheet" href="../../dist/node_modules/bootstrap-icons/font/bootstrap-icons.min.css?ver=0.0.3">
+      <link rel="stylesheet" href="../../dist/node_modules/bootstrap/dist/css/bootstrap.css?ver=0.0.4">
+      <link rel="stylesheet" href="../../dist/dist/bootstrap_theme.css?ver=0.0.4">
+      <link rel="stylesheet" href="../../dist/node_modules/bootstrap-icons/font/bootstrap-icons.min.css?ver=0.0.4">
         <title>Fixtures | Directio</title>
   </head>
 <body class="my-5">
@@ -90,7 +90,7 @@ use Symfony\Component\Yaml\Yaml;
  */
 abstract class AbstractFixture extends BaseFixture {
 
-  const YAML_OPTIONS_FILENAME = 'options.yml';
+  public const YAML_OPTIONS_FILENAME = 'options.yml';
 
   private InputInterface $input;
 
@@ -138,8 +138,34 @@ abstract class AbstractFixture extends BaseFixture {
     return $this-&gt;options()-&gt;require('directio_directory');
   }
 
+  public function cacheDirectory(): string {
+    return $this-&gt;options()-&gt;require('cache_directory');
+  }
+
   public function logsDirectory(): string {
     return $this-&gt;options()-&gt;require('logs_directory');
+  }
+
+  /**
+   * Determines whether the fixture should be run based on some criteria.
+   *
+   * @return bool True if the fixture should run, false otherwise.
+   */
+  public function shouldRun(): bool {
+    $filter_value = '';
+    if ($this-&gt;input-&gt;hasArgument('filter')) {
+      $filter_value = $this-&gt;input-&gt;getArgument('filter');
+    }
+    if (empty($filter_value) &amp;&amp; $this-&gt;input-&gt;hasOption('filter')) {
+      $filter_value = $this-&gt;input-&gt;getOption('filter');
+    }
+
+    if (!empty($filter_value) &amp;&amp; str_contains($this-&gt;id(), $filter_value)) {
+      return TRUE;
+    }
+
+    return $this-&gt;io()
+      -&gt;confirm(sprintf('Run fixture "%s"?', $this-&gt;id()));
   }
 
   /**
@@ -195,9 +221,13 @@ abstract class AbstractFixture extends BaseFixture {
 }
 </code></pre>
 <h3>Registering the Namespace</h3>
+<ol>
+<li>Add namespace declaration to <code>composer.json</code></li>
+<li><code>composer dump</code></li>
+</ol>
 <p>To make your fixtures discoverable, you must add the <code>AKlump\Directio</code> namespace to your project's <code>composer.json</code> file under the <code>autoload</code> or <code>autoload-dev</code> section.</p>
 <pre><code class="json">{
-  "autoload": {
+  "autoload-dev": {
     "psr-4": {
       "AKlump\\Directio\\": ".directio/src/"
     }
@@ -214,6 +244,9 @@ abstract class AbstractFixture extends BaseFixture {
 $options = new RunOptions([
   /** @var $directio_directory string File path to .directio/ */
   'directio_directory' =&gt; $directio_directory,
+
+  /** @var $cache_directory string File path to the directory where cached files are to be stored. */
+  'cache_directory' =&gt; (new GetCacheDirectory($directio_directory))(),
 
   /** @var $logs_directory string File path to the directory where logs are to be stored. */
   'logs_directory' =&gt; (new GetLogsDirectory($directio_directory))(),
@@ -237,7 +270,7 @@ $options = new RunOptions([
 <li><code>--flush</code>: Rebuild the fixture cache before running.</li>
 </ul>
 <h2>On Success</h2>
-<p>You will be asked if you want to mark the fixture as done in the Directio document.  The default is <code>Yes</code>.</p>
+<p>You will be asked if you want to mark the fixture as done in the Directio document. The default is <code>Yes</code>.</p>
 <p>To make a certain fixture default to <code>No</code> add this method like this:</p>
 <pre><code class="php">  /**
    * {@inheritdoc}
@@ -253,9 +286,9 @@ $options = new RunOptions([
   <footer class="footer d-flex justify-content-center">
     <div class="flex-column justify-content-center">
               Version:
-        <strong>0.0.3</strong>
+        <strong>0.0.4</strong>
         &bull;
-                    Last Update: <strong>4/26/2026</strong>
+                    Last Update: <strong>4/27/2026</strong>
           </div>
   </footer>
 
@@ -418,9 +451,9 @@ $options = new RunOptions([
   </div>
 </div>
 
-  <script src="../../dist/node_modules/bootstrap/dist/js/bootstrap.min.js?ver=0.0.3"></script>
-  <script src="../../dist/lunr.js?ver=0.0.3"></script>
-  <script src="../../dist/knowledge.min.js?ver=0.0.3"></script>
+  <script src="../../dist/node_modules/bootstrap/dist/js/bootstrap.min.js?ver=0.0.4"></script>
+  <script src="../../dist/lunr.js?ver=0.0.4"></script>
+  <script src="../../dist/knowledge.min.js?ver=0.0.4"></script>
 
 </body>
 </html>

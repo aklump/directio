@@ -4,9 +4,9 @@
   <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-      <link rel="stylesheet" href="../../dist/node_modules/bootstrap/dist/css/bootstrap.css?ver=0.0.3">
-      <link rel="stylesheet" href="../../dist/dist/bootstrap_theme.css?ver=0.0.3">
-      <link rel="stylesheet" href="../../dist/node_modules/bootstrap-icons/font/bootstrap-icons.min.css?ver=0.0.3">
+      <link rel="stylesheet" href="../../dist/node_modules/bootstrap/dist/css/bootstrap.css?ver=0.0.4">
+      <link rel="stylesheet" href="../../dist/dist/bootstrap_theme.css?ver=0.0.4">
+      <link rel="stylesheet" href="../../dist/node_modules/bootstrap-icons/font/bootstrap-icons.min.css?ver=0.0.4">
         <title>Changelog | Directio</title>
   </head>
 <body class="my-5">
@@ -46,8 +46,40 @@
 <p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>,
 and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <h2>[Unreleased]</h2>
+<h3>Added</h3>
 <ul>
-<li>Nothing to list</li>
+<li><code>ImportCommand</code> now prompts the user to flush the fixture cache directory (<code>.cache</code>) if it's not empty, similar to the existing logs directory handling.</li>
+<li>Created <code>AKlump\Directio\IO\GetCacheDirectory</code> to provide a centralized and consistent way to retrieve and initialize the <code>.cache</code> directory path.</li>
+<li>Added an optional argument to <code>FixturesCommand</code> (alias <code>do</code>) that acts as a fixture ID filter, allowing <code>directio do check_pages_runner</code> in addition to <code>directio do --filter=check_pages_runner</code>.</li>
+<li>Created <code>AKlump\Directio\Exception\AuthenticationRequiredException</code> for fine-grained authentication failure handling.</li>
+<li>Integrated <code>Symfony\Component\Stopwatch\Stopwatch</code> into <code>MHTMLTrait::downloadAsMhtml</code> to print the total generation time for the MHTML archive.</li>
+<li>Added an optional cache directory parameter to <code>MHTMLTrait::downloadAsMhtml</code> to speed up repeat calls by caching discovered assets.</li>
+<li>Created <code>MHTMLTrait</code> for generating MHTML archives from web pages and their assets.</li>
+<li>Added <code>DrupalReports</code> fixture to facilitate report archival.</li>
+</ul>
+<h3>Fixed</h3>
+<ul>
+<li>Fixed a bug in <code>MHTMLTrait</code> where incorrect <code>Content-Type</code> headers were being captured from redirects, causing assets (like SVGs) to be incorrectly labeled as <code>text/html</code>.</li>
+<li>Improved image display in MHTML archives by ensuring correct <code>Content-Type</code> and charset for all assets.</li>
+<li>Reduced MHTML filesize by using <code>quoted-printable</code> encoding for text-based assets (CSS, JS, SVG) instead of <code>base64</code>.</li>
+<li>Added <code>Snapshot-Content-Location</code> header to MHTML archives for better browser compatibility.</li>
+</ul>
+<h3>Changed</h3>
+<ul>
+<li><code>WriteDocument::__invoke</code> now trims whitespace from the document content before writing it to the file.</li>
+<li><code>AbstractFixture::shouldRun()</code> now automatically returns <code>true</code> (skipping the confirmation prompt) if a <code>filter</code> option is used in the command input.</li>
+<li><code>MHTMLTrait::downloadAsMhtml</code> now validates the main response and throws a <code>FixtureException</code> if it detects a 403 Access Denied or an unauthorized redirect to a login page (common when a session cookie is missing or expired).</li>
+<li>Refined <code>MHTMLTrait::downloadAsMhtml</code> to output a single consolidated message: "Downloaded {url} to {path} in {time}ms".</li>
+<li>Removed redundant "Downloaded" message from <code>DrupalReports</code> fixture.</li>
+<li>Refined <code>MHTMLTrait::downloadAsMhtml</code> to make <code>Stopwatch</code> usage conditional on the class existing and simplified output to show only total generation time.</li>
+<li>Added a Symfony progress bar to <code>MHTMLTrait::downloadAsMhtml</code> to track asset download progress.</li>
+<li><code>MHTMLTrait</code> now ensures all relative URLs in the HTML content are made absolute, including those in attributes (href, src, etc.) and CSS <code>url()</code> references.</li>
+<li>Refactored <code>ImportCommand</code>, <code>FixturesCommand</code>, <code>UpdateCommand</code>, and <code>InitializeCommand</code> to use <code>SymfonyStyle</code> for consistent I/O.</li>
+<li>Replaced manual <code>ConfirmationQuestion</code> usage with <code>$this-&gt;io()-&gt;confirm()</code> across all commands.</li>
+<li><code>ImportCommand</code> now skips the overwrite prompt when importing files (fixtures, documents, options) if the source and target contents are identical.</li>
+<li>Updated <code>ImportCommand</code> output to indicate when a file is skipped due to identical contents.</li>
+<li>Updated <code>ImportCommand</code>, <code>FixturesCommand</code>, <code>UpdateCommand</code>, and <code>InitializeCommand</code> with the <code>AsCommand</code> attribute to resolve Symfony 6.1 deprecations.</li>
+<li>Refined the final summary message of <code>ImportCommand</code> to accurately reflect the number of newly imported versus identical skipped items.</li>
 </ul>
     </article>
   </div>
@@ -56,9 +88,9 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   <footer class="footer d-flex justify-content-center">
     <div class="flex-column justify-content-center">
               Version:
-        <strong>0.0.3</strong>
+        <strong>0.0.4</strong>
         &bull;
-                    Last Update: <strong>4/26/2026</strong>
+                    Last Update: <strong>4/27/2026</strong>
           </div>
   </footer>
 
@@ -221,9 +253,9 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   </div>
 </div>
 
-  <script src="../../dist/node_modules/bootstrap/dist/js/bootstrap.min.js?ver=0.0.3"></script>
-  <script src="../../dist/lunr.js?ver=0.0.3"></script>
-  <script src="../../dist/knowledge.min.js?ver=0.0.3"></script>
+  <script src="../../dist/node_modules/bootstrap/dist/js/bootstrap.min.js?ver=0.0.4"></script>
+  <script src="../../dist/lunr.js?ver=0.0.4"></script>
+  <script src="../../dist/knowledge.min.js?ver=0.0.4"></script>
 
 </body>
 </html>
