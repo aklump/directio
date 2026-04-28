@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `ImportCommand` now prompts the user to flush the fixture cache directory (`.cache`) if it's not empty, similar to the existing logs directory handling.
+- Created `AKlump\Directio\IO\GetCacheDirectory` to provide a centralized and consistent way to retrieve and initialize the `.cache` directory path.
+- Added an optional argument to `FixturesCommand` (alias `do`) that acts as a fixture ID filter, allowing `directio do check_pages_runner` in addition to `directio do --filter=check_pages_runner`.
 - Created `AKlump\Directio\Exception\AuthenticationRequiredException` for fine-grained authentication failure handling.
 - Integrated `Symfony\Component\Stopwatch\Stopwatch` into `MHTMLTrait::downloadAsMhtml` to print the total generation time for the MHTML archive.
 - Added an optional cache directory parameter to `MHTMLTrait::downloadAsMhtml` to speed up repeat calls by caching discovered assets.
@@ -26,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Snapshot-Content-Location` header to MHTML archives for better browser compatibility.
 
 ### Changed
+- `WriteDocument::__invoke` now trims whitespace from the document content before writing it to the file.
+- `AbstractFixture::shouldRun()` now automatically returns `true` (skipping the confirmation prompt) if a `filter` option is used in the command input.
 - `MHTMLTrait::downloadAsMhtml` now validates the main response and throws a `FixtureException` if it detects a 403 Access Denied or an unauthorized redirect to a login page (common when a session cookie is missing or expired).
 - Refined `MHTMLTrait::downloadAsMhtml` to output a single consolidated message: "Downloaded {url} to {path} in {time}ms".
 - Removed redundant "Downloaded" message from `DrupalReports` fixture.
