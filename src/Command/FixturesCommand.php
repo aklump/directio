@@ -206,13 +206,12 @@ class FixturesCommand extends Command {
       // array rather than letting the fixture runner do so.
       while (($fixture = array_shift($fixtures)) !== NULL) {
         if (($description = $fixture->description())) {
-          $this->io()->info($description);
+          $this->io()->title($description);
         }
 
         // We can only be sure io() exists on fixtures that extend
         // AbstractFixture.  Therefor the skip option will only apply to those.
-        if ($fixture instanceof AbstractFixture && !$fixture->io()
-            ->confirm(sprintf('Run fixture "%s"?', $fixture->id()))) {
+        if ($fixture instanceof AbstractFixture && !$fixture->shouldRun()) {
           $this->io()->info('Fixture skipped.');
           ++$skipped_count;
           continue;

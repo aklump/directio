@@ -81,6 +81,16 @@ abstract class AbstractFixture extends BaseFixture {
   }
 
   /**
+   * Determines whether the fixture should be run based on some criteria.
+   *
+   * @return bool True if the fixture should run, false otherwise.
+   */
+  public function shouldRun(): bool {
+    return $this->io()
+      ->confirm(sprintf('Run fixture "%s"?', $this->id()));
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function onSuccess(bool $silent = FALSE, bool $mark_as_done_default = TRUE) {
