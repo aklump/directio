@@ -6,6 +6,7 @@ namespace AKlump\Directio\Command;
 use AKlump\Directio\FixtureFramework\AbstractFixture;
 use AKlump\Directio\Config\Names;
 use AKlump\Directio\Helper\ApplyStateToDocument;
+use AKlump\Directio\IO\GetCacheDirectory;
 use AKlump\Directio\IO\GetLogsDirectory;
 use AKlump\Directio\IO\GetResultFilename;
 use AKlump\Directio\IO\GetShortPath;
@@ -83,6 +84,17 @@ class ImportCommand extends Command {
       if ($this->io()->confirm('Delete existing logs? ', FALSE)) {
         $this->deleteDirectory($logs_dir, TRUE);
         $this->io()->info('Logs deleted.');
+      }
+    }
+
+    $cache_dir = (new GetCacheDirectory($this->directioDirectory))();
+    if (is_dir($cache_dir) && count(array_diff(scandir($cache_dir), [
+        '.',
+        '..',
+      ])) > 0) {
+      if ($this->io()->confirm('Flush the cache? ')) {
+        $this->deleteDirectory($cache_dir, TRUE);
+        $this->io()->info('Cache flushed.');
       }
     }
 

@@ -6,6 +6,7 @@ namespace AKlump\Directio\Command;
 use AKlump\Directio\Config\Names;
 use AKlump\Directio\FixtureFramework\AbstractFixture;
 use AKlump\Directio\FixtureFramework\Runtime\FixtureInstantiator;
+use AKlump\Directio\IO\GetCacheDirectory;
 use AKlump\Directio\IO\GetLogsDirectory;
 use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\ReadDocument;
@@ -189,7 +190,7 @@ class FixturesCommand extends Command {
         'directio_directory' => $directio_directory,
 
         /** @var $cache_directory string File path to the directory where cached files are to be stored. */
-        'cache_directory' => $directio_directory . '/.cache',
+        'cache_directory' => (new GetCacheDirectory($directio_directory))(),
 
         /** @var $logs_directory string File path to the directory where logs are to be stored. */
         'logs_directory' => (new GetLogsDirectory($directio_directory))(),
