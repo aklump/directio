@@ -49,6 +49,7 @@ class UpdateCommand extends Command {
   }
 
   protected function configure() {
+    return $this->setAliases(['up']);
   }
 
   protected function execute(InputInterface $input, OutputInterface $output) {
@@ -62,7 +63,8 @@ class UpdateCommand extends Command {
     $now = date_create('now', LocalTimezone::get());
     if (!file_exists($this->directioDirectory)) {
       $this->io()->error('Current directory is not initialized.');
-      $this->io()->info(sprintf('Try the "%s" command first.', InitializeCommand::getDefaultName()));
+      $this->io()
+        ->info(sprintf('Try the "%s" command first.', InitializeCommand::getDefaultName()));
 
       return Command::FAILURE;
     }
@@ -71,7 +73,8 @@ class UpdateCommand extends Command {
     $shortpath_directio = (new GetShortPath())($this->directioDirectory);
     if (empty($files_to_update)) {
       $this->io()->error(sprintf('No documents in "%s"', $shortpath_directio));
-      $this->io()->info(sprintf('Try the "%s" command first.', ImportCommand::getDefaultName()));
+      $this->io()
+        ->info(sprintf('Try the "%s" command first.', ImportCommand::getDefaultName()));
 
       return Command::FAILURE;
     }

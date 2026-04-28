@@ -45,6 +45,7 @@ class FixturesCommand extends Command {
   }
 
   protected function configure() {
+    $this->setAliases(['do']);
     $this->addOption('filter', NULL, InputOption::VALUE_REQUIRED, 'Filter fixtures by ID.');
     $this->addOption('flush', NULL, InputOption::VALUE_NONE, 'Flush the fixture cache.');
   }
