@@ -169,10 +169,22 @@ EOD;
 
       protected function fetchUrlForMhtml(string $url, array $headers): array {
         if (str_ends_with($url, '.html')) {
-          return ['body' => '<html><img src="img.png"></html>', 'content_type' => 'text/html'];
+          return [
+            'body' => '<html><img src="img.png"></html>',
+            'content_type' => 'text/html',
+            'status_code' => 200,
+            'final_url' => $url,
+            'headers' => [],
+          ];
         }
 
-        return ['body' => 'binary', 'content_type' => 'image/png'];
+        return [
+          'body' => 'binary',
+          'content_type' => 'image/png',
+          'status_code' => 200,
+          'final_url' => $url,
+          'headers' => [],
+        ];
       }
     };
 
@@ -198,10 +210,19 @@ EOD;
           return [
             'body' => '<html><img src="img.png"></html>',
             'content_type' => 'text/html',
+            'status_code' => 200,
+            'final_url' => $url,
+            'headers' => [],
           ];
         }
 
-        return ['body' => 'binary', 'content_type' => 'image/png'];
+        return [
+          'body' => 'binary',
+          'content_type' => 'image/png',
+          'status_code' => 200,
+          'final_url' => $url,
+          'headers' => [],
+        ];
       }
     };
 
@@ -251,10 +272,22 @@ EOD;
 
       protected function fetchUrlForMhtml(string $url, array $headers): array {
         if (str_ends_with($url, '.html')) {
-          return ['body' => '<html><img src="img.png"></html>', 'content_type' => 'text/html'];
+          return [
+            'body' => '<html><img src="img.png"></html>',
+            'content_type' => 'text/html',
+            'status_code' => 200,
+            'final_url' => $url,
+            'headers' => [],
+          ];
         }
 
-        return ['body' => 'binary', 'content_type' => 'image/png'];
+        return [
+          'body' => 'binary',
+          'content_type' => 'image/png',
+          'status_code' => 200,
+          'final_url' => $url,
+          'headers' => [],
+        ];
       }
     };
 

@@ -2,6 +2,7 @@
 
 namespace AKlump\Directio\Traits;
 
+use AKlump\Directio\Exception\AuthenticationRequiredException;
 use AKlump\FixtureFramework\Exception\FixtureException;
 use Symfony\Component\Stopwatch\Stopwatch;
 
@@ -35,6 +36,7 @@ trait MHTMLTrait {
     }
 
     $main_response = $this->fetchUrlForMhtml($url, $headers);
+    $this->validateMainResponseForMhtml($url, $main_response);
     $io = method_exists($this, 'io') ? $this->io() : NULL;
 
     $html = $main_response['body'];
@@ -59,6 +61,11 @@ trait MHTMLTrait {
           $assets[$asset_url] = $this->fetchUrlForMhtml($asset_url, $headers);
           if ($asset_cache_file) {
             file_put_contents($asset_cache_file, serialize($assets[$asset_url]));
+          }
+        }
+        catch (AuthenticationRequiredException $exception) {
+          if ($io) {
+            $io->warning(sprintf('Could not include authenticated asset in MHTML: %s', $asset_url));
           }
         }
         catch (FixtureException $exception) {
@@ -123,19 +130,120 @@ trait MHTMLTrait {
       throw new FixtureException(sprintf('Failed to download %s: %s', $url, $error['message'] ?? 'Unknown error'));
     }
 
+    $headers = $http_response_header ?? [];
+    $metadata = $this->parseMhtmlResponseMetadata($headers, $url);
+
+    return [
+      'body' => $body,
+      'content_type' => $metadata['content_type'],
+      'headers' => $headers,
+      'status_code' => $metadata['status_code'],
+      'final_url' => $metadata['final_url'],
+    ];
+  }
+
+  /**
+   * Parses response headers to extract metadata.
+   *
+   * @param array $headers The raw response headers.
+   * @param string $requested_url The original requested URL.
+   *
+   * @return array{content_type: string, status_code: ?int, final_url: string}
+   */
+  private function parseMhtmlResponseMetadata(array $headers, string $requested_url): array {
     $content_type = 'application/octet-stream';
-    if (isset($http_response_header)) {
-      foreach ($http_response_header as $header) {
-        if (stripos($header, 'Content-Type:') === 0) {
-          $content_type = trim(substr($header, strlen('Content-Type:')));
-        }
+    $status_code = NULL;
+    $final_url = $requested_url;
+
+    foreach ($headers as $header) {
+      if (preg_match('#^HTTP/\d+(?:\.\d+)?\s+(\d+)#', $header, $matches)) {
+        $status_code = (int) $matches[1];
+      }
+      if (stripos($header, 'Content-Type:') === 0) {
+        $content_type = trim(substr($header, strlen('Content-Type:')));
+      }
+      if (stripos($header, 'Location:') === 0) {
+        $location = trim(substr($header, strlen('Location:')));
+        $final_url = $this->makeAbsoluteUrlForMhtml($location, $final_url) ?: $location;
       }
     }
 
     return [
-      'body' => $body,
       'content_type' => $content_type,
+      'status_code' => $status_code,
+      'final_url' => $final_url,
     ];
+  }
+
+  /**
+   * Validates the main response to ensure it's not a login redirect or error.
+   *
+   * @param string $url The requested URL.
+   * @param array $main_response The response metadata from fetchUrlForMhtml.
+   *
+   * @throws \AKlump\Directio\Exception\AuthenticationRequiredException
+   * @throws \AKlump\FixtureFramework\Exception\FixtureException
+   */
+  protected function validateMainResponseForMhtml(string $url, array $main_response): void {
+    $status_code = $main_response['status_code'];
+    $final_url = $main_response['final_url'];
+    $body = $main_response['body'] ?? '';
+
+    if ($status_code === 401) {
+      throw new AuthenticationRequiredException($url, $final_url, $status_code, 'The server returned HTTP 401.');
+    }
+
+    $is_login_page = $this->mhtmlResponseLooksLikeLoginPage($body);
+
+    if ($status_code === 403) {
+      if ($is_login_page) {
+        throw new AuthenticationRequiredException($url, $final_url, $status_code, 'Access denied (403) and the response looks like a login page.');
+      }
+      throw new FixtureException(sprintf('Access denied (403) for %s', $url));
+    }
+
+    $is_login_url = str_contains($final_url, '/user/login');
+    $was_login_request = str_contains($url, '/user/login');
+
+    if ($is_login_url && !$was_login_request) {
+      throw new AuthenticationRequiredException($url, $final_url, $status_code, 'The request was redirected to the login page.');
+    }
+
+    if ($was_login_request && str_contains($url, 'destination=') && $is_login_page) {
+      throw new AuthenticationRequiredException($url, $final_url, $status_code, 'The login page was returned instead of the requested destination.');
+    }
+
+    if ($status_code >= 400) {
+      throw new FixtureException(sprintf('HTTP %d while requesting %s', $status_code, $url));
+    }
+  }
+
+  /**
+   * Detects whether a response appears to be an authentication/login page.
+   *
+   * This is intentionally heuristic. The MHTML downloader only needs to decide
+   * whether the main document failed because authentication is required. Keep
+   * the checks conservative so ordinary 403/500 responses do not accidentally
+   * invalidate a cached session.
+   *
+   * @param string $body
+   *
+   * @return bool
+   */
+  private function mhtmlResponseLooksLikeLoginPage(string $body): bool {
+    $markers = [
+      'user-login-form',
+      'name="name"',
+      'name="pass"',
+      'name="form_id" value="user_login_form"',
+    ];
+    foreach ($markers as $marker) {
+      if (str_contains($body, $marker)) {
+        return TRUE;
+      }
+    }
+
+    return FALSE;
   }
 
   private function makeHtmlAbsoluteForMhtml(string $html, string $base_url): string {

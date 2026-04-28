@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Integrated `Symfony\Component\Stopwatch\Stopwatch` into `MHTMLTrait::downloadAsMhtml` to print download times for the main page and each asset.
+- Created `AKlump\Directio\Exception\AuthenticationRequiredException` for fine-grained authentication failure handling.
+- Integrated `Symfony\Component\Stopwatch\Stopwatch` into `MHTMLTrait::downloadAsMhtml` to print the total generation time for the MHTML archive.
 - Added an optional cache directory parameter to `MHTMLTrait::downloadAsMhtml` to speed up repeat calls by caching discovered assets.
 - Created `MHTMLTrait` for generating MHTML archives from web pages and their assets.
 - Added `DrupalReports` fixture to facilitate report archival.
@@ -25,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Snapshot-Content-Location` header to MHTML archives for better browser compatibility.
 
 ### Changed
+- `MHTMLTrait::downloadAsMhtml` now validates the main response and throws a `FixtureException` if it detects a 403 Access Denied or an unauthorized redirect to a login page (common when a session cookie is missing or expired).
+- Refined `MHTMLTrait::downloadAsMhtml` to output a single consolidated message: "Downloaded {url} to {path} in {time}ms".
+- Removed redundant "Downloaded" message from `DrupalReports` fixture.
+- Refined `MHTMLTrait::downloadAsMhtml` to make `Stopwatch` usage conditional on the class existing and simplified output to show only total generation time.
 - Added a Symfony progress bar to `MHTMLTrait::downloadAsMhtml` to track asset download progress.
 - `MHTMLTrait` now ensures all relative URLs in the HTML content are made absolute, including those in attributes (href, src, etc.) and CSS `url()` references.
 - Refactored `ImportCommand`, `FixturesCommand`, `UpdateCommand`, and `InitializeCommand` to use `SymfonyStyle` for consistent I/O.
