@@ -187,6 +187,9 @@ class FixturesCommand extends Command {
         /** @var $directio_directory string File path to .directio/ */
         'directio_directory' => $directio_directory,
 
+        /** @var $cache_directory string File path to the directory where cached files are to be stored. */
+        'cache_directory' => $directio_directory . '/.cache',
+
         /** @var $logs_directory string File path to the directory where logs are to be stored. */
         'logs_directory' => (new GetLogsDirectory($directio_directory))(),
       ]);

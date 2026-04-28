@@ -72,6 +72,10 @@ abstract class AbstractFixture extends BaseFixture {
     return $this->options()->require('directio_directory');
   }
 
+  public function cacheDirectory(): string {
+    return $this->options()->require('cache_directory');
+  }
+
   public function logsDirectory(): string {
     return $this->options()->require('logs_directory');
   }
