@@ -144,7 +144,7 @@ abstract class AbstractFileSync extends AbstractFixture {
           continue;
         }
         $short_backup_file = $this->shortPath($backup_file);
-        $this->io()->writeln("<warning>Updated: $short_file (Backup: " . basename($short_backup_file) . ")</warning>");
+        $this->io()->warning("Updated: $short_file (Backup: " . basename($short_backup_file) . ")");
 
         file_put_contents($file, $new_content);
         $updated_count++;
