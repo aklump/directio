@@ -80,7 +80,10 @@ class ImportCommand extends Command {
     $this->directioDirectory = $base_dir . DIRECTORY_SEPARATOR . Names::FILENAME_INIT;
 
     $logs_dir = (new GetLogsDirectory($this->directioDirectory))();
-    if (is_dir($logs_dir) && count(array_diff(scandir($logs_dir), ['.', '..'])) > 0) {
+    if (is_dir($logs_dir) && count(array_diff(scandir($logs_dir), [
+        '.',
+        '..',
+      ])) > 0) {
       if ($this->io()->confirm('Delete existing logs? ', FALSE)) {
         $this->deleteDirectory($logs_dir, TRUE);
         $this->io()->info('Logs deleted.');
@@ -213,10 +216,12 @@ class ImportCommand extends Command {
 
     $shortpath_directory = (new GetShortPath())($directory);
     if ($found_count === 0) {
-      $this->io()->warning(sprintf('No fixtures or documents with directio markup found in %s', $shortpath_directory));
+      $this->io()
+        ->warning(sprintf('No fixtures or documents with directio markup found in %s', $shortpath_directory));
     }
     elseif ($newly_imported_count + $identical_count === 0) {
-      $this->io()->warning(sprintf('All of the %d items found in %s were skipped or failed.', $found_count, $shortpath_directory));
+      $this->io()
+        ->warning(sprintf('All of the %d items found in %s were skipped or failed.', $found_count, $shortpath_directory));
     }
     else {
       $message = sprintf('Imported %d', $newly_imported_count);
@@ -264,11 +269,13 @@ class ImportCommand extends Command {
     $shortpath = (new GetShortPath())($target_path);
     if (file_exists($target_path)) {
       if (md5_file($path) === md5_file($target_path)) {
-        $this->io()->writeln(sprintf('Fixture %s skipped as contents are identical.', $shortpath));
+        $this->io()
+          ->writeln(sprintf('Fixture %s skipped as contents are identical.', $shortpath));
 
         return self::IMPORT_STATUS_IDENTICAL;
       }
-      if (!$this->io()->confirm(sprintf('Fixture "%s" already exists. Overwrite? ', basename($target_path)), FALSE)) {
+      if (!$this->io()
+        ->confirm(sprintf('Fixture "%s" already exists. Overwrite? ', basename($target_path)), FALSE)) {
         $message = sprintf("Failed to import \"%s\" because it already exists.", basename($target_path));
         $this->io()->error($message);
 
@@ -297,11 +304,13 @@ class ImportCommand extends Command {
     $shortpath = (new GetShortPath())($imported_doc_path);
     if (file_exists($imported_doc_path)) {
       if (file_get_contents($imported_doc_path) === $document->getContent()) {
-        $this->io()->writeln(sprintf('File %s skipped as contents are identical.', $shortpath));
+        $this->io()
+          ->writeln(sprintf('File %s skipped as contents are identical.', $shortpath));
 
         return self::IMPORT_STATUS_IDENTICAL;
       }
-      if (!$this->io()->confirm(sprintf('Document "%s" already exists. Overwrite? ', basename($imported_doc_path)), FALSE)) {
+      if (!$this->io()
+        ->confirm(sprintf('Document "%s" already exists. Overwrite? ', basename($imported_doc_path)), FALSE)) {
         return self::IMPORT_STATUS_FAILURE;
       }
     }
@@ -326,11 +335,13 @@ class ImportCommand extends Command {
       $duplicated_ids = array_intersect($new_ids, $existing_ids);
       if ($duplicated_ids) {
         if (!$invalid) {
-          $this->io()->writeln('The following tasks have already been imported:');
+          $this->io()
+            ->writeln('The following tasks have already been imported:');
         }
         $invalid = TRUE;
         $shortpath_imported = (new GetShortPath())($imported_path);
-        $this->io()->writeln(sprintf('<info>├── %s</info>', $shortpath_imported));
+        $this->io()
+          ->writeln(sprintf('<info>├── %s</info>', $shortpath_imported));
         $this->io()->write(array_map(function ($line) {
           return "<comment>│   ├── $line</comment>";
         }, $duplicated_ids), TRUE);
@@ -339,7 +350,8 @@ class ImportCommand extends Command {
 
     if ($invalid) {
       $shortpath_document_path = (new GetShortPath())($document_path);
-      $this->io()->note(sprintf('Try deleting or moving "%s" if it is no longer in use.', $shortpath_document_path));
+      $this->io()
+        ->note(sprintf('Try deleting or moving "%s" if it is no longer in use.', $shortpath_document_path));
       $message = sprintf('Failed to import "%s" due to ID collision.', $shortpath_document_path);
       throw new RuntimeException($message);
     }
@@ -372,17 +384,20 @@ class ImportCommand extends Command {
     $shortpath = (new GetShortPath())($target_path);
     if (file_exists($target_path)) {
       if (md5_file($path) === md5_file($target_path)) {
-        $this->io()->writeln(sprintf('Options %s skipped as contents are identical.', $shortpath));
+        $this->io()
+          ->writeln(sprintf('Options %s skipped as contents are identical.', $shortpath));
 
         return self::IMPORT_STATUS_IDENTICAL;
       }
-      if (!$this->io()->confirm(sprintf('Options file "%s" already exists. Overwrite? ', basename($target_path)), FALSE)) {
+      if (!$this->io()
+        ->confirm(sprintf('Options file "%s" already exists. Overwrite? ', basename($target_path)), FALSE)) {
         return self::IMPORT_STATUS_FAILURE;
       }
     }
 
     if (!copy($path, $target_path)) {
-      $this->io()->error(sprintf('Failed to copy options file to %s', $shortpath));
+      $this->io()
+        ->error(sprintf('Failed to copy options file to %s', $shortpath));
 
       return self::IMPORT_STATUS_FAILURE;
     }

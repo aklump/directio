@@ -287,6 +287,46 @@ EOD
     $this->assertDirectoryExists($logDir);
   }
 
+  public function testImportAsksToFlushCacheAndFlushesItWithMessage() {
+    $cacheDir = $this->projectRoot . '/.directio/.cache';
+    if (!is_dir($cacheDir)) {
+      mkdir($cacheDir, 0755, TRUE);
+    }
+    file_put_contents($cacheDir . '/test.cache', 'some cache');
+    $this->assertDirectoryExists($cacheDir);
+
+    $docPath = $this->getTestFileFilepath('document.md');
+    file_put_contents($docPath, 'some content');
+
+    // Answer 'yes' to the prompt
+    $commandTester = $this->executeCommand(['source document' => $docPath], ['yes']);
+
+    $this->assertStringContainsString('Flush the cache?', $commandTester->getDisplay());
+    $this->assertStringContainsString('Cache flushed.', $commandTester->getDisplay());
+    $this->assertDirectoryExists($cacheDir);
+    $this->assertCount(0, glob($cacheDir . '/*'));
+  }
+
+  public function testImportAsksToFlushCacheAndDoesNotFlushItNoMessage() {
+    $cacheDir = $this->projectRoot . '/.directio/.cache';
+    if (!is_dir($cacheDir)) {
+      mkdir($cacheDir, 0755, TRUE);
+    }
+    file_put_contents($cacheDir . '/test.cache', 'some cache');
+    $this->assertDirectoryExists($cacheDir);
+
+    $docPath = $this->getTestFileFilepath('document.md');
+    file_put_contents($docPath, 'some content');
+
+    // Answer 'no' to the prompt
+    $commandTester = $this->executeCommand(['source document' => $docPath], ['no']);
+
+    $this->assertStringContainsString('Flush the cache?', $commandTester->getDisplay());
+    $this->assertStringNotContainsString('Cache flushed.', $commandTester->getDisplay());
+    $this->assertDirectoryExists($cacheDir);
+    $this->assertFileExists($cacheDir . '/test.cache');
+  }
+
   private function executeCommand(array $arguments, array $inputs = []): CommandTester {
     $application = new Application();
     $application->add(new ImportCommand());
