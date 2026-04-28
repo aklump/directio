@@ -262,6 +262,52 @@ EOD
     $this->assertStringNotContainsString('All fixtures have been marked as done.', $commandTester->getDisplay());
   }
 
+  public function testFixturesCommandAcceptsFilterAsArgument() {
+    // 1. Create a document with two different fixtures
+    $importedDir = $this->projectRoot . '/.directio/imported';
+    if (!is_dir($importedDir)) {
+      mkdir($importedDir, 0755, TRUE);
+    }
+    $docPath = $importedDir . '/tasks.md';
+    $content = '## Tasks' . PHP_EOL
+      . '<directio id="t1" fixture="f1"></directio>' . PHP_EOL
+      . '<directio id="t2" fixture="f2"></directio>';
+    file_put_contents($docPath, $content);
+
+    // 2. Setup fixtures
+    $fixtureDir = $this->projectRoot . '/.directio/src/Fixture';
+    if (!is_dir($fixtureDir)) {
+      mkdir($fixtureDir, 0755, TRUE);
+    }
+    file_put_contents($fixtureDir . '/F1.php', "<?php namespace AKlump\Directio\Fixture; use AKlump\Directio\FixtureFramework\AbstractFixture; use AKlump\FixtureFramework\Fixture; #[Fixture(id: 'f1')] class F1 extends AbstractFixture { public function __invoke(): void {} }");
+    file_put_contents($fixtureDir . '/F2.php', "<?php namespace AKlump\Directio\Fixture; use AKlump\Directio\FixtureFramework\AbstractFixture; use AKlump\FixtureFramework\Fixture; #[Fixture(id: 'f2')] class F2 extends AbstractFixture { public function __invoke(): void {} }");
+
+    require_once $fixtureDir . '/F1.php';
+    require_once $fixtureDir . '/F2.php';
+
+    $this->setupFakeVendor($this->projectRoot);
+
+    $application = new Application();
+    $application->add(new FixturesCommand());
+    $command = $application->find('fixtures');
+    $commandTester = new CommandTester($command);
+
+    // 3. Execute with filter as argument
+    $commandTester->setInputs(['y', 'y']);
+    $commandTester->execute(['filter' => 'f1']);
+
+    // 4. Verify that only f1 was processed
+    $display = $commandTester->getDisplay();
+    $this->assertStringContainsString('Marked "t1"', $display);
+    $this->assertStringNotContainsString('Marked "t2"', $display);
+
+    // 5. Verify that f2 is still not done in document
+    $updatedContent = file_get_contents($docPath);
+    $this->assertStringContainsString('<directio done id="t1" fixture="f1">', $updatedContent);
+    $this->assertStringContainsString('<directio id="t2" fixture="f2">', $updatedContent);
+    $this->assertStringNotContainsString('<directio done id="t2" fixture="f2">', $updatedContent);
+  }
+
   private function setupFakeVendor(string $root) {
     $vendor = $root . '/vendor';
     $composer = $vendor . '/composer';

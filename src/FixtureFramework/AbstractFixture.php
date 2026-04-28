@@ -86,6 +86,18 @@ abstract class AbstractFixture extends BaseFixture {
    * @return bool True if the fixture should run, false otherwise.
    */
   public function shouldRun(): bool {
+    $filter_value = '';
+    if ($this->input->hasArgument('filter')) {
+      $filter_value = $this->input->getArgument('filter');
+    }
+    if (empty($filter_value) && $this->input->hasOption('filter')) {
+      $filter_value = $this->input->getOption('filter');
+    }
+
+    if (!empty($filter_value) && str_contains($this->id(), $filter_value)) {
+      return TRUE;
+    }
+
     return $this->io()
       ->confirm(sprintf('Run fixture "%s"?', $this->id()));
   }

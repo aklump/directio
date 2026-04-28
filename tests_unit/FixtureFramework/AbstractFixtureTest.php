@@ -40,6 +40,71 @@ class AbstractFixtureTest extends TestCase {
     $this->assertNotEmpty($fixture->shortPath(__FILE__));
   }
 
+  public function testShouldRunReturnsTrueIfFilterMatches() {
+    $input = $this->createMock(InputInterface::class);
+    $input->method('hasOption')->with('filter')->willReturn(TRUE);
+    $input->method('getOption')->with('filter')->willReturn('foo');
+    $output = $this->createMock(OutputInterface::class);
+
+    $fixture = new class($input, $output) extends AbstractFixture {
+
+      public function __invoke(): void {
+      }
+    };
+    $fixture->setFixtureDefinition(['id' => 'fixture_foo_test']);
+
+    $this->assertTrue($fixture->shouldRun());
+  }
+
+  public function testShouldRunReturnsTrueIfFilterMatchesArgument() {
+    $input = $this->createMock(InputInterface::class);
+    $input->method('hasArgument')->with('filter')->willReturn(TRUE);
+    $input->method('getArgument')->with('filter')->willReturn('foo');
+    $output = $this->createMock(OutputInterface::class);
+
+    $fixture = new class($input, $output) extends AbstractFixture {
+
+      public function __invoke(): void {
+      }
+    };
+    $fixture->setFixtureDefinition(['id' => 'fixture_foo_test']);
+
+    $this->assertTrue($fixture->shouldRun());
+  }
+
+  public function testShouldRunPromptsIfFilterDoesNotMatch() {
+    $input = $this->createMock(InputInterface::class);
+    $input->method('hasOption')->with('filter')->willReturn(TRUE);
+    $input->method('getOption')->with('filter')->willReturn('foo');
+    $output = $this->createMock(OutputInterface::class);
+
+    $styleMock = $this->createMock(\Symfony\Component\Console\Style\SymfonyStyle::class);
+    $styleMock->expects($this->once())
+      ->method('confirm')
+      ->with($this->stringContains('Run fixture "bar"?'))
+      ->willReturn(TRUE);
+
+    $fixture = new class($input, $output, $styleMock) extends AbstractFixture {
+
+      private $mockIo;
+
+      public function __construct($input, $output, $mockIo) {
+        parent::__construct($input, $output);
+        $this->mockIo = $mockIo;
+      }
+
+      public function __invoke(): void {
+      }
+
+      public function io(): \Symfony\Component\Console\Style\SymfonyStyle {
+        return $this->mockIo;
+      }
+    };
+    $fixture->setFixtureDefinition(['id' => 'bar']);
+
+    $this->assertTrue($fixture->shouldRun());
+  }
+
   public function testSetRunOptionsMergesFileOptions() {
     $tempDir = $this->getTestFileFilepath('project/', TRUE);
     $runOptionsFile = $tempDir . DIRECTORY_SEPARATOR . AbstractFixture::YAML_OPTIONS_FILENAME;

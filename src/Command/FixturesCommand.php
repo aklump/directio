@@ -21,6 +21,7 @@ use AKlump\FixtureFramework\Runtime\RunOptions;
 use Exception;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -47,6 +48,7 @@ class FixturesCommand extends Command {
 
   protected function configure() {
     $this->setAliases(['do']);
+    $this->addArgument('filter', InputArgument::OPTIONAL, 'Filter fixtures by ID.');
     $this->addOption('filter', NULL, InputOption::VALUE_REQUIRED, 'Filter fixtures by ID.');
     $this->addOption('flush', NULL, InputOption::VALUE_NONE, 'Flush the fixture cache.');
   }
@@ -82,7 +84,7 @@ class FixturesCommand extends Command {
     }
 
     $fixture_ids = array_keys($fixture_mappings);
-    $filter = $input->getOption('filter') ?: '';
+    $filter = $input->getArgument('filter') ?: ($input->getOption('filter') ?: '');
     $flush = $input->getOption('flush');
 
     return $this->runFixtures($base_dir, $directio_directory, $fixture_ids, $fixture_mappings, $filter, $flush);
