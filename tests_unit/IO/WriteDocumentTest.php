@@ -38,6 +38,17 @@ class WriteDocumentTest extends TestCase {
     $this->deleteTestFile('write_document.md');
   }
 
+  public function testInvokeTrimsWhitespace() {
+    $document = (new Document())->setContent("  foobar  \n\n");
+    $filepath = $this->getTestFileFilepath('/write_document_trim.md');
+
+    $this->deleteTestFile('write_document_trim.md');
+    (new WriteDocument())($filepath, $document);
+    $this->assertStringEqualsFile($filepath, 'foobar');
+
+    $this->deleteTestFile('write_document_trim.md');
+  }
+
   protected function tearDown(): void {
     $this->deleteTestFile('.cache/lorem.md');
   }

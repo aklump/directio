@@ -16,7 +16,7 @@ class WriteDocument {
    *
    */
   public function __invoke(string $path, DocumentInterface $document): void {
-    if (!file_put_contents($path, $document->getContent())) {
+    if (!file_put_contents($path, trim($document->getContent()))) {
       throw new RuntimeException(sprintf('Failed to write: %s', $path));
     }
   }
