@@ -13,6 +13,7 @@ final class InitializeDirectory {
   public function __invoke(string $directory) {
     $this->directory = rtrim($directory, '/');
     $this->initDirectory();
+    $this->initFixtures();
     $this->initStateFile();
     $this->initFixtureDirectory();
     $this->initLogsDirectory();
@@ -49,6 +50,35 @@ final class InitializeDirectory {
   private function initLogsDirectory() {
     $target = $this->directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT;
     (new GetLogsDirectory($target))();
+  }
+
+  private function initFixtures() {
+    // Ensure composer.json exists with the default autoloading.
+    $target = $this->directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT . DIRECTORY_SEPARATOR . 'composer.json';
+    $namespace = 'AKlump\\Directio\\Fixture\\';
+    if (!file_exists($target)) {
+      touch($target);
+    }
+    $content = file_get_contents($target);
+    $data = json_decode($content, TRUE) ?? [];
+    $data['autoload']['psr-4'][$namespace] ??= [];
+    $autoload_item = &$data['autoload']['psr-4'][$namespace];
+    $default_path = './src/Fixture/';
+    if (!in_array($default_path, $autoload_item)) {
+      $autoload_item[] = $default_path;
+    }
+    unset($autoload_item);
+    if (FALSE === @file_put_contents($target, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL)) {
+      throw new RuntimeException(sprintf('Failed to create %s', $target));
+    }
+
+    // Ensure the default fixture directory exists.
+    $target = $this->directory . DIRECTORY_SEPARATOR . Names::FILENAME_INIT . DIRECTORY_SEPARATOR . 'src/Fixture';
+    if (!file_exists($target)) {
+      if (FALSE === @mkdir($target, 0755, TRUE)) {
+        throw new RuntimeException(sprintf('Failed to create %s', $target));
+      }
+    }
   }
 
   private function initGitIgnore() {

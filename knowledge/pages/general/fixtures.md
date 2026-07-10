@@ -7,31 +7,33 @@ tags: ''
 
 Fixtures allow you to run automated setup or teardown logic as part of your task workflow.
 
-## Where to Save Fixture Classes
+## Autoloading
 
-Fixture classes should be stored in the `.directio/src/Fixture` directory of your project. They should follow the PSR-4 namespacing convention and be under the `AKlump\Directio\Fixture` namespace.
+Fixture classes are provided via `autoload` in `.directio/composer.json`. They must be in the `AKlump\Directio\Fixture` namespace.
 
-{{ snippet.MyFixture_php|fenced }}
-{{ snippet.AbstractFixture_php|fenced }}
+The default directory is `.directio/src/Fixture/`. To register additional directories such as `../src/Directio/Fixture/`, add to the array as shown below.  **After any changes be sure to run `composer dump-autoload`.**
 
-### Registering the Namespace
-
-1. Add namespace declaration to `composer.json`
-2. `composer dump`
-
-To make your fixtures discoverable, you must add the `AKlump\Directio` namespace to your project's `composer.json` file under the `autoload` or `autoload-dev` section.
+**File: `composer.json`**
 
 ```json
 {
-  "autoload-dev": {
+  "autoload": {
     "psr-4": {
-      "AKlump\\Directio\\": ".directio/src/"
+      "AKlump\\Directio\\Fixture\\": [
+        "./src/Fixture/",
+        "../src/Directio/Fixture/"
+      ]
     }
   }
 }
 ```
 
-After updating `composer.json`, be sure to run `composer dump-autoload`.
+The default setup is installed with `directio init`.
+
+## Example Class
+
+{{ snippet.MyFixture_php|fenced }}
+{{ snippet.AbstractFixture_php|fenced }}
 
 ### Available Runtime Options
 

@@ -150,11 +150,12 @@ class FixturesCommand extends Command {
   }
 
   private function runFixtures(string $project_directory, string $directio_directory, array $fixture_ids, array $fixture_mappings, string $filter = '', bool $flush = FALSE): int {
-    // Prepare fixture framework
-    $vendor_dir = $project_directory . DIRECTORY_SEPARATOR . 'vendor';
-    // If we're running from within the app directory in the package itself
-    if (!file_exists($vendor_dir)) {
-      $vendor_dir = dirname($project_directory, 2) . DIRECTORY_SEPARATOR . 'vendor';
+    // This command is already running under Directio's Composer autoloader.
+    // Do not load the host project's vendor/autoload.php here; doing so can
+    // register a second Composer dependency graph in the same PHP process.
+    $vendor_dir = realpath($directio_directory) . DIRECTORY_SEPARATOR . 'vendor';
+    if (FALSE === $vendor_dir) {
+      throw new \RuntimeException('Unable to resolve Composer vendor directory. Try `directio init` to resolve.');
     }
 
     require_once $vendor_dir . '/autoload.php';
