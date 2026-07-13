@@ -1,6 +1,7 @@
 #mermaid:
 #  width: 1000
-#composer: {}
+composer:
+  require_dev: true
 image:
   max_width: 830
   pixel_density: 2
