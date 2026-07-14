@@ -10,6 +10,7 @@ chapters:
       - completion
       - changelog
       - fixtures
+      - installation
   -
     id: editors
     title: Editors

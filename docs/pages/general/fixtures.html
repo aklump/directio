@@ -33,7 +33,7 @@
       </div>
       <div class="header__tags me-3">  </div>
       <div class="header__page-numbers flex-shrink-1">5
-        / 6</div>
+        / 7</div>
     </div>
   </div>
 </header>
@@ -43,8 +43,23 @@
     <article class="col">
       <h1 class="mb-4 text-primary">Fixtures</h1>
       <p>Fixtures allow you to run automated setup or teardown logic as part of your task workflow.</p>
-<h2>Where to Save Fixture Classes</h2>
-<p>Fixture classes should be stored in the <code>.directio/src/Fixture</code> directory of your project. They should follow the PSR-4 namespacing convention and be under the <code>AKlump\Directio\Fixture</code> namespace.</p>
+<h2>Autoloading</h2>
+<p>Fixture classes are provided via <code>autoload</code> in <code>.directio/composer.json</code>. They must be in the <code>AKlump\Directio\Fixture</code> namespace.</p>
+<p>The default directory is <code>.directio/src/Fixture/</code>. To register additional directories such as <code>../src/Directio/Fixture/</code>, add to the array as shown below.  <strong>After any changes be sure to run <code>composer dump-autoload</code>.</strong></p>
+<p><strong>File: <code>composer.json</code></strong></p>
+<pre><code class="json">{
+  "autoload": {
+    "psr-4": {
+      "AKlump\\Directio\\Fixture\\": [
+        "./src/Fixture/",
+        "../src/Directio/Fixture/"
+      ]
+    }
+  }
+}
+</code></pre>
+<p>The default setup is installed with <code>directio init</code>.</p>
+<h2>Example Class</h2>
 <p><strong>File:</strong> <code>MyFixture.php</code></p>
 <pre><code class="php">&lt;?php
 
@@ -220,21 +235,6 @@ abstract class AbstractFixture extends BaseFixture {
 
 }
 </code></pre>
-<h3>Registering the Namespace</h3>
-<ol>
-<li>Add namespace declaration to <code>composer.json</code></li>
-<li><code>composer dump</code></li>
-</ol>
-<p>To make your fixtures discoverable, you must add the <code>AKlump\Directio</code> namespace to your project's <code>composer.json</code> file under the <code>autoload</code> or <code>autoload-dev</code> section.</p>
-<pre><code class="json">{
-  "autoload-dev": {
-    "psr-4": {
-      "AKlump\\Directio\\": ".directio/src/"
-    }
-  }
-}
-</code></pre>
-<p>After updating <code>composer.json</code>, be sure to run <code>composer dump-autoload</code>.</p>
 <h3>Available Runtime Options</h3>
 <p>You can see usage in the example above.</p>
 <pre><code>/**
@@ -288,7 +288,7 @@ $options = new RunOptions([
               Version:
         <strong>0.0.4</strong>
         &bull;
-                    Last Update: <strong>4/27/2026</strong>
+                    Last Update: <strong>7/13/2026</strong>
           </div>
   </footer>
 
@@ -311,8 +311,8 @@ $options = new RunOptions([
        aria-controls="table-of-contents"><i class="bi
            bi-list-ol"></i></a>
     
-              <a href="../editors/phpstorm.html" class="btn nav__next-page js-nav__next-page
-    btn-primary"><i class="bi bi-file-earmark"></i> PHP Storm <i class="bi
+              <a href="installation.html" class="btn nav__next-page js-nav__next-page
+    btn-primary"><i class="bi bi-file-earmark"></i> Installation <i class="bi
        bi-caret-right-fill"></i></a>
   
     
@@ -375,7 +375,14 @@ $options = new RunOptions([
               bg-info rounded-pill badge-sm"></span></a>
     </li>
   
-                                                          <li data-page="phpstorm" value="6">
+                                    <li data-page="installation" value="6">
+      <a class="js-page-link" href="installation.html">Installation<span
+              class="js-search-score
+              badge
+              bg-info rounded-pill badge-sm"></span></a>
+    </li>
+  
+                                                          <li data-page="phpstorm" value="7">
       <a class="js-page-link" href="../editors/phpstorm.html">PHP Storm<span
               class="js-search-score
               badge
@@ -408,10 +415,14 @@ $options = new RunOptions([
       <a class="js-page-link" href="fixtures.html">Fixtures</a>
     </li>
   
+                                <li data-page="installation" value="6">
+      <a class="js-page-link" href="installation.html">Installation</a>
+    </li>
+  
                   </ol>
               <h2 class="h4 mt-4">Editors</h2>
         <ol>
-                                <li data-page="phpstorm" value="6">
+                                <li data-page="phpstorm" value="7">
       <a class="js-page-link" href="../editors/phpstorm.html">PHP Storm</a>
     </li>
   
@@ -443,6 +454,8 @@ $options = new RunOptions([
                  data-tags="[]" href="changelog.html">Changelog</a>
                                                 <a class="list-group-item list-group-item-action"
                  data-tags="[]" href="fixtures.html">Fixtures</a>
+                                                <a class="list-group-item list-group-item-action"
+                 data-tags="[]" href="installation.html">Installation</a>
                                                 <a class="list-group-item list-group-item-action"
                  data-tags="[]" href="../editors/phpstorm.html">PHP Storm</a>
                               </ul>

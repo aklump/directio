@@ -7,7 +7,7 @@
       <link rel="stylesheet" href="../../dist/node_modules/bootstrap/dist/css/bootstrap.css?ver=0.0.4">
       <link rel="stylesheet" href="../../dist/dist/bootstrap_theme.css?ver=0.0.4">
       <link rel="stylesheet" href="../../dist/node_modules/bootstrap-icons/font/bootstrap-icons.min.css?ver=0.0.4">
-        <title>Directio Syntax | Directio</title>
+        <title>Installation | Directio</title>
   </head>
 <body class="my-5">
 
@@ -32,7 +32,7 @@
 
       </div>
       <div class="header__tags me-3">  </div>
-      <div class="header__page-numbers flex-shrink-1">2
+      <div class="header__page-numbers flex-shrink-1">6
         / 7</div>
     </div>
   </div>
@@ -41,54 +41,77 @@
 <main class="container-md flex-column">
   <div class="row mb-5 pt-5">
     <article class="col">
-      <h1 class="mb-4 text-primary">Directio Syntax</h1>
-      <p>Each Directio <em>task</em> is demarcated using two, specialized HTML comments, like so:</p>
-<pre><code class="html">&lt;directio id="foo"&gt;
-
-# Foo Task
-...
-
-&lt;/directio&gt;
+      <h1 class="mb-4 text-primary">Installation</h1>
+      <h2>Install with Composer</h2>
+<ol>
+<li><p>Because this is an unpublished package, you must include some repository information:</p>
+<pre><code class="shell">composer config repositories.82ef065c6a1b8a21d8252f14c5f90789 path /Users/aklump/Code/Packages/php/fixture-framework
+composer config repositories.9024aba2baa64b08169c0ca94a832bc7 composer https://packages.intheloftstudios.com
+composer config repositories.619ded761a01c386b8878bc732c4cc2a github https://github.com/aklump/directio
 </code></pre>
-<p>A completed task is represented by one slight change. (Look familiar?, i.e., <a href="https://www.markdownguide.org/extended-syntax/#task-lists">Markdown task lists</a>)</p>
-<pre><code class="html">&lt;directio x id="foo"&gt;
-
-# Foo Task
-...
-
-&lt;/directio&gt;
-</code></pre>
-<h2>Alternate Syntax</h2>
-<p>Instead of <code>x</code> you can use boolean attributes (<code>done, complete</code>) like this:</p>
-<pre><code class="html">&lt;directio done id="foo"&gt;
-...
-</code></pre>
-<pre><code class="html">&lt;directio complete id="foo"&gt;
-...
-</code></pre>
-<h2>Rules</h2>
-<ul>
-<li>Tasks must be wrapped with both an open <code>&lt;directio id="foo"&gt;</code> and close tag <code>&lt;/directio&gt;</code>.</li>
-<li>Open tags must have an <code>id</code> attribute.</li>
-<li>Attribute order is of no significance.</li>
-<li>Attributes must be wrapped by double quotes.<ul>
-<li><code>&lt;directio id="value" foo="another value"&gt;</code></li>
-</ul>
 </li>
-<li>Boolean attributes should be name only, e.g. <code>complete</code> as in <code>&lt;directio id="foo" complete&gt;</code>.</li>
-</ul>
-<h2>Special Attributes</h2>
-<table class="table">
-<thead>
-<tr><th>Meaning</th><th>Attributes</th><th>Notes</th><th>Example</th></tr>
-</thead>
-<tbody>
-<tr><td>task identification</td><td><code>id</code>, <code>name</code></td><td>Must be unique within an initialized project.</td><td><code>foo</code></td></tr>
-<tr><td>Complete only for a time</td><td><code>expires</code></td><td>datetime, or date period</td><td><code>P1M</code>, <code>2025-01-23T15:23:37Z</code></td></tr>
-<tr><td>Completed</td><td><code>done</code>, <code>complete</code>, <code>x</code></td><td></td><td></td></tr>
-<tr><td>Incompleted</td><td></td><td>Tasks are assumed incomplete.</td><td></td></tr>
-</tbody>
-</table>
+<li><p>Require the latest stable version:</p>
+<pre><code class="shell">composer require --dev aklump/directio:^0.0
+</code></pre>
+</li>
+<li><p>... or require the dev channel:</p>
+<pre><code class="shell">composer config minimum-stability dev
+composer require --dev aklump/directio:@dev
+</code></pre>
+</li>
+</ol>
+<h2>Sandbox Install with Composer</h2>
+<p>A sandboxed installation separates this project, its dependencies, and even the PHP version from your main application. The project is installed in an isolated, hidden subdirectory in the root of your project. This is particularly useful if you have conflicts with your application's dependencies or if you need to use a different PHP version. It functions similarly to <a href="https://asdf-vm.com/">asdf</a> shims, providing a project-specific environment for the tool.</p>
+<h3>Install in your Project</h3>
+<ol>
+<li><p>Create the sandbox:</p>
+<pre><code class="shell">mkdir -p .directio
+cd .directio
+composer init -n --name=sandboxed/directio
+composer config version dev-main
+</code></pre>
+</li>
+<li><p>Because this is an unpublished package, you must include some repository information:</p>
+<pre><code class="shell">composer config repositories.82ef065c6a1b8a21d8252f14c5f90789 path /Users/aklump/Code/Packages/php/fixture-framework
+composer config repositories.9024aba2baa64b08169c0ca94a832bc7 composer https://packages.intheloftstudios.com
+composer config repositories.619ded761a01c386b8878bc732c4cc2a github https://github.com/aklump/directio
+</code></pre>
+</li>
+<li><p>Require the latest stable version:</p>
+<pre><code class="shell">composer require --dev aklump/directio:^0.0
+</code></pre>
+</li>
+<li><p>... or require the dev channel:</p>
+<pre><code class="shell">composer config minimum-stability dev
+composer require --dev aklump/directio:@dev
+</code></pre>
+</li>
+</ol>
+<h3>Create the Shim Script</h3>
+<ol>
+<li><p>Create <code>bin/shim-composer.sh</code> in the root of you application from <a href="https://gist.github.com/aklump/83e1f3be34d20fa61c6d9293a8c592d9">https://gist.github.com/aklump/83e1f3be34d20fa61c6d9293a8c592d9</a>. If you have already done so for another sandboxed package, you can skip this step and reuse that existing script.</p>
+<pre><code class="shell">mkdir -p bin
+touch bin/shim-composer.sh
+chmod u+x bin/shim-composer.sh
+</code></pre>
+</li>
+</ol>
+<h4>How it Works</h4>
+<p>Shimming redirects shell commands to the sandboxed version by prepending the sandbox's <code>bin</code> directory to your <code>$PATH</code>.</p>
+<pre><code class="shell">$ which directio
+/Users/aklump/Code/Packages/cli/directio/app/directio
+$ . bin/shim-composer.sh directio
+😎 directio shimmed to /Users/aklump/temp/php81/.directio/vendor/bin/directio
+$ echo $PATH
+/Users/aklump/temp/php81/.directio/vendor/bin:/Applicati...
+$ which directio
+/Users/aklump/temp/php81/.directio/vendor/bin/directio
+</code></pre>
+<h3>Usage</h3>
+<ol>
+<li>At the start of a new terminal window call the shim script: <code>. bin/shim-composer.sh directio</code>. <strong>Note</strong>: This change lasts only for the current terminal session.</li>
+<li>Now simply call <code>directio</code> and it will point to <code>.directio/vendor/bin/directio</code></li>
+</ol>
     </article>
   </div>
 </main>
@@ -110,7 +133,7 @@
       bi-caret-left-fill"></i> Directio</a>
   
     
-              <a href="readme.html" class="btn nav__prev-page js-nav__prev-page
+              <a href="fixtures.html" class="btn nav__prev-page js-nav__prev-page
     btn-primary"><i class="bi
       bi-caret-left-fill"></i></a>
   
@@ -121,8 +144,8 @@
        aria-controls="table-of-contents"><i class="bi
            bi-list-ol"></i></a>
     
-              <a href="completion.html" class="btn nav__next-page js-nav__next-page
-    btn-primary"><i class="bi bi-file-earmark"></i> Completing Tasks <i class="bi
+              <a href="../editors/phpstorm.html" class="btn nav__next-page js-nav__next-page
+    btn-primary"><i class="bi bi-file-earmark"></i> PHP Storm <i class="bi
        bi-caret-right-fill"></i></a>
   
     
