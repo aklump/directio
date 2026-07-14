@@ -8,6 +8,8 @@
 
 ## Normal
 
+- `directio update` is not a good name for commiting the marked done to the database, come up with better name
+
 - Think about this syntax instead `## Foo <!--directio id="foo" redo="P1D"-->` with optional? end tag
 - instance user do such and such
 
