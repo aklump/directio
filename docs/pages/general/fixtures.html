@@ -59,6 +59,11 @@
 }
 </code></pre>
 <p>The default setup is installed with <code>directio init</code>.</p>
+<h2>When a Fixture Fails</h2>
+<ol>
+<li>Throw an instance of <code>AKlump\Directio\Fixture\FixtureException</code></li>
+<li>It is not necessary to use <code>$this-&gt;io()</code> to output the exception message, that is automatic.</li>
+</ol>
 <h2>Example Class</h2>
 <p><strong>File:</strong> <code>MyFixture.php</code></p>
 <pre><code class="php">&lt;?php
@@ -107,6 +112,8 @@ abstract class AbstractFixture extends BaseFixture {
 
   public const YAML_OPTIONS_FILENAME = 'options.yml';
 
+  public const YAML_LOCAL_OPTIONS_FILENAME = 'options.local.yml';
+
   private InputInterface $input;
 
   private OutputInterface $output;
@@ -123,14 +130,29 @@ abstract class AbstractFixture extends BaseFixture {
   public function setRunOptions(RunOptions $options): void {
     parent::setRunOptions($options);
 
-    $file_options_path = $this-&gt;directioDirectory() . DIRECTORY_SEPARATOR . self::YAML_OPTIONS_FILENAME;
-    if (file_exists($file_options_path)) {
-      $file_provided_options = Yaml::parseFile($file_options_path);
-      if (!is_array($file_provided_options)) {
-        throw new \InvalidArgumentException('Config file must be an array.');
+    $files = [
+      self::YAML_OPTIONS_FILENAME,
+      self::YAML_LOCAL_OPTIONS_FILENAME,
+    ];
+    foreach ($files as $filename) {
+      $file_options_path = $this-&gt;directioDirectory() . DIRECTORY_SEPARATOR . $filename;
+      if (file_exists($file_options_path)) {
+        $file_provided_options = Yaml::parseFile($file_options_path);
+        if (!is_array($file_provided_options)) {
+          throw new \InvalidArgumentException(sprintf('Config file "%s" must be an array.', $filename));
+        }
+
+        $merged_options = $this-&gt;options()-&gt;all();
+        foreach ($file_provided_options as $key =&gt; $value) {
+          if (is_array($value) &amp;&amp; isset($merged_options[$key]) &amp;&amp; is_array($merged_options[$key])) {
+            $merged_options[$key] = array_merge($merged_options[$key], $value);
+          }
+          else {
+            $merged_options[$key] = $value;
+          }
+        }
+        parent::setRunOptions(new RunOptions($merged_options));
       }
-      parent::setRunOptions($this-&gt;options()
-        -&gt;withAddedOptions($file_provided_options));
     }
   }
 
@@ -288,7 +310,7 @@ $options = new RunOptions([
               Version:
         <strong>0.0.5</strong>
         &bull;
-                    Last Update: <strong>7/13/2026</strong>
+                    Last Update: <strong>7/16/2026</strong>
           </div>
   </footer>
 
