@@ -12,7 +12,9 @@ default:
   - ../../**
 readonly: [ ]
 writeable:
-  - ../../tests_phpunit/test_data/.cache
+  - ../../tests_phpunit/files/
+  - ../../tests_phpunit/files/tmp/
 executable:
+  - ../../directio
   - ../../bin/*.sh
   - ../../vendor/bin/*

@@ -30,7 +30,7 @@
   ],
   "autoload-dev": {
     "psr-4": {
-      "AKlump\\Directio\\Tests\\Unit\\": "./tests_unit"
+      "AKlump\\Directio\\Tests\\": "./tests_phpunit/src"
     }
   },
   "require-dev": {

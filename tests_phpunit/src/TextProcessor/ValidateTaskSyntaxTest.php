@@ -1,0 +1,75 @@
+<?php
+// SPDX-License-Identifier: BSD-3-Clause
+
+namespace AKlump\Directio\Tests\TextProcessor;
+
+use AKlump\Directio\Exception\NestedTagsException;
+use AKlump\Directio\Exception\NoClosingException;
+use AKlump\Directio\Exception\NoIDException;
+use AKlump\Directio\Exception\NoOpeningException;
+use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * @covers \AKlump\Directio\TextProcessor\ValidateTaskSyntax
+ * @uses \AKlump\Directio\Config\SpecialAttributes
+ * @uses \AKlump\Directio\Lexer\AttributesLexer
+ * @uses \AKlump\Directio\Lexer\TaskLexer
+ * @uses \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses \AKlump\Directio\HTMLElementStyle
+ */
+class ValidateTaskSyntaxTest extends TestCase {
+
+  public static function dataFortestInvokeThrowsProvider(): array {
+    $tests = [];
+
+    $tests[] = [
+      '<directio id="foo"><directio id="bar"></directio></directio>',
+      NestedTagsException::class,
+    ];
+    $tests[] = [
+      '<directio>foobar</directio>',
+      NoIDException::class,
+    ];
+    $tests[] = [
+      '<directio id="foo">foobar',
+      NoClosingException::class,
+    ];
+    $tests[] = [
+      '<directio lorem="ipsum">foobar</directio>',
+      NoIDException::class,
+    ];
+    $tests[] = [
+      '<directio id="ipsum">foobar</directio><directio lorem="ipsum">',
+      NoIDException::class,
+    ];
+    $tests[] = [
+      '# Lorem Ipsum</directio><directio id="lorem">lorem</directio>',
+      NoOpeningException::class,
+    ];
+
+    return $tests;
+  }
+
+  /**
+   * @dataProvider dataFortestInvokeThrowsProvider
+   */
+  public function testInvokeThrows(string $content, string $expected, string $message = '') {
+    $this->expectException($expected);
+    if ($message) {
+      $this->expectExceptionMessage($message);
+    }
+    (new ValidateTaskSyntax())($content);
+  }
+
+  public function testContentWithoutTagsDoesNotThrow() {
+    $content = 'Lorem ipsum dolor sit amet.';
+    (new ValidateTaskSyntax())($content);
+    $this->assertTrue(TRUE);
+  }
+
+  public function testEmptyContentDoesNotThrow() {
+    (new ValidateTaskSyntax())('');
+    $this->assertTrue(TRUE);
+  }
+}
