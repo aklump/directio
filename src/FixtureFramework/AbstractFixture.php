@@ -26,6 +26,8 @@ abstract class AbstractFixture extends BaseFixture {
 
   public const YAML_OPTIONS_FILENAME = 'options.yml';
 
+  public const YAML_LOCAL_OPTIONS_FILENAME = 'options.local.yml';
+
   private InputInterface $input;
 
   private OutputInterface $output;
@@ -42,14 +44,29 @@ abstract class AbstractFixture extends BaseFixture {
   public function setRunOptions(RunOptions $options): void {
     parent::setRunOptions($options);
 
-    $file_options_path = $this->directioDirectory() . DIRECTORY_SEPARATOR . self::YAML_OPTIONS_FILENAME;
-    if (file_exists($file_options_path)) {
-      $file_provided_options = Yaml::parseFile($file_options_path);
-      if (!is_array($file_provided_options)) {
-        throw new \InvalidArgumentException('Config file must be an array.');
+    $files = [
+      self::YAML_OPTIONS_FILENAME,
+      self::YAML_LOCAL_OPTIONS_FILENAME,
+    ];
+    foreach ($files as $filename) {
+      $file_options_path = $this->directioDirectory() . DIRECTORY_SEPARATOR . $filename;
+      if (file_exists($file_options_path)) {
+        $file_provided_options = Yaml::parseFile($file_options_path);
+        if (!is_array($file_provided_options)) {
+          throw new \InvalidArgumentException(sprintf('Config file "%s" must be an array.', $filename));
+        }
+
+        $merged_options = $this->options()->all();
+        foreach ($file_provided_options as $key => $value) {
+          if (is_array($value) && isset($merged_options[$key]) && is_array($merged_options[$key])) {
+            $merged_options[$key] = array_merge($merged_options[$key], $value);
+          }
+          else {
+            $merged_options[$key] = $value;
+          }
+        }
+        parent::setRunOptions(new RunOptions($merged_options));
       }
-      parent::setRunOptions($this->options()
-        ->withAddedOptions($file_provided_options));
     }
   }
 
