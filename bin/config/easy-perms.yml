@@ -1,0 +1,18 @@
+file_permissions:
+  default: 0644
+  readonly: 0444
+  writeable: 0666
+  executable: 0744
+directory_permissions:
+  default: 0755
+  readonly: 0555
+  writeable: 0777
+  executable: 0755
+default:
+  - ../../**
+readonly: [ ]
+writeable:
+  - ../../tests_phpunit/test_data/.cache
+executable:
+  - ../../bin/*.sh
+  - ../../vendor/bin/*
