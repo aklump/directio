@@ -30,6 +30,11 @@ The default directory is `.directio/src/Fixture/`. To register additional direct
 
 The default setup is installed with `directio init`.
 
+## When a Fixture Fails
+
+1. Throw an instance of `AKlump\Directio\Fixture\FixtureException`
+2. It is not necessary to use `$this->io()` to output the exception message, that is automatic.
+
 ## Example Class
 
 {{ snippet.MyFixture_php|fenced }}
