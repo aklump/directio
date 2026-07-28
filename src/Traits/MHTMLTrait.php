@@ -21,7 +21,7 @@ trait MHTMLTrait {
    *
    * @throws \AKlump\FixtureFramework\Exception\FixtureException
    */
-  protected function downloadAsMhtml(string $url, string $path, array $headers = [], string $cache_dir = NULL): void {
+  protected function downloadAsMhtml(string $url, string $path, array $headers = [], ?string $cache_dir = NULL): void {
     $directory = dirname($path);
     if (!is_dir($directory) && !mkdir($directory, 0777, TRUE) && !is_dir($directory)) {
       throw new FixtureException(sprintf('Directory "%s" was not created', $directory));

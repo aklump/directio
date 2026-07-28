@@ -16,7 +16,7 @@ class GetResultFilename {
    * @param \DateTimeInterface|null $date (Optional) The date document was filtered.
    * This will be stamped into the name if provided.
    */
-  public function __construct(DateTimeInterface $date = NULL) {
+  public function __construct(?DateTimeInterface $date = NULL) {
     if (isset($date)) {
       $this->date = $date;
     }
