@@ -18,6 +18,7 @@ use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
 use AKlump\Directio\HTMLElementStyle;
 use DateTimeInterface;
 use Exception;
+use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
@@ -152,15 +153,26 @@ class ImportCommand extends Command {
     if (!is_file($path) || pathinfo($path, PATHINFO_EXTENSION) !== 'php') {
       return FALSE;
     }
+    // We use a regex to avoid loading the class, which might fail if dependencies are missing.
     $content = file_get_contents($path);
 
-    // We use a regex to avoid loading the class, which might fail if dependencies are missing.
-    $has_attribute = preg_match('/#\[\\\\?AKlump\\\\FixtureFramework\\\\Fixture\s*\(|#\[Fixture\s*\(/', $content) === 1;
-    if (!$has_attribute) {
+    // First failure would be mismatching namespace
+    if (!preg_match('/namespace\s+AKlump\\\\Directio\\\\Fixture\b/', $content)) {
       return FALSE;
     }
 
-    return preg_match('/namespace\s+AKlump\\\\Directio\\\\Fixture\b/', $content) === 1;
+    // A solid indicator of a fixture file is the presence of a fixture attribute.
+    $has_attribute = preg_match('/#\[\\\\?AKlump\\\\FixtureFramework\\\\Fixture\s*\(|#\[Fixture\s*\(/', $content) === 1;
+    if ($has_attribute) {
+      return TRUE;
+    }
+
+    // But we may have an abstract fixture class without an attribute
+    if (preg_match('/abstract\s+class/i', $content) && preg_match('/use\s+\\\\?AKlump\\\\Directio\\\\FixtureFramework\\\\AbstractFixture/i', $content)) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
   private function hasDirectioMarkup(string $path): bool {
@@ -176,7 +188,7 @@ class ImportCommand extends Command {
     $found_count = 0;
     $newly_imported_count = 0;
     $identical_count = 0;
-    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
+    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::FOLLOW_SYMLINKS));
     foreach ($iterator as $file) {
       if ($file->isDir()) {
         continue;
