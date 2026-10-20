@@ -73,7 +73,7 @@ EOD;
   }
 
   public function testImportSingleDocumentSkipsPromptOnMatchingContent() {
-    $docPath = $this->getTestFilePath('document.md');
+    $docPath = $this->getTestFilePath('project_root/document.md');
     $content = '## My Tasks' . PHP_EOL . '<directio id="task1">Do something</directio>';
     file_put_contents($docPath, $content);
 

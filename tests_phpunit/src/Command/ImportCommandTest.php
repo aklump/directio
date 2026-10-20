@@ -94,7 +94,7 @@ EOD;
   }
 
   public function testImportSingleDocumentOverwritePrompt() {
-    $docPath = $this->getTestFilePath('document.md');
+    $docPath = $this->getTestFilePath('project/document.md');
     $content = '## My Tasks' . PHP_EOL . '<directio id="task1">Do something</directio>';
     file_put_contents($docPath, $content);
 
@@ -136,7 +136,7 @@ EOD;
   }
 
   public function testImportSingleDocumentWithMarkupSucceeds() {
-    $docPath = $this->getTestFilePath('document.md');
+    $docPath = $this->getTestFilePath('project/document.md');
     $content = '## My Tasks' . PHP_EOL . '<directio id="task1">Do something</directio>';
     file_put_contents($docPath, $content);
 
@@ -256,7 +256,7 @@ EOD
     file_put_contents($logDir . '/test.log', 'some logs');
     $this->assertDirectoryExists($logDir);
 
-    $docPath = $this->getTestFilePath('document.md');
+    $docPath = $this->getTestFilePath('project/document.md');
     file_put_contents($docPath, 'some content');
 
     // Answer 'yes' to the prompt
@@ -276,7 +276,7 @@ EOD
     file_put_contents($logDir . '/test.log', 'some logs');
     $this->assertDirectoryExists($logDir);
 
-    $docPath = $this->getTestFilePath('document.md');
+    $docPath = $this->getTestFilePath('project/document.md');
     file_put_contents($docPath, 'some content');
 
     // Answer 'no' to the prompt
@@ -295,7 +295,7 @@ EOD
     file_put_contents($cacheDir . '/test.cache', 'some cache');
     $this->assertDirectoryExists($cacheDir);
 
-    $docPath = $this->getTestFilePath('document.md');
+    $docPath = $this->getTestFilePath('project/document.md');
     file_put_contents($docPath, 'some content');
 
     // Answer 'yes' to the prompt
@@ -315,7 +315,7 @@ EOD
     file_put_contents($cacheDir . '/test.cache', 'some cache');
     $this->assertDirectoryExists($cacheDir);
 
-    $docPath = $this->getTestFilePath('document.md');
+    $docPath = $this->getTestFilePath('project/document.md');
     file_put_contents($docPath, 'some content');
 
     // Answer 'no' to the prompt
