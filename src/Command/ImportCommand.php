@@ -5,6 +5,7 @@ namespace AKlump\Directio\Command;
 
 use AKlump\Directio\FixtureFramework\AbstractFixture;
 use AKlump\Directio\Config\Names;
+use AKlump\Directio\Exception\InvalidAttributesException;
 use AKlump\Directio\Helper\ApplyStateToDocument;
 use AKlump\Directio\IO\GetCacheDirectory;
 use AKlump\Directio\IO\GetLogsDirectory;
@@ -14,10 +15,12 @@ use AKlump\Directio\IO\ReadDocument;
 use AKlump\Directio\IO\ReadState;
 use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\Model\DocumentInterface;
+use AKlump\Directio\TextProcessor\HasLegacyMarkup;
+use AKlump\Directio\TextProcessor\ParseTasks;
 use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
-use AKlump\Directio\HTMLElementStyle;
 use DateTimeInterface;
 use Exception;
+use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
@@ -55,8 +58,6 @@ class ImportCommand extends Command {
 
   private DateTimeInterface $now;
 
-  private string $openTagPattern;
-
   private SymfonyStyle $io;
 
   private function io(): SymfonyStyle {
@@ -71,7 +72,6 @@ class ImportCommand extends Command {
     $this->now = date_create('now', LocalTimezone::get());
     $this->output = $output;
     $this->input = $input;
-    $this->openTagPattern = (new HTMLElementStyle())->getOpenTagPattern();
 
     $base_dir = $this->getBaseDirOrInitializeCurrent($input, $output);
     if (!$base_dir) {
@@ -152,31 +152,54 @@ class ImportCommand extends Command {
     if (!is_file($path) || pathinfo($path, PATHINFO_EXTENSION) !== 'php') {
       return FALSE;
     }
+    // We use a regex to avoid loading the class, which might fail if dependencies are missing.
     $content = file_get_contents($path);
 
-    // We use a regex to avoid loading the class, which might fail if dependencies are missing.
-    $has_attribute = preg_match('/#\[\\\\?AKlump\\\\FixtureFramework\\\\Fixture\s*\(|#\[Fixture\s*\(/', $content) === 1;
-    if (!$has_attribute) {
+    // First failure would be mismatching namespace
+    if (!preg_match('/namespace\s+AKlump\\\\Directio\\\\Fixture\b/', $content)) {
       return FALSE;
     }
 
-    return preg_match('/namespace\s+AKlump\\\\Directio\\\\Fixture\b/', $content) === 1;
+    // A solid indicator of a fixture file is the presence of a fixture attribute.
+    $has_attribute = preg_match('/#\[\\\\?AKlump\\\\FixtureFramework\\\\Fixture\s*\(|#\[Fixture\s*\(/', $content) === 1;
+    if ($has_attribute) {
+      return TRUE;
+    }
+
+    // But we may have an abstract fixture class without an attribute
+    if (preg_match('/abstract\s+class/i', $content) && preg_match('/use\s+\\\\?AKlump\\\\Directio\\\\FixtureFramework\\\\AbstractFixture/i', $content)) {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
+  /**
+   * A document with the retired "<directio" markup, or a heading block that
+   * fails to parse, counts as having markup so that ValidateTaskSyntax
+   * reports the problem instead of the file being skipped in silence.
+   */
   private function hasDirectioMarkup(string $path): bool {
     if (!is_file($path)) {
       return FALSE;
     }
     $content = file_get_contents($path);
-
-    return preg_match('/' . str_replace('/', '\/', $this->openTagPattern) . '/', $content) === 1;
+    if ((new HasLegacyMarkup())($content)) {
+      return TRUE;
+    }
+    try {
+      return !empty((new ParseTasks())($content));
+    }
+    catch (InvalidAttributesException $exception) {
+      return TRUE;
+    }
   }
 
   private function importFromDirectory(string $directory): int {
     $found_count = 0;
     $newly_imported_count = 0;
     $identical_count = 0;
-    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
+    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::FOLLOW_SYMLINKS));
     foreach ($iterator as $file) {
       if ($file->isDir()) {
         continue;

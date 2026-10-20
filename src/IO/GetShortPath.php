@@ -15,7 +15,7 @@ class GetShortPath {
 
   private string $basepath;
 
-  public function __construct(string $basepath = NULL) {
+  public function __construct(?string $basepath = NULL) {
     $this->basepath = $basepath ?? getcwd();
   }
 

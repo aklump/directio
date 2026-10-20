@@ -4,6 +4,7 @@ namespace AKlump\Directio\FixtureFramework;
 
 use AKlump\Directio\Config\Names;
 use AKlump\Directio\Config\SpecialAttributes;
+use AKlump\Directio\Exception\InvalidRedoException;
 use AKlump\Directio\Helper\MarkTaskDoneInDocument;
 use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\ReadDocument;
@@ -133,6 +134,13 @@ abstract class AbstractFixture extends BaseFixture {
     $mappings = $this->fixture()['mappings'] ?? [];
     if (empty($mappings)) {
       return;
+    }
+
+    foreach ($mappings as $mapping) {
+      $expires = SpecialAttributes::extractExpires($mapping['attributes']);
+      if (!SpecialAttributes::isValidExpires($expires)) {
+        throw new InvalidRedoException(sprintf('Task "%s" has an invalid redo value.', $mapping['id']));
+      }
     }
 
     $mark_done = new MarkTaskDoneInDocument();

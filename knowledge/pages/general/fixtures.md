@@ -48,23 +48,23 @@ You can see usage in the example above.
 
 ## How to Use Fixtures in Directio Documents
 
-You can reference a fixture in your document using the `fixture` attribute in a `<directio>` tag.
+You can reference a fixture in your document using the `fixture` attribute in a task heading's `{ … }` block.
 
-```html
-<!-- <directio fixture="my_fixture_id" /> -->
+```markdown
+## My Task {#my_task_id fixture=my_fixture_id}
 ```
 
-When you run the `fixtures` command, Directio will scan the imported documents for these tags and execute the corresponding fixtures in the order they appear.
+When you run the `fixtures` command, Directio will scan the imported documents for these blocks and execute the corresponding fixtures in the order they appear.
 
 ### Skipping Completed Fixtures
 
-If a `<directio>` tag has the `done` attribute, the fixture will be skipped. This happens automatically once a fixture has successfully run. If you need to re-run a fixture, you must remove the `done` attribute from the tag in the document.
+If a task's `{ … }` block has the `done` attribute, the fixture will be skipped. This happens automatically once a fixture has successfully run. If you need to re-run a fixture, you must remove the `done` attribute from the heading in the document.
 
 ## Running Fixtures
 
 The current working directory of all fixtures will be the project directory, which is to say the parent of `.directio`.
 
-Execute the following command to run all fixtures referenced in your documents. If the fixture succeeds the <directio/> tag will receive `done`.
+Execute the following command to run all fixtures referenced in your documents. If the fixture succeeds the task's `{ … }` block will receive `done`.
 
 ```bash
 ./directio fixtures

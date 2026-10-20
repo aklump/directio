@@ -3,6 +3,6 @@
 
 namespace AKlump\Directio\Exception;
 
-class NestedTagsException extends \InvalidArgumentException {
+class InvalidRedoException extends \InvalidArgumentException {
 
 }

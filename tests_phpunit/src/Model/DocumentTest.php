@@ -10,10 +10,12 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \AKlump\Directio\Model\Document
  * @uses \AKlump\Directio\Config\SpecialAttributes
- * @uses \AKlump\Directio\Lexer\TaskLexer
- * @uses \AKlump\Directio\Lexer\AttributesLexer
+ * @uses \AKlump\Directio\Model\Task
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
- * @uses \AKlump\Directio\HTMLElementStyle
+ * @uses \AKlump\Directio\TextProcessor\ParseTasks
+ * @uses \AKlump\Directio\Model\Heading
+ * @uses \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses \AKlump\Directio\TextProcessor\ScanLines
  */
 class DocumentTest extends TestCase {
 
@@ -21,7 +23,7 @@ class DocumentTest extends TestCase {
 
   public function testGetIdsDoesNotMakeUnique() {
     $document = new Document();
-    $document->setContent('<directio id="foo"></directio><directio id="foo"></directio>');
+    $document->setContent("## Foo {#foo}\n\n## Foo Again {#foo}\n");
     $ids = $document->getIds();
     $this->assertCount(2, $ids);
     $this->assertCount(1, array_unique($ids));
@@ -29,7 +31,7 @@ class DocumentTest extends TestCase {
 
   public function testGetIds() {
     $document = new Document();
-    $content = '<directio id="install_runs_update"></directio><directio id="drush_control"></directio>';
+    $content = "## A {#install_runs_update}\n\nbody\n\n## B {#drush_control}\n\nbody\n";
     $document->setContent($content);
     $ids = $document->getIds();
     $this->assertContains('install_runs_update', $ids);
@@ -41,23 +43,35 @@ class DocumentTest extends TestCase {
 
     // Duplicate ids are both removed.
     $tests[] = [
-      '<directio id="foo"></directio><directio id="foo"></directio>',
+      "## Foo {#foo}\n## Foo Again {#foo}\n",
       'foo',
       '',
     ];
+
     // Duplicate ids are both removed.
     $tests[] = [
-      "lorem\n\n<directio id=\"foo\">\n\nipsum</directio>\n\n",
+      "lorem\n\n## Foo {#foo}\n\nipsum\n\n",
       'foo',
       "lorem\n",
     ];
 
     $tests[] = ['', 'foo', ''];
 
+    // A task's body runs to the next heading of the same or a higher
+    // level — a plain heading ends the task even though it carries no
+    // block of its own.
     $tests[] = [
-      "foo\n<directio id=\"bar\">\nbar\n</directio>\nbaz",
+      "# Doc\n\n## Bar {#bar}\n\nbar\n\n## Baz\n",
       'bar',
-      "foo\n\nbaz\n",
+      "# Doc\n\n## Baz\n",
+    ];
+
+    // Cutting the only task at the start of the file leaves no leading blank
+    // line (Phase 1, Q11).
+    $tests[] = [
+      "## Foo {#foo}\n\nbar\n\n## Baz {#baz}\n\nbaz\n",
+      'foo',
+      "## Baz {#baz}\n\nbaz\n",
     ];
 
     return $tests;

@@ -41,15 +41,27 @@ class WriteDocumentTest extends TestCase {
     $this->deleteTestFile('write_document.md');
   }
 
-  public function testInvokeTrimsWhitespace() {
+  public function testInvokeWritesBytesUnchanged() {
     $document = (new Document())->setContent("  foobar  \n\n");
     $filepath = $this->getTestFilePath('/write_document_trim.md');
 
     $this->deleteTestFile('write_document_trim.md');
     (new WriteDocument())($filepath, $document);
-    $this->assertStringEqualsFile($filepath, 'foobar');
+    $this->assertStringEqualsFile($filepath, "  foobar  \n\n");
 
     $this->deleteTestFile('write_document_trim.md');
+  }
+
+  public function testInvokeWritesEmptyDocumentWithoutThrowing() {
+    $document = (new Document())->setContent('');
+    $filepath = $this->getTestFilePath('/write_document_empty.md');
+
+    $this->deleteTestFile('write_document_empty.md');
+    (new WriteDocument())($filepath, $document);
+    $this->assertFileExists($filepath);
+    $this->assertSame(0, filesize($filepath));
+
+    $this->deleteTestFile('write_document_empty.md');
   }
 
   protected function tearDown(): void {

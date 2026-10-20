@@ -2,11 +2,10 @@
 
 namespace AKlump\Directio\Helper;
 
-use AKlump\Directio\Lexer\TaskLexer;
+use AKlump\Directio\Config\SpecialAttributes;
 use AKlump\Directio\Model\Document;
 use AKlump\Directio\Model\DocumentInterface;
-use AKlump\Directio\TextProcessor\ParseAttributes;
-use AKlump\Directio\Config\SpecialAttributes;
+use AKlump\Directio\TextProcessor\ParseTasks;
 
 /**
  * Adds the 'done' attribute to a specific task in a document.
@@ -21,33 +20,16 @@ final class MarkTaskDoneInDocument {
    */
   public function __invoke(string $taskId, DocumentInterface $document): DocumentInterface {
     $content = $document->getContent();
-    $lexer = new TaskLexer();
-    $lexer->setInput($content);
-    $lexer->moveNext();
-
-    $parseAttributes = new ParseAttributes();
     $updates = [];
 
-    while (TRUE) {
-      $lexer->skipUntil(TaskLexer::T_OPEN_TAG);
-      if (NULL === $lexer->lookahead) {
-        break;
-      }
-      $lexer->moveNext();
-
-      $originalTag = $lexer->token->value;
-      $attributes = $parseAttributes($originalTag);
-      $this_id = SpecialAttributes::extractId($attributes);
-
-      if ($this_id === $taskId) {
-        if (!SpecialAttributes::extractDone($attributes)) {
-          $newTag = $this->addDoneAttribute($originalTag);
-          $updates[] = [
-            'pos' => $lexer->token->position,
-            'len' => strlen($originalTag),
-            'new' => $newTag,
-          ];
-        }
+    foreach ((new ParseTasks())($content) as $task) {
+      $attributes = $task->getAttributes();
+      if (SpecialAttributes::extractId($attributes) === $taskId && !SpecialAttributes::extractDone($attributes)) {
+        $updates[] = [
+          'pos' => $task->getBlockOffset() + 1,
+          'len' => 0,
+          'new' => SpecialAttributes::defaultDoneKey() . ' ',
+        ];
       }
     }
 
@@ -64,26 +46,4 @@ final class MarkTaskDoneInDocument {
     return (new Document())->setContent($content);
   }
 
-  /**
-   * Adds 'done' attribute to the open tag.
-   *
-   * @param string $tag e.g. '<directio id="foo">' or '<directio id="foo" redo="P1D">'
-   *
-   * @return string e.g. '<directio done id="foo">' or '<directio done id="foo" redo="P1D">'
-   */
-  private function addDoneAttribute(string $tag): string {
-    $done_attribute = SpecialAttributes::defaultDoneKey();
-    // We want to insert the attribute right after '<directio'
-    if (preg_match('/^(<directio)(\s|>)/i', $tag, $matches)) {
-      $prefix = $matches[1];
-      $rest = substr($tag, strlen($prefix));
-      if (trim($rest) === '>') {
-        return sprintf('%s %s>', $prefix, $done_attribute);
-      }
-
-      return sprintf('%s %s%s', $prefix, $done_attribute, $rest);
-    }
-
-    return $tag;
-  }
 }

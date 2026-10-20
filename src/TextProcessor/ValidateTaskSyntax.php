@@ -4,96 +4,62 @@
 namespace AKlump\Directio\TextProcessor;
 
 use AKlump\Directio\Config\SpecialAttributes;
-use AKlump\Directio\Exception\NestedTagsException;
-use AKlump\Directio\Exception\NoClosingException;
+use AKlump\Directio\Exception\InvalidRedoException;
+use AKlump\Directio\Exception\LegacySyntaxException;
+use AKlump\Directio\Exception\NestedTasksException;
 use AKlump\Directio\Exception\NoIDException;
-use AKlump\Directio\Exception\NoOpeningException;
-use AKlump\Directio\HTMLElementStyle;
-use AKlump\Directio\Lexer\TaskLexer;
-use AKlump\Directio\Traits\HasStyleTrait;
+use AKlump\Directio\Model\Task;
 
+/**
+ * Validates every task read by {@see ParseTasks}: each one must carry an
+ * id, its "redo" (if any) must be a valid period, and no task may nest
+ * inside another (Q5).
+ *
+ * A document that still contains the retired "<directio" element markup
+ * fails with {@see LegacySyntaxException}, naming `directio convert` as
+ * the fix.
+ */
 class ValidateTaskSyntax {
-
-  use HasStyleTrait;
-
-  public function __construct() {
-    $this->setStyle(new HTMLElementStyle());
-  }
-
-  /**
-   * @var \AKlump\Directio\Lexer\TaskLexer
-   */
-  private TaskLexer $lexer;
 
   /**
    * @param string $content
    *
    * @return void
-   *
    */
   public function __invoke(string $content): void {
-
-    if (!$this->quickScanForTags($content)) {
-      return;
+    if ((new HasLegacyMarkup())($content)) {
+      throw new LegacySyntaxException('Old <directio> markup found. Run `directio convert` on this file.');
     }
 
-    $this->lexer = new TaskLexer();
-    $this->lexer->setInput($content);
-    $this->lexer->moveNext();
+    /** @var \AKlump\Directio\Model\Task[] $validated Tasks already checked, used to detect nesting. */
+    $validated = [];
 
-    /** @var array $tags_stack Used to track nested tags and their attributes. */
-    $tags_stack = [];
+    foreach ((new ParseTasks())($content) as $task) {
+      $attributes = $task->getAttributes();
+      $position_message = 'At position: ' . $task->getStart();
 
-    /** @var array $open_tags Used to detect if we have had an open tag. */
-    $open_tags = [];
-
-    /** @var bool $tag_is_open Holds current tag open/close state. */
-    $tag_is_open = FALSE;
-
-    while (TRUE) {
-      if (NULL === $this->lexer->lookahead) {
-        break;
+      $id = SpecialAttributes::extractId($attributes);
+      if (NULL === $id || '' === $id) {
+        throw new NoIDException($position_message);
       }
-      $this->lexer->moveNext();
-      $position_message = 'At position: ' . $this->lexer->token->position;
-      $token = $this->lexer->token;
-      if ($this->lexer->isA($token->value, TaskLexer::T_OPEN_TAG)) {
-        $tag_is_open = TRUE;
-        $tags_stack[] = $token->value;
-        $open_tags[] = $token->value;
 
-        $attributes = (new ParseAttributes())($token->value);
-        if (NULL === SpecialAttributes::extractId($attributes)) {
-          throw new NoIDException($position_message);
+      $redo = SpecialAttributes::extractExpires($attributes);
+      if (!SpecialAttributes::isValidExpires($redo)) {
+        throw new InvalidRedoException(sprintf('%s: "%s"', $position_message, $redo));
+      }
+
+      foreach ($validated as $previous) {
+        if ($previous->getStart() >= $task->getStart() && $previous->getEnd() <= $task->getEnd()) {
+          throw new NestedTasksException(sprintf(
+            'Nesting tasks (%s>%s) is not supported.',
+            SpecialAttributes::extractId($attributes),
+            SpecialAttributes::extractId($previous->getAttributes())
+          ));
         }
       }
-      elseif ($this->lexer->isA($token->value, TaskLexer::T_CLOSE_TAG)) {
-        if (FALSE === $tag_is_open) {
-          throw new NoOpeningException($position_message);
-        }
-        array_pop($tags_stack);
-        $tag_is_open = FALSE;
-      }
-      if (count($tags_stack) > 1) {
-        $ids = array_map(function ($attributes) {
-          $attributes = (new ParseAttributes())($attributes);
 
-          return SpecialAttributes::extractId($attributes) ?? 'NULL';
-        }, $tags_stack);
-        $ids = implode('>', $ids);
-        throw new NestedTagsException(sprintf('Nesting directio tags (%s) is not supported.', $ids));
-      }
+      $validated[] = $task;
     }
-    if (empty($open_tags)) {
-      throw new NoOpeningException();
-    }
-    if (TRUE === $tag_is_open) {
-      throw new NoClosingException();
-    }
-  }
-
-  private function quickScanForTags(string $content) {
-    return strstr($content, $this->openTagStart) !== FALSE;
   }
 
 }

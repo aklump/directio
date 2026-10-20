@@ -13,7 +13,6 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @covers \AKlump\Directio\Command\ImportCommand
  *
  * @uses \AKlump\Directio\Config\SpecialAttributes
- * @uses \AKlump\Directio\HTMLElementStyle
  * @uses \AKlump\Directio\Helper\ApplyStateToDocument
  * @uses \AKlump\Directio\IO\GetCacheDirectory
  * @uses \AKlump\Directio\IO\GetDirectioRoot
@@ -24,11 +23,15 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @uses \AKlump\Directio\IO\ReadDocument
  * @uses \AKlump\Directio\IO\ReadState
  * @uses \AKlump\Directio\IO\WriteDocument
- * @uses \AKlump\Directio\Lexer\AttributesLexer
- * @uses \AKlump\Directio\Lexer\TaskLexer
  * @uses \AKlump\Directio\Model\Document
+ * @uses \AKlump\Directio\Model\Task
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses \AKlump\Directio\TextProcessor\ParseTasks
  * @uses \AKlump\Directio\TextProcessor\ValidateTaskSyntax
+ * @uses \AKlump\Directio\Model\Heading
+ * @uses \AKlump\Directio\TextProcessor\HasLegacyMarkup
+ * @uses \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses \AKlump\Directio\TextProcessor\ScanLines
  */
 class ImportCommandSkipOnMatchTest extends TestCase {
 
@@ -73,8 +76,8 @@ EOD;
   }
 
   public function testImportSingleDocumentSkipsPromptOnMatchingContent() {
-    $docPath = $this->getTestFilePath('document.md');
-    $content = '## My Tasks' . PHP_EOL . '<directio id="task1">Do something</directio>';
+    $docPath = $this->getTestFilePath('project_root/document.md');
+    $content = '## My Tasks' . PHP_EOL . '### Do Something {#task1}' . PHP_EOL . 'Do something';
     file_put_contents($docPath, $content);
 
     // First import
@@ -117,7 +120,7 @@ EOD
     );
 
     // 2. Document with Markup
-    file_put_contents($sourceDir . '/markup.md', '<directio id="m1"></directio>');
+    file_put_contents($sourceDir . '/markup.md', '## M1 {#m1}' . PHP_EOL);
 
     // First import all
     $this->executeCommand(['source document' => $sourceDir]);

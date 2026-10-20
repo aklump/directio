@@ -9,25 +9,27 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \AKlump\Directio\Helper\MarkTaskDoneInDocument
  * @uses \AKlump\Directio\Config\SpecialAttributes
- * @uses \AKlump\Directio\HTMLElementStyle
- * @uses \AKlump\Directio\Lexer\AttributesLexer
- * @uses \AKlump\Directio\Lexer\TaskLexer
  * @uses \AKlump\Directio\Model\Document
+ * @uses \AKlump\Directio\Model\Task
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses \AKlump\Directio\TextProcessor\ParseTasks
+ * @uses \AKlump\Directio\Model\Heading
+ * @uses \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses \AKlump\Directio\TextProcessor\ScanLines
  */
 class MarkTaskDoneInDocumentTest extends TestCase {
 
   public function testMarkTaskDoneAddsDoneAttribute() {
-    $content = '## Task 1' . PHP_EOL . '<directio id="task1" fixture="f1"></directio>';
+    $content = "## Task 1 {#task1 fixture=f1}\n\nbody\n";
     $document = (new Document())->setContent($content);
     $helper = new MarkTaskDoneInDocument();
 
     $updated = $helper('task1', $document);
-    $this->assertStringContainsString('<directio done id="task1" fixture="f1">', $updated->getContent());
+    $this->assertStringContainsString('## Task 1 {done #task1 fixture=f1}', $updated->getContent());
   }
 
   public function testMarkTaskDoneDoesNotDuplicateDoneAttribute() {
-    $content = '## Task 1' . PHP_EOL . '<directio done id="task1" fixture="f1"></directio>';
+    $content = "## Task 1 {done #task1 fixture=f1}\n\nbody\n";
     $document = (new Document())->setContent($content);
     $helper = new MarkTaskDoneInDocument();
 
@@ -35,23 +37,22 @@ class MarkTaskDoneInDocumentTest extends TestCase {
     $this->assertEquals($content, $updated->getContent());
   }
 
-  public function testMarkTaskDoneHandlesSelfClosingTag() {
-    $content = '## Task 1' . PHP_EOL . '<directio id="task1" fixture="f1" />';
+  public function testMarkTaskDoneWithOnlyIdAttribute() {
+    $content = "## Task 1 {#task1}\n\nbody\n";
     $document = (new Document())->setContent($content);
     $helper = new MarkTaskDoneInDocument();
 
     $updated = $helper('task1', $document);
-    // TaskLexer/AttributesLexer might not strictly follow XML/HTML but we want 'done' inside.
-    $this->assertStringContainsString('<directio done id="task1" fixture="f1" />', $updated->getContent());
+    $this->assertStringContainsString('## Task 1 {done #task1}', $updated->getContent());
   }
 
   public function testMarkTaskDoneOnlyAffectsSpecifiedId() {
-    $content = '<directio id="task1" fixture="f1"></directio>' . PHP_EOL . '<directio id="task2" fixture="f2"></directio>';
+    $content = "## Task 1 {#task1 fixture=f1}\n\n## Task 2 {#task2 fixture=f2}\n";
     $document = (new Document())->setContent($content);
     $helper = new MarkTaskDoneInDocument();
 
     $updated = $helper('task2', $document);
-    $this->assertStringContainsString('<directio id="task1" fixture="f1">', $updated->getContent());
-    $this->assertStringContainsString('<directio done id="task2" fixture="f2">', $updated->getContent());
+    $this->assertStringContainsString('## Task 1 {#task1 fixture=f1}', $updated->getContent());
+    $this->assertStringContainsString('## Task 2 {done #task2 fixture=f2}', $updated->getContent());
   }
 }

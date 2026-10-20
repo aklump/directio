@@ -3,20 +3,23 @@
 
 namespace AKlump\Directio\Tests\TextProcessor;
 
-use AKlump\Directio\Exception\NestedTagsException;
-use AKlump\Directio\Exception\NoClosingException;
+use AKlump\Directio\Exception\InvalidRedoException;
+use AKlump\Directio\Exception\LegacySyntaxException;
+use AKlump\Directio\Exception\NestedTasksException;
 use AKlump\Directio\Exception\NoIDException;
-use AKlump\Directio\Exception\NoOpeningException;
 use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \AKlump\Directio\TextProcessor\ValidateTaskSyntax
  * @uses \AKlump\Directio\Config\SpecialAttributes
- * @uses \AKlump\Directio\Lexer\AttributesLexer
- * @uses \AKlump\Directio\Lexer\TaskLexer
+ * @uses \AKlump\Directio\Model\Heading
+ * @uses \AKlump\Directio\Model\Task
+ * @uses \AKlump\Directio\TextProcessor\HasLegacyMarkup
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
- * @uses \AKlump\Directio\HTMLElementStyle
+ * @uses \AKlump\Directio\TextProcessor\ParseTasks
+ * @uses \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses \AKlump\Directio\TextProcessor\ScanLines
  */
 class ValidateTaskSyntaxTest extends TestCase {
 
@@ -24,31 +27,54 @@ class ValidateTaskSyntaxTest extends TestCase {
     $tests = [];
 
     $tests[] = [
-      '<directio id="foo"><directio id="bar"></directio></directio>',
-      NestedTagsException::class,
+      "## Foo {#foo}\n\n### Bar {#bar}\n",
+      NestedTasksException::class,
     ];
     $tests[] = [
-      '<directio>foobar</directio>',
+      "## Foo {}\n\nfoobar\n",
       NoIDException::class,
     ];
     $tests[] = [
-      '<directio id="foo">foobar',
-      NoClosingException::class,
-    ];
-    $tests[] = [
-      '<directio lorem="ipsum">foobar</directio>',
+      "## Foo {lorem=ipsum}\n\nfoobar\n",
       NoIDException::class,
     ];
     $tests[] = [
-      '<directio id="ipsum">foobar</directio><directio lorem="ipsum">',
+      "## Foo {#ipsum}\n\nfoobar\n\n## Bar {lorem=ipsum}\n",
       NoIDException::class,
     ];
     $tests[] = [
-      '# Lorem Ipsum</directio><directio id="lorem">lorem</directio>',
-      NoOpeningException::class,
+      "## Foo {#foo redo=P1S}\n\nfoobar\n",
+      InvalidRedoException::class,
+    ];
+    $tests[] = [
+      '<directio id="foo">foobar</directio>',
+      LegacySyntaxException::class,
+    ];
+    $tests[] = [
+      '<DIRECTIO id="foo">foobar</DIRECTIO>',
+      LegacySyntaxException::class,
+    ];
+    $tests[] = [
+      "## Foo {id=\"\"}\n\nfoobar\n",
+      NoIDException::class,
     ];
 
     return $tests;
+  }
+
+  public function testLegacyMarkupInsideAFenceDoesNotThrow() {
+    (new ValidateTaskSyntax())("## Foo {#foo}\n\n```html\n<directio id=\"old\">\n</directio>\n```\n");
+    $this->assertTrue(TRUE);
+  }
+
+  public function testInvokeWithMissingRedoDoesNotThrow() {
+    (new ValidateTaskSyntax())("## Foo {#foo}\n\nfoobar\n");
+    $this->assertTrue(TRUE);
+  }
+
+  public function testInvokeWithValidRedoDoesNotThrow() {
+    (new ValidateTaskSyntax())("## Foo {#foo redo=P1D}\n\nfoobar\n");
+    $this->assertTrue(TRUE);
   }
 
   /**
@@ -60,6 +86,12 @@ class ValidateTaskSyntaxTest extends TestCase {
       $this->expectExceptionMessage($message);
     }
     (new ValidateTaskSyntax())($content);
+  }
+
+  public function testNestedTasksExceptionNamesBothIds() {
+    $this->expectException(NestedTasksException::class);
+    $this->expectExceptionMessage('foo>bar');
+    (new ValidateTaskSyntax())("## Foo {#foo}\n\n### Bar {#bar}\n");
   }
 
   public function testContentWithoutTagsDoesNotThrow() {

@@ -11,20 +11,18 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \AKlump\Directio\Helper\ApplyStateToDocument
  * @uses \AKlump\Directio\Config\SpecialAttributes
- * @uses \AKlump\Directio\Lexer\AttributesLexer
- * @uses \AKlump\Directio\Lexer\TaskLexer
  * @uses \AKlump\Directio\Model\Document
+ * @uses \AKlump\Directio\Model\Task
  * @uses \AKlump\Directio\Model\TaskState
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
- * @uses \AKlump\Directio\HTMLElementStyle
+ * @uses \AKlump\Directio\TextProcessor\ParseTasks
+ * @uses \AKlump\Directio\Model\Heading
+ * @uses \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses \AKlump\Directio\TextProcessor\ScanLines
  */
 class ApplyStateToDocumentTest extends TestCase {
 
-  const CONTENT = <<<EOD
-  <directio id="foo" redo="P1D">
-  foobar
-  </directio>
-  EOD;
+  const CONTENT = "## Foo {#foo redo=P1D}\n\nfoobar\n";
 
   public static function dataForInvokeProvider(): array {
     $tests = [];
@@ -63,6 +61,33 @@ class ApplyStateToDocumentTest extends TestCase {
       self::CONTENT,
     ];
 
+    // The task is completed and has no redo: it stays hidden for good, even
+    // far in the future — this is not just a coincidence of "now".
+    $tests[] = [
+      date_create('2099-01-23T15:23:37Z'),
+      [
+        [
+          'id' => 'foo',
+          'completed' => '2025-01-01T06:55:53-08:00',
+          'redo' => '',
+        ],
+      ],
+      '',
+    ];
+
+    // The task is completed and recurring; its stored redo has just passed,
+    // so it reappears.
+    $tests[] = [
+      date_create('2025-01-02T06:55:54-08:00'),
+      [
+        [
+          'id' => 'foo',
+          'completed' => '2025-01-01T06:55:53-08:00',
+          'redo' => '2025-01-02T06:55:53-08:00',
+        ],
+      ],
+      self::CONTENT,
+    ];
 
     return $tests;
   }
