@@ -66,4 +66,20 @@ class SpecialAttributesTest extends TestCase {
     $this->assertSame('foo', SpecialAttributes::extractFixture(['fixture' => 'foo']));
     $this->assertNull(SpecialAttributes::extractFixture(['other' => 'baz']));
   }
+
+  public function testIsValidExpiresWithNoValueIsValid() {
+    $this->assertTrue(SpecialAttributes::isValidExpires(NULL));
+    $this->assertTrue(SpecialAttributes::isValidExpires(FALSE));
+  }
+
+  public function testIsValidExpiresWithAValidPeriodIsValid() {
+    $this->assertTrue(SpecialAttributes::isValidExpires('P1D'));
+    $this->assertTrue(SpecialAttributes::isValidExpires('P1M'));
+  }
+
+  public function testIsValidExpiresWithAnInvalidPeriodIsNotValid() {
+    $this->assertFalse(SpecialAttributes::isValidExpires('P1S'));
+    $this->assertFalse(SpecialAttributes::isValidExpires(''));
+    $this->assertFalse(SpecialAttributes::isValidExpires('not a period'));
+  }
 }

@@ -10,8 +10,8 @@ use AKlump\Directio\IO\GetCacheDirectory;
 use AKlump\Directio\IO\GetLogsDirectory;
 use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\ReadDocument;
-use AKlump\Directio\Lexer\TaskLexer;
-use AKlump\Directio\TextProcessor\ParseAttributes;
+use AKlump\Directio\TextProcessor\ParseTasks;
+use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
 use AKlump\FixtureFramework\Discovery\DiscoverFixtureDefinitions;
 use AKlump\FixtureFramework\Runtime\FixtureCollectionBuilder;
 use AKlump\FixtureFramework\Runtime\FixtureRunner;
@@ -66,7 +66,14 @@ class FixturesCommand extends Command {
     }
 
     $total_found = 0;
-    $fixture_mappings = $this->scanForFixtureMappings($directio_directory, $total_found);
+    try {
+      $fixture_mappings = $this->scanForFixtureMappings($directio_directory, $total_found);
+    }
+    catch (Exception $exception) {
+      $this->io()->error($exception->getMessage());
+
+      return Command::FAILURE;
+    }
     if ($fixture_mappings === NULL) {
       return Command::FAILURE;
     }
@@ -115,19 +122,13 @@ class FixturesCommand extends Command {
 
     $mappings = [];
     $total_fixtures_found = 0;
-    $parse_attributes = new ParseAttributes();
     foreach ($files_to_scan as $document_path) {
       $document = (new ReadDocument())($document_path);
-      $lexer = new TaskLexer();
-      $lexer->setInput($document->getContent());
-      $lexer->moveNext();
-      while (TRUE) {
-        $lexer->skipUntil(TaskLexer::T_OPEN_TAG);
-        if (NULL === $lexer->lookahead) {
-          break;
-        }
-        $lexer->moveNext();
-        $attributes = $parse_attributes($lexer->token->value);
+      // Never silently skip a bad attribute block here (Q4): a document
+      // that fails to parse is refused before any fixture runs.
+      (new ValidateTaskSyntax())($document->getContent());
+      foreach ((new ParseTasks())($document->getContent()) as $task) {
+        $attributes = $task->getAttributes();
         $is_done = SpecialAttributes::extractDone($attributes);
         $fixture_id = SpecialAttributes::extractFixture($attributes);
         if ($fixture_id) {

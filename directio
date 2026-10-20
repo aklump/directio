@@ -2,6 +2,7 @@
 <?php
 // SPDX-License-Identifier: BSD-3-Clause
 
+use AKlump\Directio\Command\ConvertCommand;
 use AKlump\Directio\Command\FixturesCommand;
 use AKlump\Directio\Command\ImportCommand;
 use AKlump\Directio\Command\InitializeCommand;
@@ -25,4 +26,5 @@ $application->add(new InitializeCommand());
 $application->add(new UpdateCommand());
 $application->add(new ImportCommand());
 $application->add(new FixturesCommand());
+$application->add(new ConvertCommand());
 $application->run();

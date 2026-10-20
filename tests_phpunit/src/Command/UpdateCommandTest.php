@@ -26,11 +26,13 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @uses \AKlump\Directio\TextProcessor\ScanForCompletedTasks
  * @uses \AKlump\Directio\TextProcessor\ValidateTaskSyntax
  * @uses \AKlump\Directio\IO\GetLogsDirectory
- * @uses \AKlump\Directio\Lexer\TaskLexer
- * @uses \AKlump\Directio\Lexer\AttributesLexer
+ * @uses \AKlump\Directio\Model\Heading
+ * @uses \AKlump\Directio\Model\Task
+ * @uses \AKlump\Directio\TextProcessor\HasLegacyMarkup
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
- * @uses \AKlump\Directio\Traits\HasStyleTrait
- * @uses \AKlump\Directio\HTMLElementStyle
+ * @uses \AKlump\Directio\TextProcessor\ParseTasks
+ * @uses \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses \AKlump\Directio\TextProcessor\ScanLines
  * @uses \AKlump\Directio\Command\InitializeCommand
  */
 class UpdateCommandTest extends TestCase {
@@ -54,7 +56,7 @@ class UpdateCommandTest extends TestCase {
     mkdir($importedDir);
 
     $docPath = $importedDir . '/tasks.md';
-    $content = '## Tasks' . PHP_EOL . '<directio id="task1" done>Task 1</directio>' . PHP_EOL . '<directio id="task2">Task 2</directio>';
+    $content = '## Tasks' . PHP_EOL . '### Task 1 {done #task1}' . PHP_EOL . 'Task 1 body' . PHP_EOL . '### Task 2 {#task2}' . PHP_EOL . 'Task 2 body';
     file_put_contents($docPath, $content);
 
     $application = new Application();
@@ -82,6 +84,25 @@ class UpdateCommandTest extends TestCase {
     $this->assertEquals('task1', $row['id']);
   }
 
+  public function testUpdateCommandRefusesALegacyDocumentAndPointsAtConvert() {
+    (new InitializeDirectory())($this->projectRoot);
+    $importedDir = $this->projectRoot . '/.directio/imported';
+    mkdir($importedDir);
+
+    $docPath = $importedDir . '/tasks.md';
+    $content = '<directio done id="task1">' . PHP_EOL . 'Task 1 body' . PHP_EOL . '</directio>';
+    file_put_contents($docPath, $content);
+
+    $application = new Application();
+    $application->add(new UpdateCommand());
+    $commandTester = new CommandTester($application->find('update'));
+    $commandTester->execute([]);
+
+    $this->assertEquals(1, $commandTester->getStatusCode());
+    $this->assertStringContainsString('directio convert', $commandTester->getDisplay());
+    $this->assertSame($content, file_get_contents($docPath));
+  }
+
   public function testUpdateCommandWithNoDocuments() {
     (new InitializeDirectory())($this->projectRoot);
 
@@ -103,7 +124,7 @@ class UpdateCommandTest extends TestCase {
 
     $docPath = $importedDir . '/tasks.md';
     // Use an ISO 8601 duration
-    $content = '## Tasks' . PHP_EOL . '<directio id="task_exp" done redo="P1D">Task with expiry</directio>';
+    $content = '## Tasks' . PHP_EOL . '### Task Exp {done #task_exp redo=P1D}' . PHP_EOL . 'Task with expiry';
     file_put_contents($docPath, $content);
 
     $application = new Application();

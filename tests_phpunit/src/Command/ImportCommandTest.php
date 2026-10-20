@@ -15,7 +15,6 @@ use Symfony\Component\Console\Tester\CommandTester;
  *
  * @uses \AKlump\Directio\Config\Names
  * @uses \AKlump\Directio\Config\SpecialAttributes
- * @uses \AKlump\Directio\HTMLElementStyle
  * @uses \AKlump\Directio\Helper\ApplyStateToDocument
  * @uses \AKlump\Directio\IO\GetCacheDirectory
  * @uses \AKlump\Directio\IO\GetDirectioRoot
@@ -25,12 +24,15 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @uses \AKlump\Directio\IO\ReadDocument
  * @uses \AKlump\Directio\IO\ReadState
  * @uses \AKlump\Directio\IO\WriteDocument
- * @uses \AKlump\Directio\Lexer\AttributesLexer
- * @uses \AKlump\Directio\Lexer\TaskLexer
  * @uses \AKlump\Directio\Model\Document
+ * @uses \AKlump\Directio\Model\Heading
+ * @uses \AKlump\Directio\Model\Task
+ * @uses \AKlump\Directio\TextProcessor\HasLegacyMarkup
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses \AKlump\Directio\TextProcessor\ParseTasks
+ * @uses \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses \AKlump\Directio\TextProcessor\ScanLines
  * @uses \AKlump\Directio\TextProcessor\ValidateTaskSyntax
- * @uses \AKlump\Directio\Traits\HasStyleTrait
  */
 class ImportCommandTest extends TestCase {
 
@@ -94,8 +96,8 @@ EOD;
   }
 
   public function testImportSingleDocumentOverwritePrompt() {
-    $docPath = $this->getTestFilePath('document.md');
-    $content = '## My Tasks' . PHP_EOL . '<directio id="task1">Do something</directio>';
+    $docPath = $this->getTestFilePath('project/document.md');
+    $content = '## My Tasks' . PHP_EOL . '### Do Something {#task1}' . PHP_EOL . 'Do something';
     file_put_contents($docPath, $content);
 
     // First import
@@ -103,7 +105,7 @@ EOD;
 
     // Modify content so we don't trigger ID collision if it was being checked too early
     // (though in this test it is checking against the file about to be overwritten)
-    $content2 = '## My Tasks 2' . PHP_EOL . '<directio id="task2">Do something else</directio>';
+    $content2 = '## My Tasks 2' . PHP_EOL . '### Do Something Else {#task2}' . PHP_EOL . 'Do something else';
     file_put_contents($docPath, $content2);
 
     // Second import, answer No
@@ -136,8 +138,8 @@ EOD;
   }
 
   public function testImportSingleDocumentWithMarkupSucceeds() {
-    $docPath = $this->getTestFilePath('document.md');
-    $content = '## My Tasks' . PHP_EOL . '<directio id="task1">Do something</directio>';
+    $docPath = $this->getTestFilePath('project/document.md');
+    $content = '## My Tasks' . PHP_EOL . '### Do Something {#task1}' . PHP_EOL . 'Do something';
     file_put_contents($docPath, $content);
 
     $commandTester = $this->executeCommand(['source document' => $docPath]);
@@ -172,7 +174,7 @@ EOD
     );
 
     // 3. Document with Markup
-    file_put_contents($sourceDir . '/markup.md', '## Tasks' . PHP_EOL . '<directio id="m1">task</directio>');
+    file_put_contents($sourceDir . '/markup.md', '## Tasks' . PHP_EOL . '### Do The Task {#m1}' . PHP_EOL . 'task');
 
     // 4. Plain Document (No markup, no fixture)
     file_put_contents($sourceDir . '/plain.txt', 'Just some text');
@@ -201,6 +203,29 @@ EOD
     $this->assertStringContainsString('Imported 2 of 2 items found', $commandTester->getDisplay());
   }
 
+  public function testImportDirectoryReportsALegacyDocumentAndPointsAtConvert() {
+    $sourceDir = $this->getTestFilePath('source_dir_legacy/', TRUE);
+    file_put_contents($sourceDir . '/old.md', '<directio id="old">' . PHP_EOL . 'body' . PHP_EOL . '</directio>');
+
+    $commandTester = $this->executeCommand(['source document' => $sourceDir]);
+
+    $this->assertStringContainsString('directio convert', $commandTester->getDisplay());
+    $this->assertStringNotContainsString('No fixtures or documents with directio markup found', $commandTester->getDisplay());
+    $this->assertCount(0, glob($this->projectRoot . '/.directio/imported/*'));
+  }
+
+  public function testImportDirectoryReportsAnUnparseableBlockInsteadOfCrashing() {
+    $sourceDir = $this->getTestFilePath('source_dir_pandoc/', TRUE);
+    file_put_contents($sourceDir . '/README.md', '## Install {.unnumbered}' . PHP_EOL);
+    file_put_contents($sourceDir . '/markup.md', '## Tasks' . PHP_EOL . '### Do The Task {#m1}' . PHP_EOL . 'task');
+
+    $commandTester = $this->executeCommand(['source document' => $sourceDir]);
+
+    $this->assertStringContainsString('.unnumbered', $commandTester->getDisplay());
+    $this->assertCount(1, glob($this->projectRoot . '/.directio/imported/*_markup.md'));
+    $this->assertCount(0, glob($this->projectRoot . '/.directio/imported/*_README.md'));
+  }
+
   public function testImportDirectoryWithSkips() {
     $sourceDir = $this->getTestFilePath('source_dir_skips/', TRUE);
     file_put_contents($sourceDir . '/Fixture1.php', <<<'EOD'
@@ -211,7 +236,7 @@ use AKlump\FixtureFramework\Fixture;
 class Fixture1 {}
 EOD
     );
-    file_put_contents($sourceDir . '/markup.md', '<directio id="m1"></directio>');
+    file_put_contents($sourceDir . '/markup.md', '## M1 {#m1}' . PHP_EOL);
 
     // First import all
     $this->executeCommand(['source document' => $sourceDir], ['yes', 'yes']);
@@ -227,7 +252,7 @@ class Fixture1 {
 }
 EOD
     );
-    file_put_contents($sourceDir . '/markup.md', '<directio id="m1">changed</directio>');
+    file_put_contents($sourceDir . '/markup.md', '## M1 {#m1}' . PHP_EOL . 'changed');
     $commandTester = $this->executeCommand(['source document' => $sourceDir], ['no', 'no']);
     $this->assertStringContainsString('All of the 2 items found', $commandTester->getDisplay());
     $this->assertStringContainsString('were skipped or failed', $commandTester->getDisplay());
@@ -243,7 +268,7 @@ class Fixture1 {
 }
 EOD
     );
-    file_put_contents($sourceDir . '/markup.md', '<directio id="m1">changed again</directio>');
+    file_put_contents($sourceDir . '/markup.md', '## M1 {#m1}' . PHP_EOL . 'changed again');
     $commandTester = $this->executeCommand(['source document' => $sourceDir], ['yes', 'no']);
     $this->assertStringContainsString('Imported 1 of 2 items found', $commandTester->getDisplay());
   }
@@ -256,7 +281,7 @@ EOD
     file_put_contents($logDir . '/test.log', 'some logs');
     $this->assertDirectoryExists($logDir);
 
-    $docPath = $this->getTestFilePath('document.md');
+    $docPath = $this->getTestFilePath('project/document.md');
     file_put_contents($docPath, 'some content');
 
     // Answer 'yes' to the prompt
@@ -276,7 +301,7 @@ EOD
     file_put_contents($logDir . '/test.log', 'some logs');
     $this->assertDirectoryExists($logDir);
 
-    $docPath = $this->getTestFilePath('document.md');
+    $docPath = $this->getTestFilePath('project/document.md');
     file_put_contents($docPath, 'some content');
 
     // Answer 'no' to the prompt
@@ -295,7 +320,7 @@ EOD
     file_put_contents($cacheDir . '/test.cache', 'some cache');
     $this->assertDirectoryExists($cacheDir);
 
-    $docPath = $this->getTestFilePath('document.md');
+    $docPath = $this->getTestFilePath('project/document.md');
     file_put_contents($docPath, 'some content');
 
     // Answer 'yes' to the prompt
@@ -315,7 +340,7 @@ EOD
     file_put_contents($cacheDir . '/test.cache', 'some cache');
     $this->assertDirectoryExists($cacheDir);
 
-    $docPath = $this->getTestFilePath('document.md');
+    $docPath = $this->getTestFilePath('project/document.md');
     file_put_contents($docPath, 'some content');
 
     // Answer 'no' to the prompt

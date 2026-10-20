@@ -116,4 +116,26 @@ class SpecialAttributes {
 
     return NULL;
   }
+
+  /**
+   * Determine if a "redo" (a.k.a. "expires") value is a valid DateInterval.
+   *
+   * @param mixed $value The value as extracted by {@see self::extractExpires()}.
+   *
+   * @return bool TRUE when there is no value (done-once, no redo) or the
+   *   value parses as a \DateInterval period; FALSE otherwise.
+   */
+  public static function isValidExpires(mixed $value): bool {
+    if (NULL === $value || FALSE === $value) {
+      return TRUE;
+    }
+    try {
+      new \DateInterval((string) $value);
+
+      return TRUE;
+    }
+    catch (\Exception $e) {
+      return FALSE;
+    }
+  }
 }

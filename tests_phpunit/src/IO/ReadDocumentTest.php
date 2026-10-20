@@ -16,6 +16,10 @@ class ReadDocumentTest extends TestCase {
 
   use TestWithFilesTrait;
 
+  protected function tearDown(): void {
+    $this->deleteAllTestFiles();
+  }
+
   public function testCanReadYaml() {
     $path = $this->getTestFilePath('document.md');
     file_put_contents($path, '# My Instructions');

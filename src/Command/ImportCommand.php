@@ -5,6 +5,7 @@ namespace AKlump\Directio\Command;
 
 use AKlump\Directio\FixtureFramework\AbstractFixture;
 use AKlump\Directio\Config\Names;
+use AKlump\Directio\Exception\InvalidAttributesException;
 use AKlump\Directio\Helper\ApplyStateToDocument;
 use AKlump\Directio\IO\GetCacheDirectory;
 use AKlump\Directio\IO\GetLogsDirectory;
@@ -14,8 +15,9 @@ use AKlump\Directio\IO\ReadDocument;
 use AKlump\Directio\IO\ReadState;
 use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\Model\DocumentInterface;
+use AKlump\Directio\TextProcessor\HasLegacyMarkup;
+use AKlump\Directio\TextProcessor\ParseTasks;
 use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
-use AKlump\Directio\HTMLElementStyle;
 use DateTimeInterface;
 use Exception;
 use FilesystemIterator;
@@ -56,8 +58,6 @@ class ImportCommand extends Command {
 
   private DateTimeInterface $now;
 
-  private string $openTagPattern;
-
   private SymfonyStyle $io;
 
   private function io(): SymfonyStyle {
@@ -72,7 +72,6 @@ class ImportCommand extends Command {
     $this->now = date_create('now', LocalTimezone::get());
     $this->output = $output;
     $this->input = $input;
-    $this->openTagPattern = (new HTMLElementStyle())->getOpenTagPattern();
 
     $base_dir = $this->getBaseDirOrInitializeCurrent($input, $output);
     if (!$base_dir) {
@@ -175,13 +174,25 @@ class ImportCommand extends Command {
     return FALSE;
   }
 
+  /**
+   * A document with the retired "<directio" markup, or a heading block that
+   * fails to parse, counts as having markup so that ValidateTaskSyntax
+   * reports the problem instead of the file being skipped in silence.
+   */
   private function hasDirectioMarkup(string $path): bool {
     if (!is_file($path)) {
       return FALSE;
     }
     $content = file_get_contents($path);
-
-    return preg_match('/' . str_replace('/', '\/', $this->openTagPattern) . '/', $content) === 1;
+    if ((new HasLegacyMarkup())($content)) {
+      return TRUE;
+    }
+    try {
+      return !empty((new ParseTasks())($content));
+    }
+    catch (InvalidAttributesException $exception) {
+      return TRUE;
+    }
   }
 
   private function importFromDirectory(string $directory): int {
