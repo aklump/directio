@@ -42,40 +42,28 @@
   <div class="row mb-5 pt-5">
     <article class="col">
       <h1 class="mb-4 text-primary">Directio Syntax</h1>
-      <p>Each Directio <em>task</em> is demarcated by an HTML element, <code>&lt;directio&gt;…&lt;/directio&gt;</code>, like so:</p>
-<pre><code class="html">&lt;directio id="foo"&gt;
-
-# Foo Task
+      <p>Each Directio <em>task</em> is a Markdown heading whose last token is a <code>{ … }</code> attribute block, like so:</p>
+<pre><code class="markdown">## Foo Task {#foo}
 ...
-
-&lt;/directio&gt;
 </code></pre>
+<p>A task's body runs from its heading down to the next heading of the same or a higher level, or to the end of the document — there is no closing tag to match. Both <a href="https://spec.commonmark.org/0.31.2/#atx-headings">ATX</a> (<code>#</code> through <code>######</code>) and <a href="https://spec.commonmark.org/0.31.2/#setext-headings">setext</a> (a line of text underlined with <code>===</code> or <code>---</code>) headings are recognized. A heading found inside a fenced code block (fenced by <code>```</code> or <code>~~~</code>) is never a task.</p>
 <p>A completed task is represented by one slight change. (Look familiar?, i.e., <a href="https://www.markdownguide.org/extended-syntax/#task-lists">Markdown task lists</a>)</p>
-<pre><code class="html">&lt;directio x id="foo"&gt;
-
-# Foo Task
-...
-
-&lt;/directio&gt;
+<pre><code class="markdown">## Foo Task {x #foo}
 </code></pre>
 <h2>Alternate Syntax</h2>
-<p>Instead of <code>x</code> you can use boolean attributes (<code>done, complete</code>) like this:</p>
-<pre><code class="html">&lt;directio done id="foo"&gt;
-...
+<p>Instead of <code>x</code> you can use boolean attributes (<code>done</code>, <code>complete</code>) like this:</p>
+<pre><code class="markdown">## Foo Task {done #foo}
 </code></pre>
-<pre><code class="html">&lt;directio complete id="foo"&gt;
-...
+<pre><code class="markdown">## Foo Task {complete #foo}
 </code></pre>
 <h2>Rules</h2>
 <ul>
-<li>Tasks must be wrapped with both an open <code>&lt;directio id="foo"&gt;</code> and close tag <code>&lt;/directio&gt;</code>.</li>
-<li>Open tags must have an <code>id</code> attribute.</li>
-<li>Attribute order is of no significance.</li>
-<li>Attributes must be wrapped by double quotes.<ul>
-<li><code>&lt;directio id="value" foo="another value"&gt;</code></li>
-</ul>
-</li>
-<li>Boolean attributes should be name only, e.g. <code>complete</code> as in <code>&lt;directio id="foo" complete&gt;</code>.</li>
+<li>The <code>{ … }</code> block must be the last token on the heading line.</li>
+<li>Every task must carry an <code>id</code>, either as <code>#value</code> shorthand or as <code>id=value</code> / <code>id="value"</code>.</li>
+<li>Items inside the block are whitespace-separated. Each one is <code>#name</code> (shorthand for <code>id=name</code>), <code>name=value</code>, <code>name="quoted value"</code>, or a bare <code>name</code> flag.</li>
+<li>An unquoted value may not contain whitespace, <code>"</code>, or <code>}</code>; wrap it in double quotes (<code>name="quoted value"</code>) when it needs to.</li>
+<li>Item order is of no significance. If a key appears twice, the later one wins.</li>
+<li>Tasks may not nest — a task's body may not contain another task's heading.</li>
 </ul>
 <h2>Special Attributes</h2>
 <table class="table">
@@ -83,13 +71,18 @@
 <tr><th>Meaning</th><th>Attributes</th><th>Notes</th><th>Example</th></tr>
 </thead>
 <tbody>
-<tr><td>task identification</td><td><code>id</code>, <code>name</code></td><td>Must be unique within an initialized project.</td><td><code>foo</code></td></tr>
-<tr><td>Redo after a period</td><td><code>redo</code></td><td>A <code>DateInterval</code> period.</td><td><code>P1M</code>, <code>P1D</code></td></tr>
-<tr><td>Completed</td><td><code>done</code>, <code>complete</code>, <code>x</code></td><td></td><td></td></tr>
+<tr><td>task identification</td><td><code>id</code>, <code>name</code></td><td>Must be unique within an initialized project.</td><td><code>#foo</code>, <code>id=foo</code></td></tr>
+<tr><td>Redo after a period</td><td><code>redo</code></td><td>A <code>DateInterval</code> period.</td><td><code>redo=P1M</code>, <code>redo=P1D</code></td></tr>
+<tr><td>Completed</td><td><code>done</code>, <code>complete</code>, <code>x</code></td><td></td><td><code>done</code></td></tr>
 <tr><td>Incompleted</td><td></td><td>Tasks are assumed incomplete.</td><td></td></tr>
 </tbody>
 </table>
 <p>A completed task with no <code>redo</code> is hidden for good. A completed task with a <code>redo</code> period is hidden until that period has passed since completion.</p>
+<h2>Converting Older Documents</h2>
+<p>Documents written in the retired <code>&lt;directio id="foo"&gt;…&lt;/directio&gt;</code> element markup can be rewritten onto this syntax in place:</p>
+<pre><code class="bash">./directio convert /foo/bar/document.md
+</code></pre>
+<p><code>directio convert</code> prints a summary and asks to confirm before overwriting the file. It preserves every task's <code>id</code> and other attributes, so SQLite state recorded under the old syntax still applies afterward.</p>
     </article>
   </div>
 </main>

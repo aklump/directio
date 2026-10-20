@@ -283,15 +283,15 @@ $options = new RunOptions([
 ]);
 </code></pre>
 <h2>How to Use Fixtures in Directio Documents</h2>
-<p>You can reference a fixture in your document using the <code>fixture</code> attribute in a <code>&lt;directio&gt;</code> tag.</p>
-<pre><code class="html">&lt;directio id="my_task_id" fixture="my_fixture_id"&gt;&lt;/directio&gt;
+<p>You can reference a fixture in your document using the <code>fixture</code> attribute in a task heading's <code>{ … }</code> block.</p>
+<pre><code class="markdown">## My Task {#my_task_id fixture=my_fixture_id}
 </code></pre>
-<p>When you run the <code>fixtures</code> command, Directio will scan the imported documents for these tags and execute the corresponding fixtures in the order they appear.</p>
+<p>When you run the <code>fixtures</code> command, Directio will scan the imported documents for these blocks and execute the corresponding fixtures in the order they appear.</p>
 <h3>Skipping Completed Fixtures</h3>
-<p>If a <code>&lt;directio&gt;</code> tag has the <code>done</code> attribute, the fixture will be skipped. This happens automatically once a fixture has successfully run. If you need to re-run a fixture, you must remove the <code>done</code> attribute from the tag in the document.</p>
+<p>If a task's <code>{ … }</code> block has the <code>done</code> attribute, the fixture will be skipped. This happens automatically once a fixture has successfully run. If you need to re-run a fixture, you must remove the <code>done</code> attribute from the heading in the document.</p>
 <h2>Running Fixtures</h2>
 <p>The current working directory of all fixtures will be the project directory, which is to say the parent of <code>.directio</code>.</p>
-<p>Execute the following command to run all fixtures referenced in your documents. If the fixture succeeds the &lt;directio/&gt; tag will receive <code>done</code>.</p>
+<p>Execute the following command to run all fixtures referenced in your documents. If the fixture succeeds the task's <code>{ … }</code> block will receive <code>done</code>.</p>
 <pre><code class="bash">./directio fixtures
 </code></pre>
 <h3>Options</h3>
