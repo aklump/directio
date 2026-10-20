@@ -63,6 +63,33 @@ class ApplyStateToDocumentTest extends TestCase {
       self::CONTENT,
     ];
 
+    // The task is completed and has no redo: it stays hidden for good, even
+    // far in the future — this is not just a coincidence of "now".
+    $tests[] = [
+      date_create('2099-01-23T15:23:37Z'),
+      [
+        [
+          'id' => 'foo',
+          'completed' => '2025-01-01T06:55:53-08:00',
+          'redo' => '',
+        ],
+      ],
+      '',
+    ];
+
+    // The task is completed and recurring; its stored redo has just passed,
+    // so it reappears.
+    $tests[] = [
+      date_create('2025-01-02T06:55:54-08:00'),
+      [
+        [
+          'id' => 'foo',
+          'completed' => '2025-01-01T06:55:53-08:00',
+          'redo' => '2025-01-02T06:55:53-08:00',
+        ],
+      ],
+      self::CONTENT,
+    ];
 
     return $tests;
   }

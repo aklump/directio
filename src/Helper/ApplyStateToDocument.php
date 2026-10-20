@@ -32,12 +32,13 @@ final class ApplyStateToDocument {
 
   private function isTaskCompleteOrIsItTimeToRedo(TaskStateInterface $task): bool {
     if (!$task->getCompleted()) {
-      return FALSE;
+      return FALSE;                                    // never done: keep
     }
-    $redo = $task->getRedo();
-    $redo = date_create($redo);
+    if ('' === $task->getRedo()) {
+      return TRUE;                                      // done once, no redo: hidden for good
+    }
 
-    return $redo >= $this->now;
+    return date_create($task->getRedo()) > $this->now;   // recurring: hidden until the period has passed
   }
 
 }
