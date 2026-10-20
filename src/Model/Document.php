@@ -78,6 +78,10 @@ class Document implements DocumentInterface {
       }
     }
 
+    // A cut starting at byte 0 leaves a leading blank line; WriteDocument's
+    // trim used to erase it by accident.
+    $content = ltrim($content, PHP_EOL);
+
     return $content;
   }
 

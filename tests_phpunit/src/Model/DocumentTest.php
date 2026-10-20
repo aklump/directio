@@ -60,6 +60,14 @@ class DocumentTest extends TestCase {
       "foo\n\nbaz\n",
     ];
 
+    // Cutting the only task at the start of the file leaves no leading blank
+    // line (Phase 1, Q11).
+    $tests[] = [
+      "<directio id=\"foo\">\nbar\n</directio>\n\nbaz",
+      'foo',
+      "baz\n",
+    ];
+
     return $tests;
   }
 
