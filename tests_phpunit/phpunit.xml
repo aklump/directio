@@ -10,6 +10,12 @@
          failOnRisky="true"
          failOnWarning="true"
          verbose="true">
+    <php>
+        <!-- Pin the console width so wrapped command output doesn't vary by terminal. -->
+        <env name="COLUMNS" value="200" force="true"/>
+        <env name="LINES" value="50" force="true"/>
+    </php>
+
     <testsuites>
         <testsuite name="default">
             <directory suffix="Test.php">.</directory>
