@@ -9,7 +9,11 @@ use AKlump\Directio\IO\ReadDocument;
 use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\Model\Attributes;
 use AKlump\Directio\Model\Document;
+use AKlump\Directio\Model\Heading;
+use AKlump\Directio\TextProcessor\ScanHeadings;
+use AKlump\Directio\TextProcessor\ScanLines;
 use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
+use Exception;
 use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -22,11 +26,15 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * Rewrites a document from the retired `<directio>…</directio>` element
  * markup onto the heading `{ … }` attribute-block syntax, in place.
  *
- * This command owns its own thin, read-only reader for the old markup.
- * `TaskLexer` and the old `ParseAttributes` no longer exist (Phase 7
- * retired them along with `doctrine/lexer`), and nothing else in the
- * codebase needs to read the old syntax, so that reader lives here only,
- * scoped to this command.
+ * This command owns the only reader of the old markup left in the
+ * codebase; nothing else needs it.
+ *
+ * Under the new syntax a task's body runs to the next heading of the same
+ * or a higher level, so the converter refuses — listing lines — wherever
+ * the old close tag ended a task somewhere the new rule would not: content
+ * after a close tag before such a heading, a headless task whose body has
+ * a level-1 heading, or a task whose own heading is deeper than the task
+ * before it. Every refusal is reported and nothing is written.
  */
 #[AsCommand(name: 'convert', description: 'Convert a document from <directio> markup to the heading { … } syntax')]
 class ConvertCommand extends Command {
@@ -65,8 +73,19 @@ class ConvertCommand extends Command {
     }
     $shortpath = (new GetShortPath())($path);
 
-    $document = (new ReadDocument())($path);
-    $result = $this->convert($document->getContent());
+    try {
+      $document = (new ReadDocument())($path);
+      $result = $this->convert($document->getContent());
+      if (NULL !== $result['content']) {
+        (new ValidateTaskSyntax())($result['content']);
+      }
+    }
+    catch (Exception $exception) {
+      $this->io()->error(sprintf('Cannot convert %s: %s', $shortpath, $exception->getMessage()));
+      $this->io()->writeln('Fix the source document and run convert again.');
+
+      return Command::FAILURE;
+    }
 
     if ($result['noop']) {
       $this->io()
@@ -91,10 +110,6 @@ class ConvertCommand extends Command {
       $shortpath,
       $result['invented']
     ));
-
-    // The converter's own output must itself be valid under the new
-    // syntax; a failure here is a bug in this command, not bad input.
-    (new ValidateTaskSyntax())($result['content']);
 
     if (!$this->io()
       ->confirm(sprintf('Overwrite "%s" with the converted content?', $shortpath), FALSE)) {
@@ -133,20 +148,19 @@ class ConvertCommand extends Command {
       ];
     }
 
-    $headings = $this->scanAtxHeadings($content);
+    $headings = (new ScanHeadings())($content);
 
-    // "Nearest heading above", used only to level an invented heading,
-    // is computed from headings that sit OUTSIDE every legacy task's own
-    // span — a genuine document-structure heading, never another task's
-    // own (promoted or invented) heading. Otherwise two sibling tasks with
-    // nothing but blank lines between them (the common case: a heading-
-    // first task immediately followed by a headless one) would nest the
-    // second one inside the first's new heading, which Q5 forbids.
+    // "Nearest heading above", used to level an invented heading, is
+    // computed from headings that sit OUTSIDE every legacy task's own span:
+    // a genuine document-structure heading, never another task's own
+    // (promoted or invented) heading. Otherwise two sibling tasks with
+    // nothing but blank lines between them would nest the second inside
+    // the first's new heading.
     $outside_headings = array_values(array_filter(
       $headings,
-      function (array $h) use ($legacy_tasks): bool {
+      function (Heading $h) use ($legacy_tasks): bool {
         foreach ($legacy_tasks as $task) {
-          if ($h['position'] >= $task['openStart'] && $h['position'] < $task['closeEnd']) {
+          if ($h->getStart() >= $task['openStart'] && $h->getStart() < $task['closeEnd']) {
             return FALSE;
           }
         }
@@ -160,120 +174,113 @@ class ConvertCommand extends Command {
     $invented = 0;
     $heading_index = 0;
     $cursor_level = 0;
+    // The previous converted task's heading level, while no outside
+    // heading has closed it; the next task's heading may not go deeper.
+    $open_task_level = NULL;
 
     foreach ($legacy_tasks as $i => $task) {
-      while ($heading_index < count($outside_headings) && $outside_headings[$heading_index]['position'] < $task['openStart']) {
-        $cursor_level = $outside_headings[$heading_index]['level'];
+      while ($heading_index < count($outside_headings) && $outside_headings[$heading_index]->getStart() < $task['openStart']) {
+        $cursor_level = $outside_headings[$heading_index]->getLevel();
+        $open_task_level = NULL;
         $heading_index++;
       }
-      $nearest_above_level = $cursor_level;
 
+      $id = SpecialAttributes::extractId($task['attributes']) ?? '(no id)';
       $body = substr($content, $task['openEnd'], $task['closeStart'] - $task['openEnd']);
-
       $body_headings = array_values(array_filter(
         $headings,
-        fn(array $h) => $h['position'] >= $task['openEnd'] && $h['position'] < $task['closeStart']
+        fn(Heading $h) => $h->getStart() >= $task['openEnd'] && $h->getStart() < $task['closeStart']
       ));
-      $body_heading_levels = array_column($body_headings, 'level');
-
       $block = '{' . (string) new Attributes($task['attributes']) . '}';
 
+      // Case 1: the body opens with a heading that no later body heading
+      // of the same or a higher level would cut short.
+      $own_heading = NULL;
       $first_line_offset = $this->firstNonBlankLineOffset($body);
-      $is_case_1 = FALSE;
-      $heading_level = NULL;
-      $heading_title = NULL;
-      $first_line = '';
-
       if (NULL !== $first_line_offset) {
-        $first_line = $this->lineAt($body, $first_line_offset);
-        $atx = $this->matchAtxHeadingLine(rtrim($first_line, "\r\n"));
-        if (NULL !== $atx) {
-          $heading_absolute_start = $task['openEnd'] + $first_line_offset;
-          $has_sibling_conflict = FALSE;
-          foreach ($body_headings as $h) {
-            if ($h['position'] > $heading_absolute_start && $h['level'] <= $atx['level']) {
-              $has_sibling_conflict = TRUE;
-              break;
-            }
+        foreach ($body_headings as $h) {
+          if ($h->getStart() === $task['openEnd'] + $first_line_offset) {
+            $own_heading = $h;
+            break;
           }
-          if (!$has_sibling_conflict) {
-            $is_case_1 = TRUE;
-            $heading_level = $atx['level'];
-            $heading_title = $atx['title'];
+        }
+      }
+      if (NULL !== $own_heading) {
+        foreach ($body_headings as $h) {
+          if ($h->getStart() > $own_heading->getStart() && $h->getLevel() <= $own_heading->getLevel()) {
+            $own_heading = NULL;
+            break;
           }
         }
       }
 
-      if (!$is_case_1) {
-        $level = $nearest_above_level + 1;
-        if (!empty($body_heading_levels)) {
-          $level = min($level, min($body_heading_levels) - 1);
+      if (NULL !== $own_heading) {
+        $level = $own_heading->getLevel();
+        $title = $own_heading->getTitle();
+        if (NULL !== $open_task_level && $level > $open_task_level) {
+          $refusals[] = [
+            'line' => $this->lineNumber($content, $own_heading->getStart()),
+            'reason' => sprintf('The heading of "%s" is deeper than the task before it, so it would nest inside that task.', $id),
+          ];
         }
-        $level = max(1, min($level, 6));
-
-        $heading_level = $level;
-        $heading_title = $this->humanize(SpecialAttributes::extractId($task['attributes']) ?? '');
-        $invented++;
-      }
-
-      $new_heading_line = str_repeat('#', $heading_level) . ' ' . trim($heading_title) . ' ' . $block;
-
-      if ($is_case_1) {
-        $rest = substr($body, $first_line_offset + strlen($first_line));
-        $rest_trimmed = rtrim($rest);
-        $new_body = $new_heading_line . "\n";
-        if ('' !== $rest_trimmed) {
-          $new_body .= $rest_trimmed . "\n";
-        }
+        $rest = substr($content, $own_heading->getEnd(), $task['closeStart'] - $own_heading->getEnd());
       }
       else {
-        $body_trimmed = trim($body);
-        $new_body = $new_heading_line . "\n\n";
-        if ('' !== $body_trimmed) {
-          $new_body .= $body_trimmed . "\n";
+        $level = $cursor_level + 1;
+        if (!empty($body_headings)) {
+          $shallowest = min(array_map(fn(Heading $h) => $h->getLevel(), $body_headings));
+          if ($shallowest <= 1) {
+            $refusals[] = [
+              'line' => $this->lineNumber($content, $task['openStart']),
+              'reason' => sprintf('"%s" has no heading of its own and its body contains a level-1 heading, so none can be invented above it.', $id),
+            ];
+          }
+          $level = min($level, $shallowest - 1);
         }
+        if (NULL !== $open_task_level) {
+          $level = min($level, $open_task_level);
+        }
+        $level = max(1, min($level, 6));
+        $title = $this->humanize($id);
+        $invented++;
+        $rest = $body;
       }
+      $open_task_level = $level;
 
+      $new_body = str_repeat('#', $level) . ' ' . trim($title) . ' ' . $block . "\n";
+      $rest = trim($rest);
+      if ('' !== $rest) {
+        $new_body .= "\n" . $rest . "\n";
+      }
       $replacements[] = [
         'start' => $task['openStart'],
         'end' => $task['closeEnd'],
         'text' => $new_body,
       ];
 
-      // Case 3: non-blank content between this task's close tag and the
-      // next structural boundary (the next task's open tag, or the next
-      // real heading, whichever comes first) would silently become part
-      // of this task's body once the close tag is gone.
-      $next_task_start = $legacy_tasks[$i + 1]['openStart'] ?? strlen($content);
-      $next_heading_position = strlen($content);
+      // Case 3: once the close tag is gone, everything up to the next
+      // heading at this task's level or higher (or the next task's open
+      // tag) becomes part of this task's body.
+      $boundary = $legacy_tasks[$i + 1]['openStart'] ?? strlen($content);
       foreach ($headings as $h) {
-        if ($h['position'] >= $task['closeEnd']) {
-          $next_heading_position = $h['position'];
+        if ($h->getStart() >= $task['closeEnd'] && $h->getLevel() <= $level) {
+          $boundary = min($boundary, $h->getStart());
           break;
         }
       }
-      $boundary = min($next_task_start, $next_heading_position);
       $gap = substr($content, $task['closeEnd'], $boundary - $task['closeEnd']);
       if ('' !== trim($gap)) {
-        $pos = $task['closeEnd'];
-        for ($k = 0; $k < strlen($gap); $k++) {
-          if (!ctype_space($gap[$k])) {
-            $pos = $task['closeEnd'] + $k;
-            break;
-          }
-        }
-        $line = substr_count($content, "\n", 0, $pos) + 1;
+        $pos = $task['closeEnd'] + strlen($gap) - strlen(ltrim($gap));
         $refusals[] = [
-          'line' => $line,
-          'reason' => sprintf(
-            'Content follows the close tag for "%s" before the next heading.',
-            SpecialAttributes::extractId($task['attributes']) ?? '(no id)'
-          ),
+          'line' => $this->lineNumber($content, $pos),
+          'reason' => sprintf('Content follows the close tag for "%s" before the next heading at its level.', $id),
         ];
       }
     }
 
     if (!empty($refusals)) {
+      usort($refusals, fn(array $a, array $b) => $a['line'] <=> $b['line']);
+
       return [
         'content' => NULL,
         'refusals' => $refusals,
@@ -298,9 +305,9 @@ class ConvertCommand extends Command {
   }
 
   /**
-   * Finds every `<directio …>…</directio>` task in $content, in document
-   * order. Tasks are assumed not to nest or overlap, which matches every
-   * surveyed document.
+   * Finds every `<directio …>…</directio>` task outside fenced code, in
+   * document order. Tasks are assumed not to nest or overlap, which
+   * matches every surveyed document.
    *
    * @return array<array{
    *   openStart: int,
@@ -311,6 +318,22 @@ class ConvertCommand extends Command {
    * }>
    */
   private function findLegacyTasks(string $content): array {
+    $fenced = [];
+    foreach ((new ScanLines())($content) as $line) {
+      if ($line['inFence']) {
+        $fenced[] = [$line['offset'], $line['offset'] + strlen($line['raw'])];
+      }
+    }
+    $in_fence = function (int $offset) use ($fenced): bool {
+      foreach ($fenced as [$start, $end]) {
+        if ($offset >= $start && $offset < $end) {
+          return TRUE;
+        }
+      }
+
+      return FALSE;
+    };
+
     $tasks = [];
     $cursor = 0;
     $length = strlen($content);
@@ -322,8 +345,7 @@ class ConvertCommand extends Command {
       }
 
       $remainder = substr($content, $open_start);
-      if (!preg_match('/^<directio(?:[\s][^>]*)?>/i', $remainder, $tag_match)) {
-        // Not a real open tag (e.g. "<directiofoo>"); keep scanning.
+      if ($in_fence($open_start) || !preg_match('/^<directio(?:[\s][^>]*)?>/i', $remainder, $tag_match)) {
         $cursor = $open_start + strlen(self::OPEN_TAG);
         continue;
       }
@@ -333,23 +355,22 @@ class ConvertCommand extends Command {
       $close_start = stripos($content, self::CLOSE_TAG, $open_end);
       if (FALSE === $close_start) {
         throw new RuntimeException(sprintf(
-          'Unmatched "%s" with no closing "%s" found (starting at byte offset %d).',
+          'The "%s" tag on line %d has no closing "%s".',
           self::OPEN_TAG,
-          self::CLOSE_TAG,
-          $open_start
+          $this->lineNumber($content, $open_start),
+          self::CLOSE_TAG
         ));
       }
       $close_end = $close_start + strlen(self::CLOSE_TAG);
 
       $tag_inner = substr($open_tag_text, strlen(self::OPEN_TAG), -1);
-      $attributes = $this->parseLegacyAttributes($tag_inner);
 
       $tasks[] = [
         'openStart' => $open_start,
         'openEnd' => $open_end,
         'closeStart' => $close_start,
         'closeEnd' => $close_end,
-        'attributes' => $attributes,
+        'attributes' => $this->parseLegacyAttributes($tag_inner),
       ];
 
       $cursor = $close_end;
@@ -386,122 +407,21 @@ class ConvertCommand extends Command {
   }
 
   /**
-   * Scans $content for every ATX heading (fence-aware), regardless of
-   * whether it carries a "{ … }" block, used to compute an invented
-   * heading's level and to find case 3's "next heading" boundary.
-   *
-   * @return array<array{position: int, level: int}>
-   */
-  private function scanAtxHeadings(string $content): array {
-    $headings = [];
-    $fence = NULL;
-    $offset = 0;
-
-    foreach ($this->splitLines($content) as $line) {
-      $line_start = $offset;
-      $offset += strlen($line);
-      $trimmed = rtrim($line, "\r\n");
-
-      if (NULL !== $fence) {
-        if ($this->closesFence($trimmed, $fence)) {
-          $fence = NULL;
-        }
-        continue;
-      }
-
-      $opened_fence = $this->matchFenceOpen($trimmed);
-      if (NULL !== $opened_fence) {
-        $fence = $opened_fence;
-        continue;
-      }
-
-      $atx = $this->matchAtxHeadingLine($trimmed);
-      if (NULL !== $atx) {
-        $headings[] = ['position' => $line_start, 'level' => $atx['level']];
-      }
-    }
-
-    return $headings;
-  }
-
-  /**
-   * @return array{char: string, len: int}|null
-   */
-  private function matchFenceOpen(string $line): ?array {
-    if (preg_match('/^[ \t]*(`{3,}|~{3,})/', $line, $m)) {
-      return ['char' => $m[1][0], 'len' => strlen($m[1])];
-    }
-
-    return NULL;
-  }
-
-  /**
-   * @param array{char: string, len: int} $fence
-   */
-  private function closesFence(string $line, array $fence): bool {
-    $pattern = sprintf('/^[ \t]*%s{%d,}[ \t]*$/', preg_quote($fence['char'], '/'), $fence['len']);
-
-    return 1 === preg_match($pattern, $line);
-  }
-
-  /**
-   * @param string $line A line with no trailing line-ending characters.
-   *
-   * @return array{level: int, title: string}|null
-   */
-  private function matchAtxHeadingLine(string $line): ?array {
-    if (!preg_match('/^[ ]{0,3}(#{1,6})(?:[ \t]+(.*))?$/', $line, $m)) {
-      return NULL;
-    }
-
-    $level = strlen($m[1]);
-    $rest = $m[2] ?? '';
-    if (preg_match('/^(.*?)[ \t]+#+[ \t]*$/', $rest, $closing)) {
-      $rest = $closing[1];
-    }
-    else {
-      $rest = rtrim($rest, " \t");
-    }
-
-    return ['level' => $level, 'title' => $rest];
-  }
-
-  /**
-   * @return int|null The byte offset, relative to $text, of the start of
-   *   the first line that isn't blank; NULL if $text is entirely blank.
+   * @return int|null The byte offset, relative to $text, of the first line
+   *   that isn't blank; NULL if $text is entirely blank.
    */
   private function firstNonBlankLineOffset(string $text): ?int {
-    $offset = 0;
-    foreach ($this->splitLines($text) as $line) {
-      if ('' !== trim($line)) {
-        return $offset;
+    foreach ((new ScanLines())($text) as $line) {
+      if ('' !== trim($line['text'])) {
+        return $line['offset'];
       }
-      $offset += strlen($line);
     }
 
     return NULL;
   }
 
-  /**
-   * @return string The line (terminator included, if any) starting at
-   *   byte offset $offset within $text.
-   */
-  private function lineAt(string $text, int $offset): string {
-    $lines = $this->splitLines(substr($text, $offset));
-
-    return $lines[0] ?? '';
-  }
-
-  /**
-   * @return string[] Each line of $content, with its line ending (if any)
-   *   still attached.
-   */
-  private function splitLines(string $content): array {
-    if ('' === $content) {
-      return [];
-    }
-
-    return preg_split('/(?<=\n)/', $content);
+  private function lineNumber(string $content, int $offset): int {
+    return substr_count($content, "\n", 0, $offset) + 1;
   }
 
   /**
@@ -509,13 +429,7 @@ class ConvertCommand extends Command {
    * "bump_unbuild" -> "Bump unbuild".
    */
   private function humanize(string $id): string {
-    $title = str_replace(['_', '-'], ' ', $id);
-    $title = trim($title);
-    if ('' === $title) {
-      return $title;
-    }
-
-    return ucfirst($title);
+    return ucfirst(trim(str_replace(['_', '-'], ' ', $id)));
   }
 
 }

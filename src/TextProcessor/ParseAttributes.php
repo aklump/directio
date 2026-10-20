@@ -11,7 +11,7 @@ use AKlump\Directio\Exception\InvalidAttributesException;
  * Items inside the block are whitespace-separated. Each item is one of:
  * - "#name": shorthand for the id, stored under the "id" key;
  * - "name=value": an unquoted value, which may not contain whitespace,
- *   `"`, or `}`;
+ *   `"`, `{`, or `}`;
  * - `name="quoted value"`: a value that may contain whitespace;
  * - a bare "name": a boolean flag.
  *
@@ -76,7 +76,7 @@ class ParseAttributes {
           }
           else {
             $valueStart = $pos;
-            while ($pos < $length && !ctype_space($inner[$pos]) && '"' !== $inner[$pos] && '}' !== $inner[$pos]) {
+            while ($pos < $length && !ctype_space($inner[$pos]) && '"' !== $inner[$pos] && '{' !== $inner[$pos] && '}' !== $inner[$pos]) {
               $pos++;
             }
             $value = substr($inner, $valueStart, $pos - $valueStart);

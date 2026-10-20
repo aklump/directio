@@ -23,9 +23,13 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @uses \AKlump\Directio\IO\WriteDocument
  * @uses \AKlump\Directio\Model\Attributes
  * @uses \AKlump\Directio\Model\Document
+ * @uses \AKlump\Directio\Model\Heading
  * @uses \AKlump\Directio\Model\Task
+ * @uses \AKlump\Directio\TextProcessor\HasLegacyMarkup
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
  * @uses \AKlump\Directio\TextProcessor\ParseTasks
+ * @uses \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses \AKlump\Directio\TextProcessor\ScanLines
  * @uses \AKlump\Directio\TextProcessor\ValidateTaskSyntax
  */
 class ConvertCommandTest extends TestCase {
@@ -194,6 +198,167 @@ EOD;
 
     $this->assertSame(Command::FAILURE, $commandTester->getStatusCode());
     $this->assertStringContainsString('Line 8:', $commandTester->getDisplay());
+    $this->assertSame($original, file_get_contents($path));
+  }
+
+  public function testCase3RefusesContentUnderADeeperHeadingAfterTheCloseTag() {
+    // "### Notes" is deeper than the task's "## A", so under the new rule
+    // it and its text would be inside the task and go with a later cut.
+    $path = $this->getTestFilePath('project/document.md');
+    $original = <<<'EOD'
+<directio id="a">
+## A
+body
+</directio>
+
+### Notes
+notes text
+
+<directio id="b">
+## B
+body
+</directio>
+EOD;
+    file_put_contents($path, $original);
+
+    $commandTester = $this->executeCommand(['file' => $path]);
+
+    $this->assertSame(Command::FAILURE, $commandTester->getStatusCode());
+    $this->assertStringContainsString('Line 6:', $commandTester->getDisplay());
+    $this->assertSame($original, file_get_contents($path));
+  }
+
+  public function testHeadlessBodyWithALevelOneHeadingIsRefused() {
+    $path = $this->getTestFilePath('project/document.md');
+    $original = <<<'EOD'
+# Doc
+
+<directio id="x">
+intro
+# Inner H1
+more
+</directio>
+EOD;
+    file_put_contents($path, $original);
+
+    $commandTester = $this->executeCommand(['file' => $path]);
+
+    $this->assertSame(Command::FAILURE, $commandTester->getStatusCode());
+    $this->assertStringContainsString('Line 3:', $commandTester->getDisplay());
+    $this->assertStringContainsString('level-1 heading', $commandTester->getDisplay());
+    $this->assertSame($original, file_get_contents($path));
+  }
+
+  public function testOwnHeadingDeeperThanThePreviousTaskIsRefused() {
+    $path = $this->getTestFilePath('project/document.md');
+    $original = <<<'EOD'
+<directio id="a">
+## A
+body
+</directio>
+
+<directio id="b">
+### B
+body
+</directio>
+EOD;
+    file_put_contents($path, $original);
+
+    $commandTester = $this->executeCommand(['file' => $path]);
+
+    $this->assertSame(Command::FAILURE, $commandTester->getStatusCode());
+    $this->assertStringContainsString('Line 7:', $commandTester->getDisplay());
+    $this->assertStringContainsString('nest', $commandTester->getDisplay());
+    $this->assertSame($original, file_get_contents($path));
+  }
+
+  public function testHeadlessTaskAfterAShallowTaskDoesNotNestInsideIt() {
+    $path = $this->getTestFilePath('project/document.md');
+    file_put_contents($path, <<<'EOD'
+# Doc
+
+## Section
+
+<directio id="a">
+# A
+body
+</directio>
+
+<directio id="b">
+body
+</directio>
+EOD);
+
+    $commandTester = $this->executeCommand(['file' => $path], ['yes']);
+
+    $this->assertSame(Command::SUCCESS, $commandTester->getStatusCode());
+    $content = file_get_contents($path);
+    $this->assertStringContainsString("# A {#a}\n", $content);
+    $this->assertStringContainsString("# B {#b}\n", $content);
+    $this->assertSame(['a', 'b'], (new Document())->setContent($content)->getIds());
+  }
+
+  public function testSetextHeadingFirstIsPromotedToAtx() {
+    $path = $this->getTestFilePath('project/document.md');
+    file_put_contents($path, <<<'EOD'
+<directio id="s">
+Title
+=====
+body
+</directio>
+EOD);
+
+    $commandTester = $this->executeCommand(['file' => $path], ['yes']);
+
+    $this->assertSame(Command::SUCCESS, $commandTester->getStatusCode());
+    $this->assertSame("# Title {#s}\n\nbody\n", file_get_contents($path));
+    $this->assertStringContainsString('0 invented', $commandTester->getDisplay());
+  }
+
+  public function testInvalidRedoIsReportedNotThrown() {
+    $path = $this->getTestFilePath('project/document.md');
+    $original = <<<'EOD'
+<directio id="x" redo="">
+body
+</directio>
+EOD;
+    file_put_contents($path, $original);
+
+    $commandTester = $this->executeCommand(['file' => $path]);
+
+    $this->assertSame(Command::FAILURE, $commandTester->getStatusCode());
+    $this->assertStringContainsString('Cannot convert', $commandTester->getDisplay());
+    $this->assertSame($original, file_get_contents($path));
+  }
+
+  public function testUnclosedTagIsReportedNotThrown() {
+    $path = $this->getTestFilePath('project/document.md');
+    $original = "line one\n<directio id=\"x\">\nbody\n";
+    file_put_contents($path, $original);
+
+    $commandTester = $this->executeCommand(['file' => $path]);
+
+    $this->assertSame(Command::FAILURE, $commandTester->getStatusCode());
+    $this->assertStringContainsString('line 2', $commandTester->getDisplay());
+    $this->assertSame($original, file_get_contents($path));
+  }
+
+  public function testLegacyMarkupInsideAFenceIsLeftAlone() {
+    $path = $this->getTestFilePath('project/document.md');
+    $original = <<<'EOD'
+## Foo {#foo}
+
+```html
+<directio id="old">
+</directio>
+```
+EOD;
+    file_put_contents($path, $original);
+
+    $commandTester = $this->executeCommand(['file' => $path]);
+
+    $this->assertSame(Command::SUCCESS, $commandTester->getStatusCode());
+    $this->assertStringContainsString('nothing to convert', $commandTester->getDisplay());
     $this->assertSame($original, file_get_contents($path));
   }
 

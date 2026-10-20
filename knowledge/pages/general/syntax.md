@@ -37,7 +37,7 @@ Instead of `x` you can use boolean attributes (`done`, `complete`) like this:
 * The `{ … }` block must be the last token on the heading line.
 * Every task must carry an `id`, either as `#value` shorthand or as `id=value` / `id="value"`.
 * Items inside the block are whitespace-separated. Each one is `#name` (shorthand for `id=name`), `name=value`, `name="quoted value"`, or a bare `name` flag.
-* An unquoted value may not contain whitespace, `"`, or `}`; wrap it in double quotes (`name="quoted value"`) when it needs to.
+* An unquoted value may not contain whitespace, `"`, `{`, or `}`; wrap it in double quotes (`name="quoted value"`) when it needs to. There is no escape for `"` itself, so a value can never contain one.
 * Item order is of no significance. If a key appears twice, the later one wins.
 * Tasks may not nest — a task's body may not contain another task's heading.
 
@@ -61,3 +61,7 @@ Documents written in the retired `<directio id="foo">…</directio>` element mar
 ```
 
 `directio convert` prints a summary and asks to confirm before overwriting the file. It preserves every task's `id` and other attributes, so SQLite state recorded under the old syntax still applies afterward.
+
+Under the new syntax a task's body runs to the next heading at its level or higher, where the old close tag could end it anywhere. Wherever that would change what `update` later removes, the converter refuses and lists the lines rather than guessing: content after a close tag before such a heading, a task with no heading of its own whose body has a level-1 heading, or a task whose heading is deeper than the task before it. Fix those spots in the source and run it again.
+
+Convert the imported copies too — every document under `.directio/imported/` — or `update` and `fixtures` will refuse them until you do.

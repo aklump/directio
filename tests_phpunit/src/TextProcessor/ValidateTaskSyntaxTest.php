@@ -13,9 +13,13 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \AKlump\Directio\TextProcessor\ValidateTaskSyntax
  * @uses \AKlump\Directio\Config\SpecialAttributes
+ * @uses \AKlump\Directio\Model\Heading
  * @uses \AKlump\Directio\Model\Task
+ * @uses \AKlump\Directio\TextProcessor\HasLegacyMarkup
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
  * @uses \AKlump\Directio\TextProcessor\ParseTasks
+ * @uses \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses \AKlump\Directio\TextProcessor\ScanLines
  */
 class ValidateTaskSyntaxTest extends TestCase {
 
@@ -46,8 +50,21 @@ class ValidateTaskSyntaxTest extends TestCase {
       '<directio id="foo">foobar</directio>',
       LegacySyntaxException::class,
     ];
+    $tests[] = [
+      '<DIRECTIO id="foo">foobar</DIRECTIO>',
+      LegacySyntaxException::class,
+    ];
+    $tests[] = [
+      "## Foo {id=\"\"}\n\nfoobar\n",
+      NoIDException::class,
+    ];
 
     return $tests;
+  }
+
+  public function testLegacyMarkupInsideAFenceDoesNotThrow() {
+    (new ValidateTaskSyntax())("## Foo {#foo}\n\n```html\n<directio id=\"old\">\n</directio>\n```\n");
+    $this->assertTrue(TRUE);
   }
 
   public function testInvokeWithMissingRedoDoesNotThrow() {

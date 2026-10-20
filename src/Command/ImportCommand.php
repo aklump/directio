@@ -5,6 +5,7 @@ namespace AKlump\Directio\Command;
 
 use AKlump\Directio\FixtureFramework\AbstractFixture;
 use AKlump\Directio\Config\Names;
+use AKlump\Directio\Exception\InvalidAttributesException;
 use AKlump\Directio\Helper\ApplyStateToDocument;
 use AKlump\Directio\IO\GetCacheDirectory;
 use AKlump\Directio\IO\GetLogsDirectory;
@@ -14,6 +15,7 @@ use AKlump\Directio\IO\ReadDocument;
 use AKlump\Directio\IO\ReadState;
 use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\Model\DocumentInterface;
+use AKlump\Directio\TextProcessor\HasLegacyMarkup;
 use AKlump\Directio\TextProcessor\ParseTasks;
 use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
 use DateTimeInterface;
@@ -172,12 +174,25 @@ class ImportCommand extends Command {
     return FALSE;
   }
 
+  /**
+   * A document with the retired "<directio" markup, or a heading block that
+   * fails to parse, counts as having markup so that ValidateTaskSyntax
+   * reports the problem instead of the file being skipped in silence.
+   */
   private function hasDirectioMarkup(string $path): bool {
     if (!is_file($path)) {
       return FALSE;
     }
-
-    return !empty((new ParseTasks())(file_get_contents($path)));
+    $content = file_get_contents($path);
+    if ((new HasLegacyMarkup())($content)) {
+      return TRUE;
+    }
+    try {
+      return !empty((new ParseTasks())($content));
+    }
+    catch (InvalidAttributesException $exception) {
+      return TRUE;
+    }
   }
 
   private function importFromDirectory(string $directory): int {

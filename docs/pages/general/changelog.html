@@ -71,7 +71,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <h3>Changed</h3>
 <ul>
-<li>Task markup is now a Markdown heading ending in a <code>{ … }</code> attribute block (e.g. <code>## Permissions {#bump_perms redo=P1M}</code>), not a <code>&lt;directio id="foo"&gt;…&lt;/directio&gt;</code> element. Run <code>directio convert &lt;file&gt;</code> on any existing document to rewrite it onto the new syntax in place.</li>
+<li>Task markup is now a Markdown heading ending in a <code>{ … }</code> attribute block (e.g. <code>## Permissions {#bump_perms redo=P1M}</code>), not a <code>&lt;directio id="foo"&gt;…&lt;/directio&gt;</code> element. Run <code>directio convert &lt;file&gt;</code> on every existing document — the source documents and the imported copies under <code>.directio/imported/</code> — to rewrite them onto the new syntax in place; <code>import</code>, <code>update</code>, and <code>fixtures</code> refuse a document still on the old markup and say so.</li>
 <li><code>AbstractFixture::shouldRun()</code> now automatically returns <code>true</code> (skipping the confirmation prompt) if a <code>filter</code> option is used in the command input.</li>
 <li><code>MHTMLTrait::downloadAsMhtml</code> now validates the main response and throws a <code>FixtureException</code> if it detects a 403 Access Denied or an unauthorized redirect to a login page (common when a session cookie is missing or expired).</li>
 <li>Refined <code>MHTMLTrait::downloadAsMhtml</code> to output a single consolidated message: "Downloaded {url} to {path} in {time}ms".</li>

@@ -23,6 +23,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
  * @uses \AKlump\Directio\TextProcessor\ParseTasks
  * @uses \AKlump\Directio\Model\Document
+ * @uses \AKlump\Directio\Model\Heading
+ * @uses \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses \AKlump\Directio\TextProcessor\ScanLines
  * @uses \AKlump\Directio\Exception\InvalidRedoException
  */
 class AbstractFixtureTest extends TestCase {

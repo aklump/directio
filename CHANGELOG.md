@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Snapshot-Content-Location` header to MHTML archives for better browser compatibility.
 
 ### Changed
-- Task markup is now a Markdown heading ending in a `{ … }` attribute block (e.g. `## Permissions {#bump_perms redo=P1M}`), not a `<directio id="foo">…</directio>` element. Run `directio convert <file>` on any existing document to rewrite it onto the new syntax in place.
+- Task markup is now a Markdown heading ending in a `{ … }` attribute block (e.g. `## Permissions {#bump_perms redo=P1M}`), not a `<directio id="foo">…</directio>` element. Run `directio convert <file>` on every existing document — the source documents and the imported copies under `.directio/imported/` — to rewrite them onto the new syntax in place; `import`, `update`, and `fixtures` refuse a document still on the old markup and say so.
 - `AbstractFixture::shouldRun()` now automatically returns `true` (skipping the confirmation prompt) if a `filter` option is used in the command input.
 - `MHTMLTrait::downloadAsMhtml` now validates the main response and throws a `FixtureException` if it detects a 403 Access Denied or an unauthorized redirect to a login page (common when a session cookie is missing or expired).
 - Refined `MHTMLTrait::downloadAsMhtml` to output a single consolidated message: "Downloaded {url} to {path} in {time}ms".

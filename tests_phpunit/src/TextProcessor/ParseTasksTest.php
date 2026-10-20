@@ -9,8 +9,11 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \AKlump\Directio\TextProcessor\ParseTasks
- * @uses \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses \AKlump\Directio\Model\Heading
  * @uses \AKlump\Directio\Model\Task
+ * @uses \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses \AKlump\Directio\TextProcessor\ScanLines
  */
 class ParseTasksTest extends TestCase {
 

@@ -58,8 +58,24 @@ class AttributesTest extends TestCase {
     $this->assertSame('foo="a}b"', (string) $attributes);
   }
 
-  public function testValueContainingAQuoteIsQuoted() {
-    $attributes = new Attributes(['foo' => 'a"b']);
-    $this->assertSame('foo="a"b"', (string) $attributes);
+  public function testValueContainingAnOpeningBraceIsQuoted() {
+    $attributes = new Attributes(['foo' => 'a{b']);
+    $this->assertSame('foo="a{b"', (string) $attributes);
+  }
+
+  public function testEmptyValueIsQuoted() {
+    $attributes = new Attributes(['id' => 'x', 'redo' => '']);
+    $this->assertSame('#x redo=""', (string) $attributes);
+  }
+
+  public function testEmptyIdIsWrittenAsKeyValue() {
+    $attributes = new Attributes(['id' => '']);
+    $this->assertSame('id=""', (string) $attributes);
+  }
+
+  public function testValueContainingAQuoteCannotBeRendered() {
+    $this->expectException(\InvalidArgumentException::class);
+    $this->expectExceptionMessage('"foo"');
+    (string) new Attributes(['foo' => 'a"b']);
   }
 }

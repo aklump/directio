@@ -30,6 +30,10 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @uses   \AKlump\Directio\TextProcessor\ParseAttributes
  * @uses   \AKlump\Directio\TextProcessor\ParseTasks
  * @uses   \AKlump\Directio\TextProcessor\ValidateTaskSyntax
+ * @uses   \AKlump\Directio\Model\Heading
+ * @uses   \AKlump\Directio\TextProcessor\HasLegacyMarkup
+ * @uses   \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses   \AKlump\Directio\TextProcessor\ScanLines
  * @uses   \AKlump\Directio\Exception\InvalidRedoException
  */
 class FixturesCommandTest extends TestCase {

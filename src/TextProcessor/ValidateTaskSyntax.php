@@ -27,7 +27,7 @@ class ValidateTaskSyntax {
    * @return void
    */
   public function __invoke(string $content): void {
-    if (FALSE !== strpos($content, '<directio')) {
+    if ((new HasLegacyMarkup())($content)) {
       throw new LegacySyntaxException('Old <directio> markup found. Run `directio convert` on this file.');
     }
 
@@ -38,7 +38,8 @@ class ValidateTaskSyntax {
       $attributes = $task->getAttributes();
       $position_message = 'At position: ' . $task->getStart();
 
-      if (NULL === SpecialAttributes::extractId($attributes)) {
+      $id = SpecialAttributes::extractId($attributes);
+      if (NULL === $id || '' === $id) {
         throw new NoIDException($position_message);
       }
 

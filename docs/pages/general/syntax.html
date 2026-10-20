@@ -61,7 +61,7 @@
 <li>The <code>{ … }</code> block must be the last token on the heading line.</li>
 <li>Every task must carry an <code>id</code>, either as <code>#value</code> shorthand or as <code>id=value</code> / <code>id="value"</code>.</li>
 <li>Items inside the block are whitespace-separated. Each one is <code>#name</code> (shorthand for <code>id=name</code>), <code>name=value</code>, <code>name="quoted value"</code>, or a bare <code>name</code> flag.</li>
-<li>An unquoted value may not contain whitespace, <code>"</code>, or <code>}</code>; wrap it in double quotes (<code>name="quoted value"</code>) when it needs to.</li>
+<li>An unquoted value may not contain whitespace, <code>"</code>, <code>{</code>, or <code>}</code>; wrap it in double quotes (<code>name="quoted value"</code>) when it needs to. There is no escape for <code>"</code> itself, so a value can never contain one.</li>
 <li>Item order is of no significance. If a key appears twice, the later one wins.</li>
 <li>Tasks may not nest — a task's body may not contain another task's heading.</li>
 </ul>
@@ -83,6 +83,8 @@
 <pre><code class="bash">./directio convert /foo/bar/document.md
 </code></pre>
 <p><code>directio convert</code> prints a summary and asks to confirm before overwriting the file. It preserves every task's <code>id</code> and other attributes, so SQLite state recorded under the old syntax still applies afterward.</p>
+<p>Under the new syntax a task's body runs to the next heading at its level or higher, where the old close tag could end it anywhere. Wherever that would change what <code>update</code> later removes, the converter refuses and lists the lines rather than guessing: content after a close tag before such a heading, a task with no heading of its own whose body has a level-1 heading, or a task whose heading is deeper than the task before it. Fix those spots in the source and run it again.</p>
+<p>Convert the imported copies too — every document under <code>.directio/imported/</code> — or <code>update</code> and <code>fixtures</code> will refuse them until you do.</p>
     </article>
   </div>
 </main>

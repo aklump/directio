@@ -25,9 +25,13 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @uses \AKlump\Directio\IO\ReadState
  * @uses \AKlump\Directio\IO\WriteDocument
  * @uses \AKlump\Directio\Model\Document
+ * @uses \AKlump\Directio\Model\Heading
  * @uses \AKlump\Directio\Model\Task
+ * @uses \AKlump\Directio\TextProcessor\HasLegacyMarkup
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
  * @uses \AKlump\Directio\TextProcessor\ParseTasks
+ * @uses \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses \AKlump\Directio\TextProcessor\ScanLines
  * @uses \AKlump\Directio\TextProcessor\ValidateTaskSyntax
  */
 class ImportCommandTest extends TestCase {
@@ -197,6 +201,29 @@ EOD
     $this->assertStringContainsString('Fixture imported', $commandTester->getDisplay());
     $this->assertStringContainsString('File imported', $commandTester->getDisplay());
     $this->assertStringContainsString('Imported 2 of 2 items found', $commandTester->getDisplay());
+  }
+
+  public function testImportDirectoryReportsALegacyDocumentAndPointsAtConvert() {
+    $sourceDir = $this->getTestFilePath('source_dir_legacy/', TRUE);
+    file_put_contents($sourceDir . '/old.md', '<directio id="old">' . PHP_EOL . 'body' . PHP_EOL . '</directio>');
+
+    $commandTester = $this->executeCommand(['source document' => $sourceDir]);
+
+    $this->assertStringContainsString('directio convert', $commandTester->getDisplay());
+    $this->assertStringNotContainsString('No fixtures or documents with directio markup found', $commandTester->getDisplay());
+    $this->assertCount(0, glob($this->projectRoot . '/.directio/imported/*'));
+  }
+
+  public function testImportDirectoryReportsAnUnparseableBlockInsteadOfCrashing() {
+    $sourceDir = $this->getTestFilePath('source_dir_pandoc/', TRUE);
+    file_put_contents($sourceDir . '/README.md', '## Install {.unnumbered}' . PHP_EOL);
+    file_put_contents($sourceDir . '/markup.md', '## Tasks' . PHP_EOL . '### Do The Task {#m1}' . PHP_EOL . 'task');
+
+    $commandTester = $this->executeCommand(['source document' => $sourceDir]);
+
+    $this->assertStringContainsString('.unnumbered', $commandTester->getDisplay());
+    $this->assertCount(1, glob($this->projectRoot . '/.directio/imported/*_markup.md'));
+    $this->assertCount(0, glob($this->projectRoot . '/.directio/imported/*_README.md'));
   }
 
   public function testImportDirectoryWithSkips() {

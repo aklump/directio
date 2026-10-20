@@ -52,6 +52,10 @@ class ParseAttributesTest extends TestCase {
       ['id' => 'data-id', 'fixture' => 'my-fixture'],
     ];
     $tests[] = [
+      '{#a x="a{b" y=""}',
+      ['id' => 'a', 'x' => 'a{b', 'y' => ''],
+    ];
+    $tests[] = [
       '{}',
       [],
     ];
@@ -90,6 +94,8 @@ class ParseAttributesTest extends TestCase {
     $tests[] = ['{id=}'];
     // An empty "#" id shorthand.
     $tests[] = ['{#}'];
+    // An unquoted value may not contain "{".
+    $tests[] = ['{#a x=a{b}'];
 
     return $tests;
   }

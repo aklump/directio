@@ -15,6 +15,7 @@ use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
 use AKlump\LocalTimezone\LocalTimezone;
 use DateInterval;
 use DateTimeInterface;
+use Exception;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -86,7 +87,14 @@ class UpdateCommand extends Command {
       $document_label = (new GetShortPath())($document_path);
       $this->io()->writeln($document_label);
       $document = (new ReadDocument())($document_path);
-      (new ValidateTaskSyntax())($document->getContent());
+      try {
+        (new ValidateTaskSyntax())($document->getContent());
+      }
+      catch (Exception $exception) {
+        $this->io()->error(sprintf('%s: %s', $document_label, $exception->getMessage()));
+
+        return Command::FAILURE;
+      }
       $completed_tasks = (new ScanForCompletedTasks())($document->getContent());
 
       if (empty($completed_tasks)) {

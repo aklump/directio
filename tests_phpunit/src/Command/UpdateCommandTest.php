@@ -26,9 +26,13 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @uses \AKlump\Directio\TextProcessor\ScanForCompletedTasks
  * @uses \AKlump\Directio\TextProcessor\ValidateTaskSyntax
  * @uses \AKlump\Directio\IO\GetLogsDirectory
+ * @uses \AKlump\Directio\Model\Heading
  * @uses \AKlump\Directio\Model\Task
+ * @uses \AKlump\Directio\TextProcessor\HasLegacyMarkup
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
  * @uses \AKlump\Directio\TextProcessor\ParseTasks
+ * @uses \AKlump\Directio\TextProcessor\ScanHeadings
+ * @uses \AKlump\Directio\TextProcessor\ScanLines
  * @uses \AKlump\Directio\Command\InitializeCommand
  */
 class UpdateCommandTest extends TestCase {
@@ -78,6 +82,25 @@ class UpdateCommandTest extends TestCase {
     $row = $stmt->fetch();
     $this->assertNotEmpty($row);
     $this->assertEquals('task1', $row['id']);
+  }
+
+  public function testUpdateCommandRefusesALegacyDocumentAndPointsAtConvert() {
+    (new InitializeDirectory())($this->projectRoot);
+    $importedDir = $this->projectRoot . '/.directio/imported';
+    mkdir($importedDir);
+
+    $docPath = $importedDir . '/tasks.md';
+    $content = '<directio done id="task1">' . PHP_EOL . 'Task 1 body' . PHP_EOL . '</directio>';
+    file_put_contents($docPath, $content);
+
+    $application = new Application();
+    $application->add(new UpdateCommand());
+    $commandTester = new CommandTester($application->find('update'));
+    $commandTester->execute([]);
+
+    $this->assertEquals(1, $commandTester->getStatusCode());
+    $this->assertStringContainsString('directio convert', $commandTester->getDisplay());
+    $this->assertSame($content, file_get_contents($docPath));
   }
 
   public function testUpdateCommandWithNoDocuments() {
