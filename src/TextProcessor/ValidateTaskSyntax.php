@@ -4,6 +4,7 @@
 namespace AKlump\Directio\TextProcessor;
 
 use AKlump\Directio\Config\SpecialAttributes;
+use AKlump\Directio\Exception\InvalidRedoException;
 use AKlump\Directio\Exception\NestedTagsException;
 use AKlump\Directio\Exception\NoClosingException;
 use AKlump\Directio\Exception\NoIDException;
@@ -65,6 +66,10 @@ class ValidateTaskSyntax {
         $attributes = (new ParseAttributes())($token->value);
         if (NULL === SpecialAttributes::extractId($attributes)) {
           throw new NoIDException($position_message);
+        }
+        $expires = SpecialAttributes::extractExpires($attributes);
+        if (!SpecialAttributes::isValidExpires($expires)) {
+          throw new InvalidRedoException(sprintf('%s: "%s"', $position_message, $expires));
         }
       }
       elseif ($this->lexer->isA($token->value, TaskLexer::T_CLOSE_TAG)) {

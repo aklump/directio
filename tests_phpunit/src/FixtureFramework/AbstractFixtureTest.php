@@ -24,6 +24,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * @uses \AKlump\Directio\Model\Document
  * @uses \AKlump\Directio\HTMLElementStyle
  * @uses \AKlump\Directio\Lexer\AttributesLexer
+ * @uses \AKlump\Directio\Exception\InvalidRedoException
  */
 class AbstractFixtureTest extends TestCase {
 
@@ -169,6 +170,46 @@ class AbstractFixtureTest extends TestCase {
     // Check state file
     $statePath = $tempDir . '/state.sqlite';
     $this->assertFileExists($statePath);
+  }
+
+  public function testMarkDoneWithInvalidRedoThrowsBeforeAnyWrite() {
+    $tempDir = $this->getTestFilePath('project_invalid_redo/', TRUE);
+    $docPath = $tempDir . '/tasks.md';
+    $original_content = '<directio id="t1" fixture="f1" redo="P1S"></directio>';
+    file_put_contents($docPath, $original_content);
+
+    $input = $this->createMock(InputInterface::class);
+    $output = $this->createMock(OutputInterface::class);
+
+    $fixture = new class($input, $output) extends AbstractFixture {
+
+      public function __invoke(): void {
+      }
+    };
+    $fixture->setFixtureDefinition([
+      'id' => 'f1',
+      'mappings' => [
+        [
+          'path' => $docPath,
+          'id' => 't1',
+          'attributes' => ['id' => 't1', 'fixture' => 'f1', 'redo' => 'P1S'],
+        ],
+      ],
+    ]);
+    $fixture->setRunOptions(new RunOptions([
+      'directio_directory' => $tempDir,
+      'logs_directory' => $tempDir . '/logs',
+    ]));
+
+    $this->expectException(\AKlump\Directio\Exception\InvalidRedoException::class);
+    try {
+      $fixture->markDone();
+    }
+    finally {
+      // Neither the document nor the state database were written to.
+      $this->assertSame($original_content, file_get_contents($docPath));
+      $this->assertFileDoesNotExist($tempDir . '/state.sqlite');
+    }
   }
 
 }

@@ -30,6 +30,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @uses   \AKlump\Directio\Model\Document
  * @uses   \AKlump\Directio\Model\TaskState
  * @uses   \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses   \AKlump\Directio\Exception\InvalidRedoException
  */
 class FixturesCommandTest extends TestCase {
 
@@ -258,6 +259,75 @@ EOD
     $updatedContent = file_get_contents($docPath);
     $this->assertStringContainsString('<directio done id="t1" fixture="f1">', $updatedContent);
     $this->assertStringContainsString('<directio done id="t2" fixture="f2">', $updatedContent);
+  }
+
+  public function testFixturesCommandWithInvalidRedoThrowsBeforeAnyWrite() {
+    // 1. Create a document whose fixture-mapped task has an invalid `redo`.
+    $docPath = $this->projectRoot . '/.directio/imported/tasks.md';
+    if (!is_dir(dirname($docPath))) {
+      mkdir(dirname($docPath), 0777, TRUE);
+    }
+    $content = '## Tasks' . PHP_EOL . '<directio id="t1" fixture="f1" redo="P1S"></directio>';
+    file_put_contents($docPath, $content);
+
+    // 2. Create a dummy fixture class that can be discovered.
+    $className = 'F' . str_replace('.', '', uniqid('', TRUE));
+    $fixturePath = $this->projectRoot . "/.directio/src/Fixture/$className.php";
+    if (!is_dir(dirname($fixturePath))) {
+      mkdir(dirname($fixturePath), 0777, TRUE);
+    }
+    $fixtureContent = <<<EOD
+<?php
+namespace AKlump\Directio\Fixture;
+use AKlump\Directio\FixtureFramework\AbstractFixture;
+use AKlump\FixtureFramework\Fixture;
+
+#[Fixture(id: 'f1')]
+class $className extends AbstractFixture {
+  public function __invoke(): void {
+    // Do nothing
+  }
+}
+EOD;
+    file_put_contents($fixturePath, $fixtureContent);
+    require_once $fixturePath;
+
+    $this->setupFakeVendor($this->projectRoot);
+
+    $psr4Path = $this->projectRoot . '/.directio/vendor/composer/autoload_psr4.php';
+    if (!is_dir(dirname($psr4Path))) {
+      mkdir(dirname($psr4Path), 0777, TRUE);
+    }
+    file_put_contents($psr4Path, "<?php return ['AKlump\\\\Directio\\\\Fixture\\\\' => [dirname(dirname(__DIR__)) . '/src/Fixture']];");
+
+    $application = new Application();
+    $application->add(new FixturesCommand());
+    $command = $application->find('fixtures');
+    $commandTester = new CommandTester($command);
+
+    $commandTester->setInputs(['y', 'y']);
+    ob_start();
+    $commandTester->execute(['--flush' => TRUE], ['capture_stderr_separately' => TRUE]);
+    ob_end_clean();
+
+    // 3. The command reports failure and names the task; nothing is written.
+    $display = $commandTester->getDisplay();
+    $this->assertStringContainsString('Error running fixtures', $display);
+    $this->assertStringContainsString('t1', $display);
+    $this->assertStringNotContainsString('Marked "t1" as done', $display);
+
+    $this->assertSame($content, file_get_contents($docPath));
+
+    $statePath = $this->projectRoot . '/.directio/state.sqlite';
+    if (file_exists($statePath)) {
+      $db = new \SQLite3($statePath);
+      $table_exists = $db->querySingle("SELECT name FROM sqlite_master WHERE type='table' AND name='task_state'");
+      if ($table_exists) {
+        $result = $db->query("SELECT * FROM task_state WHERE id = 't1'");
+        $row = $result->fetchArray(SQLITE3_ASSOC);
+        $this->assertEmpty($row);
+      }
+    }
   }
 
   public function testMessageWhenNoFixturesAtAll() {

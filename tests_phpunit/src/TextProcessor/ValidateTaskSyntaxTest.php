@@ -3,6 +3,7 @@
 
 namespace AKlump\Directio\Tests\TextProcessor;
 
+use AKlump\Directio\Exception\InvalidRedoException;
 use AKlump\Directio\Exception\NestedTagsException;
 use AKlump\Directio\Exception\NoClosingException;
 use AKlump\Directio\Exception\NoIDException;
@@ -47,8 +48,22 @@ class ValidateTaskSyntaxTest extends TestCase {
       '# Lorem Ipsum</directio><directio id="lorem">lorem</directio>',
       NoOpeningException::class,
     ];
+    $tests[] = [
+      '<directio id="foo" redo="P1S">foobar</directio>',
+      InvalidRedoException::class,
+    ];
 
     return $tests;
+  }
+
+  public function testInvokeWithMissingRedoDoesNotThrow() {
+    (new ValidateTaskSyntax())('<directio id="foo">foobar</directio>');
+    $this->assertTrue(TRUE);
+  }
+
+  public function testInvokeWithValidRedoDoesNotThrow() {
+    (new ValidateTaskSyntax())('<directio id="foo" redo="P1D">foobar</directio>');
+    $this->assertTrue(TRUE);
   }
 
   /**
