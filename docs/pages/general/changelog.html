@@ -59,11 +59,6 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <h3>Fixed</h3>
 <ul>
-<li><code>WriteDocument</code> writes a document's bytes unchanged instead of trimming them, so an empty document (e.g. after its last task is cut) can be saved; the leading blank line that trimming used to collapse by accident is now handled explicitly when a task is cut.</li>
-<li>A completed task with no <code>redo</code> is now hidden for good by an explicit rule, rather than by an accident of comparing <code>date_create('')</code> to the clock.</li>
-<li><code>redo</code> is now validated as a <code>DateInterval</code> period before <code>import</code>, <code>update</code>, or <code>fixtures</code> write anything, instead of throwing partway through a write.</li>
-<li>Corrected <code>syntax.md</code>: the special attribute is <code>redo</code>, not <code>expires</code> (the code has read <code>redo</code> since 2024-10-30); <code>redo</code> only accepts a <code>DateInterval</code> period, not a datetime; the opening description now says tasks are demarcated by an HTML element, not HTML comments; and the done-once rule (no <code>redo</code> means hidden for good) is now stated.</li>
-<li>Corrected the <code>fixtures.md</code> example, which had no task <code>id</code> and so could never actually be imported or mapped by <code>fixtures</code>.</li>
 <li>Fixed a bug in <code>MHTMLTrait</code> where incorrect <code>Content-Type</code> headers were being captured from redirects, causing assets (like SVGs) to be incorrectly labeled as <code>text/html</code>.</li>
 <li>Improved image display in MHTML archives by ensuring correct <code>Content-Type</code> and charset for all assets.</li>
 <li>Reduced MHTML filesize by using <code>quoted-printable</code> encoding for text-based assets (CSS, JS, SVG) instead of <code>base64</code>.</li>
@@ -71,7 +66,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <h3>Changed</h3>
 <ul>
-<li>Task markup is now a Markdown heading ending in a <code>{ … }</code> attribute block (e.g. <code>## Permissions {#bump_perms redo=P1M}</code>), not a <code>&lt;directio id="foo"&gt;…&lt;/directio&gt;</code> element. Run <code>directio convert &lt;file&gt;</code> on every existing document — the source documents and the imported copies under <code>.directio/imported/</code> — to rewrite them onto the new syntax in place; <code>import</code>, <code>update</code>, and <code>fixtures</code> refuse a document still on the old markup and say so.</li>
+<li><code>WriteDocument::__invoke</code> now trims whitespace from the document content before writing it to the file.</li>
 <li><code>AbstractFixture::shouldRun()</code> now automatically returns <code>true</code> (skipping the confirmation prompt) if a <code>filter</code> option is used in the command input.</li>
 <li><code>MHTMLTrait::downloadAsMhtml</code> now validates the main response and throws a <code>FixtureException</code> if it detects a 403 Access Denied or an unauthorized redirect to a login page (common when a session cookie is missing or expired).</li>
 <li>Refined <code>MHTMLTrait::downloadAsMhtml</code> to output a single consolidated message: "Downloaded {url} to {path} in {time}ms".</li>
@@ -95,7 +90,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
               Version:
         <strong>0.0.6</strong>
         &bull;
-                    Last Update: <strong>10/20/2026</strong>
+                    Last Update: <strong>7/16/2026</strong>
           </div>
   </footer>
 

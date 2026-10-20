@@ -42,23 +42,25 @@
   <div class="row mb-5 pt-5">
     <article class="col">
       <h1 class="mb-4 text-primary">Completing Tasks</h1>
-      <p>Given the following task markup:</p>
-<pre><code class="markdown">## Making Dessert {#dessert}
+      <p>Give the following task markup:</p>
+<pre><code class="html">&lt;directio id="dessert"&gt;
+## Making Dessert
 
 - Measure the eggs and sugar into a bowl
 - Whip for 5 minutes until incorporated
 - Continue mixing the cookies...
+&lt;/directio&gt;
 </code></pre>
 <p>To mark this complete you do two things:</p>
 <ol>
-<li>Add the completion flag to the heading's <code>{ … }</code> block.</li>
+<li>Add the completion markup to the open tag.</li>
 <li>Run the <code>update</code> command.</li>
 </ol>
 <h2>Completion Markup</h2>
 <p>Any of the following can be used to indicate completion of a task.</p>
-<pre><code class="markdown">## Making Dessert {#dessert complete}
-## Making Dessert {#dessert done}
-## Making Dessert {x #dessert}
+<pre><code class="html">&lt;directio id="dessert" complete&gt;
+&lt;directio id="dessert" done&gt;
+&lt;directio x id="dessert"&gt;
 </code></pre>
     </article>
   </div>
@@ -69,7 +71,7 @@
               Version:
         <strong>0.0.6</strong>
         &bull;
-                    Last Update: <strong>10/20/2026</strong>
+                    Last Update: <strong>7/16/2026</strong>
           </div>
   </footer>
 

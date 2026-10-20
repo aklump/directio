@@ -45,12 +45,13 @@
       <h2>Install with Composer</h2>
 <ol>
 <li><p>Installation requires explicit repositories:</p>
-<pre><code class="shell">composer config repositories.9024aba2baa64b08169c0ca94a832bc7 composer https://packages.intheloftstudios.com
+<pre><code class="shell">composer config repositories.82ef065c6a1b8a21d8252f14c5f90789 path /Users/aklump/Code/Packages/php/fixture-framework
+composer config repositories.9024aba2baa64b08169c0ca94a832bc7 composer https://packages.intheloftstudios.com
 composer config repositories.619ded761a01c386b8878bc732c4cc2a github https://github.com/aklump/directio
 </code></pre>
 </li>
 <li><p>Require the latest stable version:</p>
-<pre><code class="shell">composer require --dev aklump/directio:"&gt;=0.0.6 &lt;0.1"
+<pre><code class="shell">composer require --dev aklump/directio:^0.0
 </code></pre>
 </li>
 <li><p>... or require the dev channel:</p>
@@ -60,7 +61,7 @@ composer require --dev aklump/directio:@dev
 </li>
 </ol>
 <h2>Sandbox Install with Composer</h2>
-<p>A sandboxed installation separates this project, its dependencies, and even the PHP version from your main application.  In a team environment is allows one member to use a package independently. The project is installed in an isolated, hidden subdirectory in the root directory. This is particularly useful if you have conflicts with your application's dependencies or if you need to use a different PHP version, or you don't want to commit the package to the repo. It functions similarly to <a href="https://asdf-vm.com/">asdf</a> shims, providing a project-specific environment for the tool.</p>
+<p>A sandboxed installation separates this project, its dependencies, and even the PHP version from your main application. The project is installed in an isolated, hidden subdirectory in the root of your project. This is particularly useful if you have conflicts with your application's dependencies or if you need to use a different PHP version. It functions similarly to <a href="https://asdf-vm.com/">asdf</a> shims, providing a project-specific environment for the tool.</p>
 <h3>Install in your Project</h3>
 <ol>
 <li><p>Create the isolated directory (the sandbox):</p>
@@ -75,12 +76,13 @@ echo "Execute with: .directio/vendor/bin/directio\n" &gt;&gt; README.md
 </code></pre>
 </li>
 <li><p>Installation requires explicit repositories:</p>
-<pre><code class="shell">composer config repositories.9024aba2baa64b08169c0ca94a832bc7 composer https://packages.intheloftstudios.com
+<pre><code class="shell">composer config repositories.82ef065c6a1b8a21d8252f14c5f90789 path /Users/aklump/Code/Packages/php/fixture-framework
+composer config repositories.9024aba2baa64b08169c0ca94a832bc7 composer https://packages.intheloftstudios.com
 composer config repositories.619ded761a01c386b8878bc732c4cc2a github https://github.com/aklump/directio
 </code></pre>
 </li>
 <li><p>Require the latest stable version:</p>
-<pre><code class="shell">composer require --dev aklump/directio:&amp;quot;&amp;gt;=0.0.6 &amp;lt;0.1&amp;quot;
+<pre><code class="shell">composer require --dev aklump/directio:^0.0
 </code></pre>
 </li>
 <li><p>... or require the dev channel:</p>
@@ -128,7 +130,7 @@ $ which directio
               Version:
         <strong>0.0.6</strong>
         &bull;
-                    Last Update: <strong>10/20/2026</strong>
+                    Last Update: <strong>7/16/2026</strong>
           </div>
   </footer>
 
