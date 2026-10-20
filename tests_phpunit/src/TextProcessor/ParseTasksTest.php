@@ -122,4 +122,48 @@ class ParseTasksTest extends TestCase {
     (new ParseTasks())("## Foo {id = bad}\n");
   }
 
+  public function testSetextHeadingOpensALevelOneTask() {
+    $content = "Permissions {#a}\n===\n\nbody\n";
+    $tasks = (new ParseTasks())($content);
+    $this->assertCount(1, $tasks);
+    $task = $tasks[0];
+    $this->assertSame(1, $task->getLevel());
+    $this->assertSame('a', $task->getAttributes()['id']);
+    $this->assertSame('Permissions', $task->getTitle());
+    $this->assertSame(0, $task->getStart());
+    $this->assertSame(strlen($content), $task->getEnd());
+  }
+
+  public function testSetextHeadingWithNoBlockClosesAPrecedingAtxTask() {
+    $content = "## Task {#t}\n\n"
+      . "body\n\n"
+      . "Finalize\n"
+      . "--------\n";
+    $closerStart = strpos($content, 'Finalize');
+
+    $tasks = (new ParseTasks())($content);
+    $this->assertCount(1, $tasks);
+    $this->assertSame('t', $tasks[0]->getAttributes()['id']);
+    $this->assertSame($closerStart, $tasks[0]->getEnd());
+  }
+
+  public function testHtmlLineAboveDashesIsNotAHeading() {
+    $content = "<feature>\n---\n\n# Title\n";
+    $tasks = (new ParseTasks())($content);
+    $this->assertCount(0, $tasks);
+  }
+
+  public function testListItemAboveDashesIsNotAHeading() {
+    $content = "- item\n---\n";
+    $tasks = (new ParseTasks())($content);
+    $this->assertCount(0, $tasks);
+  }
+
+  public function testSetextLineInsideFenceIsNeverAHeading() {
+    $content = "```\nTitle {#a}\n---\n```\n\n## Real Heading {#real}\n";
+    $tasks = (new ParseTasks())($content);
+    $this->assertCount(1, $tasks);
+    $this->assertSame('real', $tasks[0]->getAttributes()['id']);
+  }
+
 }
