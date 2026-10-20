@@ -42,7 +42,7 @@
   <div class="row mb-5 pt-5">
     <article class="col">
       <h1 class="mb-4 text-primary">Directio Syntax</h1>
-      <p>Each Directio <em>task</em> is demarcated using two, specialized HTML comments, like so:</p>
+      <p>Each Directio <em>task</em> is demarcated by an HTML element, <code>&lt;directio&gt;…&lt;/directio&gt;</code>, like so:</p>
 <pre><code class="html">&lt;directio id="foo"&gt;
 
 # Foo Task
@@ -84,11 +84,12 @@
 </thead>
 <tbody>
 <tr><td>task identification</td><td><code>id</code>, <code>name</code></td><td>Must be unique within an initialized project.</td><td><code>foo</code></td></tr>
-<tr><td>Complete only for a time</td><td><code>expires</code></td><td>datetime, or date period</td><td><code>P1M</code>, <code>2025-01-23T15:23:37Z</code></td></tr>
+<tr><td>Redo after a period</td><td><code>redo</code></td><td>A <code>DateInterval</code> period.</td><td><code>P1M</code>, <code>P1D</code></td></tr>
 <tr><td>Completed</td><td><code>done</code>, <code>complete</code>, <code>x</code></td><td></td><td></td></tr>
 <tr><td>Incompleted</td><td></td><td>Tasks are assumed incomplete.</td><td></td></tr>
 </tbody>
 </table>
+<p>A completed task with no <code>redo</code> is hidden for good. A completed task with a <code>redo</code> period is hidden until that period has passed since completion.</p>
     </article>
   </div>
 </main>
@@ -98,7 +99,7 @@
               Version:
         <strong>0.0.6</strong>
         &bull;
-                    Last Update: <strong>7/16/2026</strong>
+                    Last Update: <strong>10/20/2026</strong>
           </div>
   </footer>
 

@@ -5,7 +5,7 @@ tags: ''
 
 # Directio Syntax
 
-Each Directio _task_ is demarcated using two, specialized HTML comments, like so:
+Each Directio _task_ is demarcated by an HTML element, `<directio>…</directio>`, like so:
 
 ```html
 <directio id="foo">
@@ -55,6 +55,8 @@ Instead of `x` you can use boolean attributes (`done, complete`) like this:
 | Meaning                  | Attributes              | Notes                                         | Example                       |
 |--------------------------|-------------------------|-----------------------------------------------|-------------------------------|
 | task identification      | `id`, `name`            | Must be unique within an initialized project. | `foo`                         |
-| Complete only for a time | `expires`               | datetime, or date period                      | `P1M`, `2025-01-23T15:23:37Z` |
+| Redo after a period      | `redo`                  | A `DateInterval` period.                      | `P1M`, `P1D`                  |
 | Completed                | `done`, `complete`, `x` |                                               |                               |
 | Incompleted              |             | Tasks are assumed incomplete.                 |                               |
+
+A completed task with no `redo` is hidden for good. A completed task with a `redo` period is hidden until that period has passed since completion.

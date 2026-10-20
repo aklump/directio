@@ -59,6 +59,8 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <h3>Fixed</h3>
 <ul>
+<li>Corrected <code>syntax.md</code>: the special attribute is <code>redo</code>, not <code>expires</code> (the code has read <code>redo</code> since 2024-10-30); <code>redo</code> only accepts a <code>DateInterval</code> period, not a datetime; the opening description now says tasks are demarcated by an HTML element, not HTML comments; and the done-once rule (no <code>redo</code> means hidden for good) is now stated.</li>
+<li>Corrected the <code>fixtures.md</code> example, which had no task <code>id</code> and so could never actually be imported or mapped by <code>fixtures</code>.</li>
 <li>Fixed a bug in <code>MHTMLTrait</code> where incorrect <code>Content-Type</code> headers were being captured from redirects, causing assets (like SVGs) to be incorrectly labeled as <code>text/html</code>.</li>
 <li>Improved image display in MHTML archives by ensuring correct <code>Content-Type</code> and charset for all assets.</li>
 <li>Reduced MHTML filesize by using <code>quoted-printable</code> encoding for text-based assets (CSS, JS, SVG) instead of <code>base64</code>.</li>
@@ -90,7 +92,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
               Version:
         <strong>0.0.6</strong>
         &bull;
-                    Last Update: <strong>7/16/2026</strong>
+                    Last Update: <strong>10/20/2026</strong>
           </div>
   </footer>
 

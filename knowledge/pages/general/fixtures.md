@@ -51,7 +51,7 @@ You can see usage in the example above.
 You can reference a fixture in your document using the `fixture` attribute in a `<directio>` tag.
 
 ```html
-<!-- <directio fixture="my_fixture_id" /> -->
+<directio id="my_task_id" fixture="my_fixture_id"></directio>
 ```
 
 When you run the `fixtures` command, Directio will scan the imported documents for these tags and execute the corresponding fixtures in the order they appear.

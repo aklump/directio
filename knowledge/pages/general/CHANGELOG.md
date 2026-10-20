@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `DrupalReports` fixture to facilitate report archival.
 
 ### Fixed
+- Corrected `syntax.md`: the special attribute is `redo`, not `expires` (the code has read `redo` since 2024-10-30); `redo` only accepts a `DateInterval` period, not a datetime; the opening description now says tasks are demarcated by an HTML element, not HTML comments; and the done-once rule (no `redo` means hidden for good) is now stated.
+- Corrected the `fixtures.md` example, which had no task `id` and so could never actually be imported or mapped by `fixtures`.
 - Fixed a bug in `MHTMLTrait` where incorrect `Content-Type` headers were being captured from redirects, causing assets (like SVGs) to be incorrectly labeled as `text/html`.
 - Improved image display in MHTML archives by ensuring correct `Content-Type` and charset for all assets.
 - Reduced MHTML filesize by using `quoted-printable` encoding for text-based assets (CSS, JS, SVG) instead of `base64`.

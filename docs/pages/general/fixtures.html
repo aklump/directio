@@ -90,6 +90,7 @@ namespace AKlump\Directio\FixtureFramework;
 
 use AKlump\Directio\Config\Names;
 use AKlump\Directio\Config\SpecialAttributes;
+use AKlump\Directio\Exception\InvalidRedoException;
 use AKlump\Directio\Helper\MarkTaskDoneInDocument;
 use AKlump\Directio\IO\GetShortPath;
 use AKlump\Directio\IO\ReadDocument;
@@ -221,6 +222,13 @@ abstract class AbstractFixture extends BaseFixture {
       return;
     }
 
+    foreach ($mappings as $mapping) {
+      $expires = SpecialAttributes::extractExpires($mapping['attributes']);
+      if (!SpecialAttributes::isValidExpires($expires)) {
+        throw new InvalidRedoException(sprintf('Task "%s" has an invalid redo value.', $mapping['id']));
+      }
+    }
+
     $mark_done = new MarkTaskDoneInDocument();
     $read_document = new ReadDocument();
     $write_document = new WriteDocument();
@@ -276,7 +284,7 @@ $options = new RunOptions([
 </code></pre>
 <h2>How to Use Fixtures in Directio Documents</h2>
 <p>You can reference a fixture in your document using the <code>fixture</code> attribute in a <code>&lt;directio&gt;</code> tag.</p>
-<pre><code class="html">&lt;!-- &lt;directio fixture="my_fixture_id" /&gt; --&gt;
+<pre><code class="html">&lt;directio id="my_task_id" fixture="my_fixture_id"&gt;&lt;/directio&gt;
 </code></pre>
 <p>When you run the <code>fixtures</code> command, Directio will scan the imported documents for these tags and execute the corresponding fixtures in the order they appear.</p>
 <h3>Skipping Completed Fixtures</h3>
@@ -310,7 +318,7 @@ $options = new RunOptions([
               Version:
         <strong>0.0.6</strong>
         &bull;
-                    Last Update: <strong>7/16/2026</strong>
+                    Last Update: <strong>10/20/2026</strong>
           </div>
   </footer>
 
