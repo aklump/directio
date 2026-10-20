@@ -3,8 +3,8 @@
 
 namespace AKlump\Directio\TextProcessor;
 
-use AKlump\Directio\Lexer\TaskLexer;
 use AKlump\Directio\Config\SpecialAttributes;
+use AKlump\Directio\Model\Task;
 
 class ScanForCompletedTasks {
 
@@ -14,28 +14,12 @@ class ScanForCompletedTasks {
    * @return array[] An array of completed task attributes.
    */
   public function __invoke(string $content): array {
-    $lexer = new TaskLexer();
-    $lexer->setInput($content);
-    $lexer->moveNext();
+    $done = array_filter(
+      (new ParseTasks())($content),
+      fn(Task $task) => SpecialAttributes::extractDone($task->getAttributes())
+    );
 
-    // Save some time by moving to the first task.
-    $lexer->skipUntil(TaskLexer::T_OPEN_TAG);
-
-    $completed_tasks = [];
-    while (TRUE) {
-      if (NULL === $lexer->lookahead) {
-        break;
-      }
-      $lexer->moveNext();
-      if ($lexer->token->isA(TaskLexer::T_OPEN_TAG)) {
-        $attributes = (new ParseAttributes())($lexer->token->value);
-        if (SpecialAttributes::extractDone($attributes)) {
-          $completed_tasks[] = $attributes;
-        }
-      }
-    }
-
-    return $completed_tasks;
+    return array_values(array_map(fn(Task $task) => $task->getAttributes(), $done));
   }
 
 }

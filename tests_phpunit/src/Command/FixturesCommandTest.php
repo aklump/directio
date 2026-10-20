@@ -16,7 +16,6 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @uses   \AKlump\Directio\Config\SpecialAttributes
  * @uses   \AKlump\Directio\FixtureFramework\AbstractFixture
  * @uses   \AKlump\Directio\FixtureFramework\Runtime\FixtureInstantiator
- * @uses   \AKlump\Directio\HTMLElementStyle
  * @uses   \AKlump\Directio\Helper\MarkTaskDoneInDocument
  * @uses   \AKlump\Directio\IO\GetCacheDirectory
  * @uses   \AKlump\Directio\IO\GetDirectioRoot
@@ -25,11 +24,12 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @uses   \AKlump\Directio\IO\ReadDocument
  * @uses   \AKlump\Directio\IO\WriteDocument
  * @uses   \AKlump\Directio\IO\WriteState
- * @uses   \AKlump\Directio\Lexer\AttributesLexer
- * @uses   \AKlump\Directio\Lexer\TaskLexer
  * @uses   \AKlump\Directio\Model\Document
+ * @uses   \AKlump\Directio\Model\Task
  * @uses   \AKlump\Directio\Model\TaskState
  * @uses   \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses   \AKlump\Directio\TextProcessor\ParseTasks
+ * @uses   \AKlump\Directio\TextProcessor\ValidateTaskSyntax
  * @uses   \AKlump\Directio\Exception\InvalidRedoException
  */
 class FixturesCommandTest extends TestCase {
@@ -62,7 +62,7 @@ class FixturesCommandTest extends TestCase {
     if (!is_dir(dirname($docPath))) {
       mkdir(dirname($docPath), 0777, TRUE);
     }
-    $content = '## Tasks' . PHP_EOL . '<directio id="t1" fixture="f1"></directio>';
+    $content = '## Tasks' . PHP_EOL . '### Do The Thing {#t1 fixture=f1}' . PHP_EOL;
     file_put_contents($docPath, $content);
 
     // 2. Create a dummy fixture class that can be discovered
@@ -135,7 +135,7 @@ EOD;
     $this->assertStringContainsString('Marked "t1" as done in ./.directio/imported/tasks.md', $commandTester->getDisplay());
 
     $updatedContent = file_get_contents($docPath);
-    $this->assertStringContainsString('<directio done id="t1" fixture="f1">', $updatedContent);
+    $this->assertStringContainsString('{done #t1 fixture=f1}', $updatedContent);
 
     // 4. Verify state database
     $statePath = $this->projectRoot . '/.directio/state.sqlite';
@@ -154,7 +154,7 @@ EOD;
     if (!is_dir(dirname($docPath))) {
       mkdir(dirname($docPath), 0777, TRUE);
     }
-    $content = '## Tasks' . PHP_EOL . '<directio done id="t1" fixture="f1"></directio>';
+    $content = '## Tasks' . PHP_EOL . '### Do The Thing {done #t1 fixture=f1}' . PHP_EOL;
     file_put_contents($docPath, $content);
 
     // 2. Setup application and command
@@ -179,7 +179,7 @@ EOD;
     if (!is_dir(dirname($docPath))) {
       mkdir(dirname($docPath), 0777, TRUE);
     }
-    $content = "## Tasks\n<directio $attribute id=\"t1\" fixture=\"f1\"></directio>";
+    $content = "## Tasks\n### Do The Thing {{$attribute} #t1 fixture=f1}\n";
     file_put_contents($docPath, $content);
 
     $application = new Application();
@@ -207,8 +207,8 @@ EOD;
       mkdir(dirname($docPath), 0777, TRUE);
     }
     $content = '## Tasks' . PHP_EOL
-      . '<directio done id="t1" fixture="f1"></directio>' . PHP_EOL
-      . '<directio id="t2" fixture="f2"></directio>';
+      . '### Task One {done #t1 fixture=f1}' . PHP_EOL
+      . '### Task Two {#t2 fixture=f2}' . PHP_EOL;
     file_put_contents($docPath, $content);
 
     // 2. Setup fixtures
@@ -257,63 +257,32 @@ EOD
     $this->assertStringContainsString('Marked "t2"', $display);
 
     $updatedContent = file_get_contents($docPath);
-    $this->assertStringContainsString('<directio done id="t1" fixture="f1">', $updatedContent);
-    $this->assertStringContainsString('<directio done id="t2" fixture="f2">', $updatedContent);
+    $this->assertStringContainsString('{done #t1 fixture=f1}', $updatedContent);
+    $this->assertStringContainsString('{done #t2 fixture=f2}', $updatedContent);
   }
 
   public function testFixturesCommandWithInvalidRedoThrowsBeforeAnyWrite() {
-    // 1. Create a document whose fixture-mapped task has an invalid `redo`.
+    // A document whose fixture-mapped task has an invalid `redo` is refused
+    // by ValidateTaskSyntax while scanning for fixture mappings, before any
+    // fixture is discovered or run.
     $docPath = $this->projectRoot . '/.directio/imported/tasks.md';
     if (!is_dir(dirname($docPath))) {
       mkdir(dirname($docPath), 0777, TRUE);
     }
-    $content = '## Tasks' . PHP_EOL . '<directio id="t1" fixture="f1" redo="P1S"></directio>';
+    $content = '## Tasks' . PHP_EOL . '### Do The Thing {#t1 fixture=f1 redo=P1S}' . PHP_EOL;
     file_put_contents($docPath, $content);
-
-    // 2. Create a dummy fixture class that can be discovered.
-    $className = 'F' . str_replace('.', '', uniqid('', TRUE));
-    $fixturePath = $this->projectRoot . "/.directio/src/Fixture/$className.php";
-    if (!is_dir(dirname($fixturePath))) {
-      mkdir(dirname($fixturePath), 0777, TRUE);
-    }
-    $fixtureContent = <<<EOD
-<?php
-namespace AKlump\Directio\Fixture;
-use AKlump\Directio\FixtureFramework\AbstractFixture;
-use AKlump\FixtureFramework\Fixture;
-
-#[Fixture(id: 'f1')]
-class $className extends AbstractFixture {
-  public function __invoke(): void {
-    // Do nothing
-  }
-}
-EOD;
-    file_put_contents($fixturePath, $fixtureContent);
-    require_once $fixturePath;
-
-    $this->setupFakeVendor($this->projectRoot);
-
-    $psr4Path = $this->projectRoot . '/.directio/vendor/composer/autoload_psr4.php';
-    if (!is_dir(dirname($psr4Path))) {
-      mkdir(dirname($psr4Path), 0777, TRUE);
-    }
-    file_put_contents($psr4Path, "<?php return ['AKlump\\\\Directio\\\\Fixture\\\\' => [dirname(dirname(__DIR__)) . '/src/Fixture']];");
 
     $application = new Application();
     $application->add(new FixturesCommand());
     $command = $application->find('fixtures');
     $commandTester = new CommandTester($command);
 
-    $commandTester->setInputs(['y', 'y']);
-    ob_start();
-    $commandTester->execute(['--flush' => TRUE], ['capture_stderr_separately' => TRUE]);
-    ob_end_clean();
+    $commandTester->execute([]);
 
-    // 3. The command reports failure and names the task; nothing is written.
+    // The command reports failure and names the offending value; nothing is written.
     $display = $commandTester->getDisplay();
-    $this->assertStringContainsString('Error running fixtures', $display);
-    $this->assertStringContainsString('t1', $display);
+    $this->assertEquals(1, $commandTester->getStatusCode());
+    $this->assertStringContainsString('P1S', $display);
     $this->assertStringNotContainsString('Marked "t1" as done', $display);
 
     $this->assertSame($content, file_get_contents($docPath));
@@ -356,8 +325,8 @@ EOD;
       mkdir(dirname($docPath), 0777, TRUE);
     }
     $content = '## Tasks' . PHP_EOL
-      . '<directio id="t1" fixture="f1"></directio>' . PHP_EOL
-      . '<directio id="t2" fixture="f2"></directio>';
+      . '### Task One {#t1 fixture=f1}' . PHP_EOL
+      . '### Task Two {#t2 fixture=f2}' . PHP_EOL;
     file_put_contents($docPath, $content);
 
     // 2. Setup fixtures
@@ -403,9 +372,9 @@ EOD;
 
     // 5. Verify that f2 is still not done in document
     $updatedContent = file_get_contents($docPath);
-    $this->assertStringContainsString('<directio done id="t1" fixture="f1">', $updatedContent);
-    $this->assertStringContainsString('<directio id="t2" fixture="f2">', $updatedContent);
-    $this->assertStringNotContainsString('<directio done id="t2" fixture="f2">', $updatedContent);
+    $this->assertStringContainsString('{done #t1 fixture=f1}', $updatedContent);
+    $this->assertStringContainsString('{#t2 fixture=f2}', $updatedContent);
+    $this->assertStringNotContainsString('{done #t2 fixture=f2}', $updatedContent);
   }
 
   private function setupFakeVendor(string $root) {

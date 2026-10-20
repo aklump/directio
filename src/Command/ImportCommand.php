@@ -14,8 +14,8 @@ use AKlump\Directio\IO\ReadDocument;
 use AKlump\Directio\IO\ReadState;
 use AKlump\Directio\IO\WriteDocument;
 use AKlump\Directio\Model\DocumentInterface;
+use AKlump\Directio\TextProcessor\ParseTasks;
 use AKlump\Directio\TextProcessor\ValidateTaskSyntax;
-use AKlump\Directio\HTMLElementStyle;
 use DateTimeInterface;
 use Exception;
 use FilesystemIterator;
@@ -56,8 +56,6 @@ class ImportCommand extends Command {
 
   private DateTimeInterface $now;
 
-  private string $openTagPattern;
-
   private SymfonyStyle $io;
 
   private function io(): SymfonyStyle {
@@ -72,7 +70,6 @@ class ImportCommand extends Command {
     $this->now = date_create('now', LocalTimezone::get());
     $this->output = $output;
     $this->input = $input;
-    $this->openTagPattern = (new HTMLElementStyle())->getOpenTagPattern();
 
     $base_dir = $this->getBaseDirOrInitializeCurrent($input, $output);
     if (!$base_dir) {
@@ -179,9 +176,8 @@ class ImportCommand extends Command {
     if (!is_file($path)) {
       return FALSE;
     }
-    $content = file_get_contents($path);
 
-    return preg_match('/' . str_replace('/', '\/', $this->openTagPattern) . '/', $content) === 1;
+    return !empty((new ParseTasks())(file_get_contents($path)));
   }
 
   private function importFromDirectory(string $directory): int {

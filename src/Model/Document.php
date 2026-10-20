@@ -4,8 +4,7 @@
 namespace AKlump\Directio\Model;
 
 use AKlump\Directio\Config\SpecialAttributes;
-use AKlump\Directio\Lexer\TaskLexer;
-use AKlump\Directio\TextProcessor\ParseAttributes;
+use AKlump\Directio\TextProcessor\ParseTasks;
 
 class Document implements DocumentInterface {
 
@@ -31,34 +30,9 @@ class Document implements DocumentInterface {
     $content = $this->getContent();
     $cuts = [];
 
-    $lexer = new TaskLexer();
-    $lexer->setInput($content);
-    $lexer->moveNext();
-
-    // Save some time by moving to the first task.
-    $lexer->skipUntil(TaskLexer::T_OPEN_TAG);
-
-    while (TRUE) {
-      if (NULL === $lexer->lookahead) {
-        break;
-      }
-      $lexer->moveNext();
-
-      if ($lexer->token->isA(TaskLexer::T_OPEN_TAG)) {
-        $start_position = $lexer->token->position;
-        $attributes = (new ParseAttributes())($lexer->token->value);
-        // Check the id of this task against the method argument, and discard
-        // the start position (preventing the cut) if the id doesn't match.
-        $this_id = SpecialAttributes::extractId($attributes);
-        if ($this_id != $id) {
-          unset($start_position);
-        }
-      }
-      elseif (isset($start_position) && $lexer->token->isA(TaskLexer::T_CLOSE_TAG)) {
-        $cuts[] = [
-          $start_position,
-          $lexer->token->position + strlen($lexer->token->value),
-        ];
+    foreach ((new ParseTasks())($content) as $task) {
+      if (SpecialAttributes::extractId($task->getAttributes()) === $id) {
+        $cuts[] = [$task->getStart(), $task->getEnd()];
       }
     }
     $content = $this->applyCuts($cuts, $content);
@@ -89,22 +63,10 @@ class Document implements DocumentInterface {
    * {@inheritdoc}
    */
   public function getIds(): array {
-    $lexer = new TaskLexer();
-    $lexer->setInput($this->getContent());
-    $lexer->moveNext();
-    $parse_attributes = new ParseAttributes();
-    $ids = [];
-    while (TRUE) {
-      $lexer->skipUntil(TaskLexer::T_OPEN_TAG);
-      if (NULL === $lexer->lookahead) {
-        break;
-      }
-      $lexer->moveNext();
-      $attributes = $parse_attributes($lexer->token->value);
-      $ids[] = SpecialAttributes::extractId($attributes);
-    }
-
-    return $ids;
+    return array_map(
+      fn(Task $task) => SpecialAttributes::extractId($task->getAttributes()),
+      (new ParseTasks())($this->getContent())
+    );
   }
 
 }

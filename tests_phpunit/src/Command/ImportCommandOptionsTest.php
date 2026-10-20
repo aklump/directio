@@ -14,7 +14,6 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @covers \AKlump\Directio\Command\ImportCommand
  *
  * @uses \AKlump\Directio\FixtureFramework\AbstractFixture
- * @uses \AKlump\Directio\HTMLElementStyle
  * @uses \AKlump\Directio\IO\GetCacheDirectory
  * @uses \AKlump\Directio\IO\GetDirectioRoot
  * @uses \AKlump\Directio\IO\GetLogsDirectory

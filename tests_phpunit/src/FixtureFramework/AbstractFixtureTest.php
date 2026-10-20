@@ -19,11 +19,10 @@ use Symfony\Component\Console\Output\OutputInterface;
  * @uses \AKlump\Directio\IO\WriteState
  * @uses \AKlump\Directio\Model\TaskState
  * @uses \AKlump\Directio\Config\SpecialAttributes
- * @uses \AKlump\Directio\Lexer\TaskLexer
+ * @uses \AKlump\Directio\Model\Task
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
+ * @uses \AKlump\Directio\TextProcessor\ParseTasks
  * @uses \AKlump\Directio\Model\Document
- * @uses \AKlump\Directio\HTMLElementStyle
- * @uses \AKlump\Directio\Lexer\AttributesLexer
  * @uses \AKlump\Directio\Exception\InvalidRedoException
  */
 class AbstractFixtureTest extends TestCase {
@@ -137,7 +136,7 @@ class AbstractFixtureTest extends TestCase {
   public function testMarkDone() {
     $tempDir = $this->getTestFilePath('project/', TRUE);
     $docPath = $tempDir . '/tasks.md';
-    file_put_contents($docPath, '<directio id="t1" fixture="f1"></directio>');
+    file_put_contents($docPath, '## Do The Thing {#t1 fixture=f1}' . PHP_EOL);
 
     $input = $this->createMock(InputInterface::class);
     $output = $this->createMock(OutputInterface::class);
@@ -165,7 +164,7 @@ class AbstractFixtureTest extends TestCase {
     $fixture->markDone();
 
     $content = file_get_contents($docPath);
-    $this->assertStringContainsString('<directio done id="t1" fixture="f1">', $content);
+    $this->assertStringContainsString('{done #t1 fixture=f1}', $content);
 
     // Check state file
     $statePath = $tempDir . '/state.sqlite';
@@ -175,7 +174,7 @@ class AbstractFixtureTest extends TestCase {
   public function testMarkDoneWithInvalidRedoThrowsBeforeAnyWrite() {
     $tempDir = $this->getTestFilePath('project_invalid_redo/', TRUE);
     $docPath = $tempDir . '/tasks.md';
-    $original_content = '<directio id="t1" fixture="f1" redo="P1S"></directio>';
+    $original_content = '## Do The Thing {#t1 fixture=f1 redo=P1S}' . PHP_EOL;
     file_put_contents($docPath, $original_content);
 
     $input = $this->createMock(InputInterface::class);

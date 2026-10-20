@@ -11,20 +11,15 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \AKlump\Directio\Helper\ApplyStateToDocument
  * @uses \AKlump\Directio\Config\SpecialAttributes
- * @uses \AKlump\Directio\Lexer\AttributesLexer
- * @uses \AKlump\Directio\Lexer\TaskLexer
  * @uses \AKlump\Directio\Model\Document
+ * @uses \AKlump\Directio\Model\Task
  * @uses \AKlump\Directio\Model\TaskState
  * @uses \AKlump\Directio\TextProcessor\ParseAttributes
- * @uses \AKlump\Directio\HTMLElementStyle
+ * @uses \AKlump\Directio\TextProcessor\ParseTasks
  */
 class ApplyStateToDocumentTest extends TestCase {
 
-  const CONTENT = <<<EOD
-  <directio id="foo" redo="P1D">
-  foobar
-  </directio>
-  EOD;
+  const CONTENT = "## Foo {#foo redo=P1D}\n\nfoobar\n";
 
   public static function dataForInvokeProvider(): array {
     $tests = [];
