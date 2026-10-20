@@ -10,6 +10,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 /**
  * @covers \AKlump\Directio\Fixture\AbstractFileSync
  * @uses \AKlump\Directio\FixtureFramework\AbstractFixture
+ * @uses \AKlump\Directio\IO\GetShortPath
  */
 class AbstractFileSyncRenameTest extends TestCase {
 

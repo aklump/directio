@@ -254,8 +254,10 @@ EOD
     );
     file_put_contents($sourceDir . '/markup.md', '## M1 {#m1}' . PHP_EOL . 'changed');
     $commandTester = $this->executeCommand(['source document' => $sourceDir], ['no', 'no']);
-    $this->assertStringContainsString('All of the 2 items found', $commandTester->getDisplay());
-    $this->assertStringContainsString('were skipped or failed', $commandTester->getDisplay());
+    // The warning block wraps at the terminal width, so collapse whitespace.
+    $display = preg_replace('/\s+/', ' ', $commandTester->getDisplay());
+    $this->assertStringContainsString('All of the 2 items found', $display);
+    $this->assertStringContainsString('were skipped or failed', $display);
 
     // Third import, skip one
     file_put_contents($sourceDir . '/Fixture1.php', <<<'EOD'
