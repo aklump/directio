@@ -73,6 +73,10 @@ class AbstractFileSyncTest extends TestCase {
         return [$this->searchDir];
       }
 
+      protected function getLegacyFilenames(): array {
+        return [];
+      }
+
     };
 
     $fixture();
@@ -120,6 +124,10 @@ class AbstractFileSyncTest extends TestCase {
         return [$this->searchDir];
       }
 
+      protected function getLegacyFilenames(): array {
+        return [];
+      }
+
     };
 
     $fixture();
@@ -152,6 +160,7 @@ class AbstractFileSyncTest extends TestCase {
       protected function getSource(): string { return $this->source; }
       protected function getTargetFilename(): string { return $this->target; }
       protected function getSearchDirectories(): array { return [$this->searchDir]; }
+      protected function getLegacyFilenames(): array { return []; }
     };
 
     $fixture();
@@ -179,6 +188,7 @@ class AbstractFileSyncTest extends TestCase {
       protected function getSource(): string { return $this->source; }
       protected function getTargetFilename(): string { return $this->target; }
       protected function getSearchDirectories(): array { return [$this->searchDir]; }
+      protected function getLegacyFilenames(): array { return []; }
     };
 
     $fixture();
@@ -208,6 +218,7 @@ class AbstractFileSyncTest extends TestCase {
       protected function getSource(): string { return $this->source; }
       protected function getTargetFilename(): string { return $this->target; }
       protected function getSearchDirectories(): array { return [$this->searchDir]; }
+      protected function getLegacyFilenames(): array { return []; }
     };
 
     $fixture();
@@ -236,6 +247,7 @@ class AbstractFileSyncTest extends TestCase {
       protected function getSource(): string { return $this->source; }
       protected function getTargetFilename(): string { return $this->target; }
       protected function getSearchDirectories(): array { return [$this->searchDir]; }
+      protected function getLegacyFilenames(): array { return []; }
     };
 
     $fixture();

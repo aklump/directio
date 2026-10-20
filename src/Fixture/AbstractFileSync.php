@@ -4,6 +4,7 @@ namespace AKlump\Directio\Fixture;
 
 use AKlump\Directio\FixtureFramework\AbstractFixture;
 use AKlump\FixtureFramework\Exception\FixtureException;
+use Drupal\Core\File\FileSystemInterface;
 
 /**
  * Base class for synchronizing a local file with a remote or local source.
@@ -42,6 +43,13 @@ abstract class AbstractFileSync extends AbstractFixture {
    * @return string
    */
   abstract protected function getTargetFilename(): string;
+
+  /**
+   * Get old filenames to be renamed.
+   *
+   * @return string[] An array of legacy filenames to search for and rename to target if found.
+   */
+  abstract protected function getLegacyFilenames(): array;
 
   /**
    * Returns an array of directories to search for the target filename.
@@ -104,13 +112,15 @@ abstract class AbstractFileSync extends AbstractFixture {
       throw new FixtureException("Unable to fetch the latest content from: $source");
     }
 
-    $files = [];
+    $legacy_filenames = $this->getLegacyFilenames();
     $ignored_directories = $this->getIgnoredDirectories();
+    $files = [];
+
     foreach ($this->getSearchDirectories() as $search_dir) {
       if (!is_dir($search_dir)) {
         continue;
       }
-      $directory = new \RecursiveDirectoryIterator($search_dir, \FilesystemIterator::SKIP_DOTS);
+      $directory = new \RecursiveDirectoryIterator($search_dir, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS);
       $filter = new \RecursiveCallbackFilterIterator($directory, function ($current, $key, $iterator) use ($ignored_directories) {
         if ($iterator->hasChildren()) {
           return !in_array($current->getFilename(), $ignored_directories);
@@ -120,15 +130,28 @@ abstract class AbstractFileSync extends AbstractFixture {
       });
       $iterator = new \RecursiveIteratorIterator($filter);
       foreach ($iterator as $info) {
-        if ($info->getFilename() === $target) {
-          $files[] = $info->getPathname();
+        $filename = $info->getFilename();
+        $pathname = $info->getPathname();
+        if (in_array($filename, $legacy_filenames)) {
+          $new_path = dirname($pathname) . DIRECTORY_SEPARATOR . $target;
+          if (!file_exists($new_path)) {
+            if (rename($pathname, $new_path)) {
+              $this->io()
+                ->writeln(sprintf('Renamed legacy file %s to %s', $this->shortPath($pathname), $target));
+              $files[] = $new_path;
+            }
+          }
+        }
+        elseif ($filename === $target) {
+          $files[] = $pathname;
         }
       }
     }
     $files = array_unique($files);
 
     if (empty($files)) {
-      $this->io()->writeln("<error>No instances of $target were found.</error>");
+      $this->io()
+        ->writeln("<error>No instances of $target were found.</error>");
 
       return;
     }
@@ -140,11 +163,13 @@ abstract class AbstractFileSync extends AbstractFixture {
       if ($this->isUpdateRequired($current_content, $new_content)) {
         $backup_file = $file . $this->getBackupExtension();
         if (!copy($file, $backup_file)) {
-          $this->io()->writeln("<error>Failed to create backup for $short_file. Skipping update.</error>");
+          $this->io()
+            ->writeln("<error>Failed to create backup for $short_file. Skipping update.</error>");
           continue;
         }
         $short_backup_file = $this->shortPath($backup_file);
-        $this->io()->warning("Updated: $short_file (Backup: " . basename($short_backup_file) . ")");
+        $this->io()
+          ->warning("Updated: $short_file (Backup: " . basename($short_backup_file) . ")");
 
         file_put_contents($file, $new_content);
         $updated_count++;

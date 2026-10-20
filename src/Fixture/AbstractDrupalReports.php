@@ -42,7 +42,7 @@ abstract class AbstractDrupalReports extends AbstractFixture {
         $this->context()->remove('admin_session_cookie.value');
 
         throw new FixtureException(
-          'The saved admin session appears to be invalid and has been cleared. Rerun the admin session fixture.',
+          'The saved admin session appears to be invalid and has been cleared. Try `directio do admin_session_cookie`',
           0,
           $exception
         );
