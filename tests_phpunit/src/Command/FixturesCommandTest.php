@@ -381,6 +381,117 @@ EOD
     $this->assertStringNotContainsString('{done #t2 fixture=f2}', $updatedContent);
   }
 
+  public function testFilterNamingADoneFixtureSaysItIsMarkedDone() {
+    $this->writeDocument('## Tasks' . PHP_EOL
+      . '### Task One {x #t1 fixture=f1}' . PHP_EOL
+      . '### Task Two {#t2 fixture=f2}' . PHP_EOL);
+    $this->writeFixtureClasses(['f1', 'f2']);
+
+    $commandTester = $this->createCommandTester();
+    ob_start();
+    $commandTester->execute(['filter' => 'f1', '--flush' => TRUE]);
+    ob_end_clean();
+
+    $display = $commandTester->getDisplay();
+    $this->assertStringContainsString('Skipped fixture "f1": task "t1" is marked done in ./.directio/imported/tasks.md', $display);
+    $this->assertStringContainsString('Remove "done", "x" or', $display);
+    $this->assertStringNotContainsString('No fixture', $display);
+    $this->assertStringNotContainsString('Marked "t2"', $display);
+  }
+
+  public function testFilterNamingADoneFixtureSaysItIsMarkedDoneWhenAllAreDone() {
+    $this->writeDocument('## Tasks' . PHP_EOL . '### Task One {x #t1 fixture=f1}' . PHP_EOL);
+    $this->writeFixtureClasses(['f1']);
+
+    $commandTester = $this->createCommandTester();
+    ob_start();
+    $commandTester->execute(['filter' => 'f1', '--flush' => TRUE]);
+    ob_end_clean();
+
+    $display = $commandTester->getDisplay();
+    $this->assertStringContainsString('Skipped fixture "f1": task "t1" is marked done in ./.directio/imported/tasks.md', $display);
+    $this->assertStringNotContainsString('All fixtures have been marked as done', $display);
+    $this->assertStringNotContainsString('No fixture', $display);
+    $this->assertStringNotContainsString('No task', $display);
+  }
+
+  public function testAllDoneWithoutFilterStillSaysNothingMoreToDo() {
+    $this->writeDocument('## Tasks' . PHP_EOL . '### Task One {x #t1 fixture=f1}' . PHP_EOL);
+    $this->writeFixtureClasses(['f1']);
+
+    $commandTester = $this->createCommandTester();
+    ob_start();
+    $commandTester->execute(['--flush' => TRUE]);
+    ob_end_clean();
+
+    $this->assertStringContainsString('All fixtures have been marked as done. Nothing more to do.', $commandTester->getDisplay());
+  }
+
+  public function testFilterNamingAFixtureNoTaskUsesSaysSo() {
+    $this->writeDocument('## Tasks' . PHP_EOL . '### Task Two {#t2 fixture=f2}' . PHP_EOL);
+    $this->writeFixtureClasses(['f1', 'f2']);
+
+    $commandTester = $this->createCommandTester();
+    ob_start();
+    $commandTester->execute(['filter' => 'f1', '--flush' => TRUE]);
+    ob_end_clean();
+
+    $this->assertStringContainsString('No task in the imported documents uses fixture: f1', $commandTester->getDisplay());
+  }
+
+  public function testFilterMatchingNoFixtureIdSaysSo() {
+    $this->writeDocument('## Tasks' . PHP_EOL . '### Task Two {#t2 fixture=f2}' . PHP_EOL);
+    $this->writeFixtureClasses(['f2']);
+
+    $commandTester = $this->createCommandTester();
+    ob_start();
+    $commandTester->execute(['filter' => 'nope', '--flush' => TRUE]);
+    ob_end_clean();
+
+    $this->assertStringContainsString('No fixture ID matches "nope".', $commandTester->getDisplay());
+  }
+
+  public function testReferencedFixtureWithoutClassListsTheIds() {
+    $this->writeDocument('## Tasks' . PHP_EOL . '### Task Two {#t2 fixture=missing_one}' . PHP_EOL);
+    $this->writeFixtureClasses([]);
+
+    $commandTester = $this->createCommandTester();
+    ob_start();
+    $commandTester->execute(['--flush' => TRUE]);
+    ob_end_clean();
+
+    $this->assertStringContainsString('No fixture classes define the IDs used in documents: missing_one', $commandTester->getDisplay());
+  }
+
+  private function writeDocument(string $content): void {
+    $docPath = $this->projectRoot . '/.directio/imported/tasks.md';
+    if (!is_dir(dirname($docPath))) {
+      mkdir(dirname($docPath), 0777, TRUE);
+    }
+    file_put_contents($docPath, $content);
+  }
+
+  private function writeFixtureClasses(array $fixture_ids): void {
+    $dir = $this->projectRoot . '/.directio/src/Fixture';
+    if (!is_dir($dir)) {
+      mkdir($dir, 0777, TRUE);
+    }
+    foreach ($fixture_ids as $fixture_id) {
+      $class = 'F' . str_replace('.', '', uniqid('', TRUE));
+      $path = "$dir/$class.php";
+      file_put_contents($path, "<?php namespace AKlump\Directio\Fixture; use AKlump\Directio\FixtureFramework\AbstractFixture; use AKlump\FixtureFramework\Fixture; #[Fixture(id: '$fixture_id')] class $class extends AbstractFixture { public function __invoke(): void {} }");
+      require_once $path;
+    }
+    $this->setupFakeVendor($this->projectRoot);
+  }
+
+  private function createCommandTester(): CommandTester {
+    $application = new Application();
+    $application->add(new FixturesCommand());
+
+    return new CommandTester($application->find('fixtures'));
+  }
+
   private function setupFakeVendor(string $root) {
     $vendor = $root . '/.directio/vendor';
     $composer = $vendor . '/composer';

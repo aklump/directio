@@ -9,7 +9,6 @@
 ## Normal
 
 - `directio update` is not a good name for commiting the marked done to the database, come up with better name
-
 - instance user do such and such
 
 ## Backlog
