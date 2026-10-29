@@ -4,9 +4,9 @@
   <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-      <link rel="stylesheet" href="../../dist/node_modules/bootstrap/dist/css/bootstrap.css?ver=0.0.6">
-      <link rel="stylesheet" href="../../dist/dist/bootstrap_theme.css?ver=0.0.6">
-      <link rel="stylesheet" href="../../dist/node_modules/bootstrap-icons/font/bootstrap-icons.min.css?ver=0.0.6">
+      <link rel="stylesheet" href="../../dist/node_modules/bootstrap/dist/css/bootstrap.css?ver=0.1.0">
+      <link rel="stylesheet" href="../../dist/dist/bootstrap_theme.css?ver=0.1.0">
+      <link rel="stylesheet" href="../../dist/node_modules/bootstrap-icons/font/bootstrap-icons.min.css?ver=0.1.0">
         <title>Installation | Directio</title>
   </head>
 <body class="my-5">
@@ -32,8 +32,8 @@
 
       </div>
       <div class="header__tags me-3">  </div>
-      <div class="header__page-numbers flex-shrink-1">6
-        / 7</div>
+      <div class="header__page-numbers flex-shrink-1">7
+        / 8</div>
     </div>
   </div>
 </header>
@@ -50,7 +50,7 @@ composer config repositories.619ded761a01c386b8878bc732c4cc2a github https://git
 </code></pre>
 </li>
 <li><p>Require the latest stable version:</p>
-<pre><code class="shell">composer require --dev aklump/directio:"&gt;=0.0.6 &lt;0.1"
+<pre><code class="shell">composer require --dev aklump/directio:^0.1
 </code></pre>
 </li>
 <li><p>... or require the dev channel:</p>
@@ -80,7 +80,7 @@ composer config repositories.619ded761a01c386b8878bc732c4cc2a github https://git
 </code></pre>
 </li>
 <li><p>Require the latest stable version:</p>
-<pre><code class="shell">composer require --dev aklump/directio:&amp;quot;&amp;gt;=0.0.6 &amp;lt;0.1&amp;quot;
+<pre><code class="shell">composer require --dev aklump/directio:^0.1
 </code></pre>
 </li>
 <li><p>... or require the dev channel:</p>
@@ -126,9 +126,9 @@ $ which directio
   <footer class="footer d-flex justify-content-center">
     <div class="flex-column justify-content-center">
               Version:
-        <strong>0.0.6</strong>
+        <strong>0.1.0</strong>
         &bull;
-                    Last Update: <strong>10/20/2026</strong>
+                    Last Update: <strong>10/29/2026</strong>
           </div>
   </footer>
 
@@ -201,28 +201,35 @@ $ which directio
               bg-info rounded-pill badge-sm"></span></a>
     </li>
   
-                                    <li data-page="changelog" value="4">
+                                    <li data-page="only" value="4">
+      <a class="js-page-link" href="only.html">Keeping Only Some Tasks<span
+              class="js-search-score
+              badge
+              bg-info rounded-pill badge-sm"></span></a>
+    </li>
+  
+                                    <li data-page="changelog" value="5">
       <a class="js-page-link" href="changelog.html">Changelog<span
               class="js-search-score
               badge
               bg-info rounded-pill badge-sm"></span></a>
     </li>
   
-                                    <li data-page="fixtures" value="5">
+                                    <li data-page="fixtures" value="6">
       <a class="js-page-link" href="fixtures.html">Fixtures<span
               class="js-search-score
               badge
               bg-info rounded-pill badge-sm"></span></a>
     </li>
   
-                                    <li data-page="installation" value="6">
+                                    <li data-page="installation" value="7">
       <a class="js-page-link" href="installation.html">Installation<span
               class="js-search-score
               badge
               bg-info rounded-pill badge-sm"></span></a>
     </li>
   
-                                                          <li data-page="phpstorm" value="7">
+                                                          <li data-page="phpstorm" value="8">
       <a class="js-page-link" href="../editors/phpstorm.html">PHP Storm<span
               class="js-search-score
               badge
@@ -247,22 +254,26 @@ $ which directio
       <a class="js-page-link" href="completion.html">Completing Tasks</a>
     </li>
   
-                                <li data-page="changelog" value="4">
+                                <li data-page="only" value="4">
+      <a class="js-page-link" href="only.html">Keeping Only Some Tasks</a>
+    </li>
+  
+                                <li data-page="changelog" value="5">
       <a class="js-page-link" href="changelog.html">Changelog</a>
     </li>
   
-                                <li data-page="fixtures" value="5">
+                                <li data-page="fixtures" value="6">
       <a class="js-page-link" href="fixtures.html">Fixtures</a>
     </li>
   
-                                <li data-page="installation" value="6">
+                                <li data-page="installation" value="7">
       <a class="js-page-link" href="installation.html">Installation</a>
     </li>
   
                   </ol>
               <h2 class="h4 mt-4">Editors</h2>
         <ol>
-                                <li data-page="phpstorm" value="7">
+                                <li data-page="phpstorm" value="8">
       <a class="js-page-link" href="../editors/phpstorm.html">PHP Storm</a>
     </li>
   
@@ -291,6 +302,8 @@ $ which directio
                                                 <a class="list-group-item list-group-item-action"
                  data-tags="[]" href="completion.html">Completing Tasks</a>
                                                 <a class="list-group-item list-group-item-action"
+                 data-tags="[]" href="only.html">Keeping Only Some Tasks</a>
+                                                <a class="list-group-item list-group-item-action"
                  data-tags="[]" href="changelog.html">Changelog</a>
                                                 <a class="list-group-item list-group-item-action"
                  data-tags="[]" href="fixtures.html">Fixtures</a>
@@ -304,9 +317,9 @@ $ which directio
   </div>
 </div>
 
-  <script src="../../dist/node_modules/bootstrap/dist/js/bootstrap.min.js?ver=0.0.6"></script>
-  <script src="../../dist/lunr.js?ver=0.0.6"></script>
-  <script src="../../dist/knowledge.min.js?ver=0.0.6"></script>
+  <script src="../../dist/node_modules/bootstrap/dist/js/bootstrap.min.js?ver=0.1.0"></script>
+  <script src="../../dist/lunr.js?ver=0.1.0"></script>
+  <script src="../../dist/knowledge.min.js?ver=0.1.0"></script>
 
 </body>
 </html>

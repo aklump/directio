@@ -4,9 +4,9 @@
   <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-      <link rel="stylesheet" href="../../dist/node_modules/bootstrap/dist/css/bootstrap.css?ver=0.0.6">
-      <link rel="stylesheet" href="../../dist/dist/bootstrap_theme.css?ver=0.0.6">
-      <link rel="stylesheet" href="../../dist/node_modules/bootstrap-icons/font/bootstrap-icons.min.css?ver=0.0.6">
+      <link rel="stylesheet" href="../../dist/node_modules/bootstrap/dist/css/bootstrap.css?ver=0.1.0">
+      <link rel="stylesheet" href="../../dist/dist/bootstrap_theme.css?ver=0.1.0">
+      <link rel="stylesheet" href="../../dist/node_modules/bootstrap-icons/font/bootstrap-icons.min.css?ver=0.1.0">
         <title>Changelog | Directio</title>
   </head>
 <body class="my-5">
@@ -32,8 +32,8 @@
 
       </div>
       <div class="header__tags me-3">  </div>
-      <div class="header__page-numbers flex-shrink-1">4
-        / 7</div>
+      <div class="header__page-numbers flex-shrink-1">5
+        / 8</div>
     </div>
   </div>
 </header>
@@ -45,7 +45,15 @@
       <p>All notable changes to this project will be documented in this file.</p>
 <p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>,
 and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
-<h2>[Unreleased]</h2>
+<h2>[0.2.0] - 2026-10-29</h2>
+<h3>Added</h3>
+<ul>
+<li><code>directio only &lt;attribute&gt;...</code> (alias <code>with</code>) removes every imported task that has none of the given attributes, e.g. <code>directio only security</code>. <code>name=value</code> matches one value; several attributes keep a task with any of them. Nothing is written to the database; re-import to restore.</li>
+</ul>
+<h3>Changed</h3>
+<ul>
+<li><code>directio do &lt;filter&gt;</code> now explains why nothing ran instead of always saying "No fixture definitions found for the referenced IDs." It names a matching fixture whose task is marked done (with the document and how to re-run it), a fixture no task uses, a filter that matches no fixture ID, or the IDs that have no fixture class.</li>
+</ul>
 <h2>[0.1.0] - 2026-10-20</h2>
 <h3>Added</h3>
 <ul>
@@ -94,9 +102,9 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   <footer class="footer d-flex justify-content-center">
     <div class="flex-column justify-content-center">
               Version:
-        <strong>0.0.6</strong>
+        <strong>0.1.0</strong>
         &bull;
-                    Last Update: <strong>10/20/2026</strong>
+                    Last Update: <strong>10/29/2026</strong>
           </div>
   </footer>
 
@@ -108,7 +116,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
       bi-caret-left-fill"></i> Directio</a>
   
     
-              <a href="completion.html" class="btn nav__prev-page js-nav__prev-page
+              <a href="only.html" class="btn nav__prev-page js-nav__prev-page
     btn-primary"><i class="bi
       bi-caret-left-fill"></i></a>
   
@@ -169,28 +177,35 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
               bg-info rounded-pill badge-sm"></span></a>
     </li>
   
-                                    <li data-page="changelog" value="4">
+                                    <li data-page="only" value="4">
+      <a class="js-page-link" href="only.html">Keeping Only Some Tasks<span
+              class="js-search-score
+              badge
+              bg-info rounded-pill badge-sm"></span></a>
+    </li>
+  
+                                    <li data-page="changelog" value="5">
       <a class="js-page-link" href="changelog.html">Changelog<span
               class="js-search-score
               badge
               bg-info rounded-pill badge-sm"></span></a>
     </li>
   
-                                    <li data-page="fixtures" value="5">
+                                    <li data-page="fixtures" value="6">
       <a class="js-page-link" href="fixtures.html">Fixtures<span
               class="js-search-score
               badge
               bg-info rounded-pill badge-sm"></span></a>
     </li>
   
-                                    <li data-page="installation" value="6">
+                                    <li data-page="installation" value="7">
       <a class="js-page-link" href="installation.html">Installation<span
               class="js-search-score
               badge
               bg-info rounded-pill badge-sm"></span></a>
     </li>
   
-                                                          <li data-page="phpstorm" value="7">
+                                                          <li data-page="phpstorm" value="8">
       <a class="js-page-link" href="../editors/phpstorm.html">PHP Storm<span
               class="js-search-score
               badge
@@ -215,22 +230,26 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
       <a class="js-page-link" href="completion.html">Completing Tasks</a>
     </li>
   
-                                <li data-page="changelog" value="4">
+                                <li data-page="only" value="4">
+      <a class="js-page-link" href="only.html">Keeping Only Some Tasks</a>
+    </li>
+  
+                                <li data-page="changelog" value="5">
       <a class="js-page-link" href="changelog.html">Changelog</a>
     </li>
   
-                                <li data-page="fixtures" value="5">
+                                <li data-page="fixtures" value="6">
       <a class="js-page-link" href="fixtures.html">Fixtures</a>
     </li>
   
-                                <li data-page="installation" value="6">
+                                <li data-page="installation" value="7">
       <a class="js-page-link" href="installation.html">Installation</a>
     </li>
   
                   </ol>
               <h2 class="h4 mt-4">Editors</h2>
         <ol>
-                                <li data-page="phpstorm" value="7">
+                                <li data-page="phpstorm" value="8">
       <a class="js-page-link" href="../editors/phpstorm.html">PHP Storm</a>
     </li>
   
@@ -259,6 +278,8 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
                                                 <a class="list-group-item list-group-item-action"
                  data-tags="[]" href="completion.html">Completing Tasks</a>
                                                 <a class="list-group-item list-group-item-action"
+                 data-tags="[]" href="only.html">Keeping Only Some Tasks</a>
+                                                <a class="list-group-item list-group-item-action"
                  data-tags="[]" href="changelog.html">Changelog</a>
                                                 <a class="list-group-item list-group-item-action"
                  data-tags="[]" href="fixtures.html">Fixtures</a>
@@ -272,9 +293,9 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   </div>
 </div>
 
-  <script src="../../dist/node_modules/bootstrap/dist/js/bootstrap.min.js?ver=0.0.6"></script>
-  <script src="../../dist/lunr.js?ver=0.0.6"></script>
-  <script src="../../dist/knowledge.min.js?ver=0.0.6"></script>
+  <script src="../../dist/node_modules/bootstrap/dist/js/bootstrap.min.js?ver=0.1.0"></script>
+  <script src="../../dist/lunr.js?ver=0.1.0"></script>
+  <script src="../../dist/knowledge.min.js?ver=0.1.0"></script>
 
 </body>
 </html>
