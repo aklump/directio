@@ -27,17 +27,30 @@ class Document implements DocumentInterface {
    * task(s) indicated by matching the id attribute with $id.
    */
   public function withoutTask(string $id): DocumentInterface {
+    return $this->withoutTasksMatching(
+      fn(Task $task) => SpecialAttributes::extractId($task->getAttributes()) === $id
+    );
+  }
+
+  /**
+   * @param callable(\AKlump\Directio\Model\Task): bool $predicate Returns
+   * TRUE for each task to remove.
+   *
+   * @return \AKlump\Directio\Model\DocumentInterface A new document without
+   * the matching tasks.
+   */
+  public function withoutTasksMatching(callable $predicate): DocumentInterface {
     $content = $this->getContent();
     $cuts = [];
-
     foreach ((new ParseTasks())($content) as $task) {
-      if (SpecialAttributes::extractId($task->getAttributes()) === $id) {
+      if ($predicate($task)) {
         $cuts[] = [$task->getStart(), $task->getEnd()];
       }
     }
-    $content = $this->applyCuts($cuts, $content);
+    // ParseTasks returns tasks in closing order; cuts must run start to end.
+    usort($cuts, fn(array $a, array $b) => $a[0] <=> $b[0]);
 
-    return (new Document())->setContent($content);
+    return (new Document())->setContent($this->applyCuts($cuts, $content));
   }
 
   private function applyCuts(array $cuts, string $content): string {

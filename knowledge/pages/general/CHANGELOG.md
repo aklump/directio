@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `directio only <attribute>...` (alias `with`) removes every imported task that has none of the given attributes, e.g. `directio only security`. `name=value` matches one value; several attributes keep a task with any of them. Nothing is written to the database; re-import to restore.
+
 ### Changed
 
 - `directio do <filter>` now explains why nothing ran instead of always saying "No fixture definitions found for the referenced IDs." It names a matching fixture whose task is marked done (with the document and how to re-run it), a fixture no task uses, a filter that matches no fixture ID, or the IDs that have no fixture class.

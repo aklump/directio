@@ -29,6 +29,13 @@ class DocumentTest extends TestCase {
     $this->assertCount(1, array_unique($ids));
   }
 
+  public function testWithoutTasksMatchingCutsEachMatchAndKeepsTheRest() {
+    $document = (new Document())->setContent("# Title\n\n## A {#a keep}\n\na\n\n## B {#b}\n\nb\n\n## C {#c keep}\n\nc\n\n## D {#d}\n\nd\n");
+    $result = $document->withoutTasksMatching(fn($task) => !isset($task->getAttributes()['keep']));
+    $this->assertSame("# Title\n\n## A {#a keep}\n\na\n\n## C {#c keep}\n\nc\n", $result->getContent());
+    $this->assertNotSame($document, $result);
+  }
+
   public function testGetIds() {
     $document = new Document();
     $content = "## A {#install_runs_update}\n\nbody\n\n## B {#drush_control}\n\nbody\n";

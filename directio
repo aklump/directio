@@ -6,6 +6,7 @@ use AKlump\Directio\Command\ConvertCommand;
 use AKlump\Directio\Command\FixturesCommand;
 use AKlump\Directio\Command\ImportCommand;
 use AKlump\Directio\Command\InitializeCommand;
+use AKlump\Directio\Command\OnlyCommand;
 use AKlump\Directio\Command\UpdateCommand;
 use Symfony\Component\Console\Application;
 
@@ -23,6 +24,7 @@ foreach ([
 $application = new Application();
 $application->setName('Directio: Persistent Task Manager');
 $application->add(new InitializeCommand());
+$application->add(new OnlyCommand());
 $application->add(new UpdateCommand());
 $application->add(new ImportCommand());
 $application->add(new FixturesCommand());
