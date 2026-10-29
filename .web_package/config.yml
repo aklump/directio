@@ -8,5 +8,5 @@ push_master: true
 push_tags: true
 remote: origin
 version_file: .web_package/config.yml
-version: 0.1.0+26
+version: 0.2.0+2
 build_number: true
